@@ -12,12 +12,16 @@ program floquet_tight_binding
   type(external_vars) :: variables(2)
   type(sys) :: a
 
+  integer :: i
+
   a%name = "test"
 
   allocate(variables(1)%data(1))
   variables(1)%data = 3.0_dp
   allocate(variables(2)%data(10))
-  variables(2)%data = 7.0_dp
+  do i = 1, 10
+    variables(2)%data(i) = 2*real(i, dp)
+  enddo
 
   !Declare that task "test" aims to calculate a quantitiy which has 2 integer indices of size 3 and a contonous index of size 1.
   test_result(1)%task = "test"
@@ -44,20 +48,34 @@ program floquet_tight_binding
   call omp_set_nested(.true.)
   !call OMP_SET_MAX_ACTIVE_LEVELS(2)
 
-  call sample_and_integrate_in_BZ(test_result(1), (/2049, 1, 1/))
+  call sample_and_integrate_in_BZ(test_result(1), a, variables(1), (/2049, 1, 1/), calculator_test)
 
   print*, "Task:", test_result(1)%task
   print*, test_result(1)%res
 
-  call sample_and_integrate_in_BZ(test_result(2), (/2049, 1, 1/))
+  call sample_and_integrate_in_BZ(test_result(2), a, variables(2), (/2049, 1, 1/), calculator_test)
 
   print*, "Task:", test_result(2)%task
   print*, test_result(2)%res
 
-  call print_task_result(test_result(1), a, variables(1))
-  !call print_task_result(test_result(2), a, variables(2))
+  !call print_task_result(test_result(1), a, variables(1))
+  call print_task_result(test_result(2), a, variables(2))
 
   contains
+
+  function calculator_test(task, system, external_variable_data, i_arr, r_arr, k) result(u)
+
+    type(BZ_integrated_data), intent(in) :: task
+    type(sys),                intent(in) :: system
+    type(external_vars),      intent(in) :: external_variable_data
+    integer,                  intent(in) :: i_arr(:), r_arr(:)
+    real(kind=dp),            intent(in) :: k(3)
+
+    complex(kind=dp)                     :: u
+
+    u = r_arr(1)*i_arr(1)*(k(1)**2)*exp(sin(10*k(1)))
+
+  end function calculator_test
 
   subroutine init_model
 

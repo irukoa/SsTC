@@ -115,23 +115,23 @@ module calculator
     complex(kind=dp),         intent(inout) :: data_k
 
     if (task%task == "test") then
-      data_k = calculator_test(k, i_arr, r_arr)
+      !data_k = calculator_test(k, i_arr, r_arr)
     else
       print*, "Task label not recognized."
       stop
     endif
   end subroutine calculator_dict
 
-  function calculator_test(k, i_arr, r_arr) result(u)
+  !function calculator_test(k, i_arr, r_arr) result(u)
     !TESTING PURPOSES CALCULATOR.
-    real(kind=dp), intent(in) :: k(3)
-    integer,       intent(in) :: i_arr(:), r_arr(:)
+  !  real(kind=dp), intent(in) :: k(3)
+  !  integer,       intent(in) :: i_arr(:), r_arr(:)
 
-    complex(kind=dp) :: u
+  !  complex(kind=dp) :: u
 
-    u = r_arr(1)*i_arr(1)*(k(1)**2)*exp(sin(10*k(1)))
+  !  u = r_arr(1)*i_arr(1)*(k(1)**2)*exp(sin(10*k(1)))
 
-  end function calculator_test
+  !end function calculator_test
 
   function integer_array_element_to_memory_element(task, i_arr) result (i_mem)
     !Get integer indices from array layout to memory layout.

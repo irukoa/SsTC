@@ -10,10 +10,26 @@ module integrator
 
   contains
 
-  subroutine sample_and_integrate_in_BZ(task, samples)
+  !TODO: Check why it fails on parallel. Make a progress bar? Check bounds of the BZ integration.
+  subroutine sample_and_integrate_in_BZ(task, system, external_variable_data, samples, calculator)
 
     type(BZ_integrated_data), intent(inout) :: task
+    type(sys),                intent(in)    :: system
+    type(external_vars),      intent(in)    :: external_variable_data
     integer,                  intent(in)    :: samples(:)
+
+    interface
+      function calculator(task, system, external_variable_data, i_arr, r_arr, k) result(u)
+        import :: BZ_integrated_data, sys, external_vars, dp
+        type(BZ_integrated_data), intent(in) :: task
+        type(sys),                intent(in) :: system
+        type(external_vars),      intent(in) :: external_variable_data
+        integer,                  intent(in) :: i_arr(:), r_arr(:)
+        real(kind=dp),            intent(in) :: k(3)
+
+        complex(kind=dp)                     :: u
+      end function calculator
+    end interface
 
     complex(kind=dp), allocatable :: data_k(:, :, :), sdata_k(:)
 
@@ -41,11 +57,9 @@ module integrator
               k(2) = real(ik2-1,dp)/real(samples(2)-1,dp)
               do ik3 = 1, samples(3)
                 k(3) = real(ik3-1,dp)/real(samples(3)-1,dp)
-      
-                !TODO: Check why it fails on parallel. Make a progress bar?
-      
-                call calculator_dict(task, i_arr, r_arr, k, data_k(ik1, ik2, ik3))
-              
+                
+                data_k(ik1, ik2, ik3) = calculator(task, system, external_variable_data, i_arr, r_arr, k)!Do
+                
               enddo
             enddo
           enddo
