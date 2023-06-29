@@ -1,6 +1,7 @@
 module calculator
 
   use utility
+  use system
 
   type BZ_integrated_data
     !Label for the integration task.

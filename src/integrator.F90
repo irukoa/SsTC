@@ -4,6 +4,7 @@ module integrator
   use utility
   use extrapolation_integration
   use calculator
+  use system
 
   public :: sample_and_integrate_in_BZ
 

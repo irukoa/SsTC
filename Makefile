@@ -10,17 +10,20 @@ BIN = ./bin
 utility.o: $(SRC)/utility.F90
 					 $(F90) $(F90FLAGS) -c $(SRC)/utility.F90 -o "$(OBJ)/utility.o"
 
-calculator.o: $(SRC)/calculator.F90 utility.o
-							$(F90) $(F90FLAGS) -c $(SRC)/calculator.F90 $(OBJ)/utility.o -o "$(OBJ)/calculator.o"
+system.o: $(SRC)/system.F90 utility.o
+					$(F90) $(F90FLAGS) -c $(SRC)/system.F90 -o "$(OBJ)/system.o"
 
 extrapolation_integration.o: $(SRC)/extrapolation_integration.F90 utility.o
-					 $(F90) $(F90FLAGS) -c $(SRC)/extrapolation_integration.F90 $(OBJ)/utility.o -o "$(OBJ)/extrapolation_integration.o"
+					 									 $(F90) $(F90FLAGS) -c $(SRC)/extrapolation_integration.F90 -o "$(OBJ)/extrapolation_integration.o"
 
-integrator.o : $(SRC)/integrator.F90 utility.o extrapolation_integration.o calculator.o
-							 $(F90) $(F90FLAGS) -c $(SRC)/integrator.F90 $(OBJ)/utility.o $(OBJ)/extrapolation_integration.o $(OBJ)/calculator.o -o "$(OBJ)/integrator.o"
+calculator.o: $(SRC)/calculator.F90 utility.o system.o
+							$(F90) $(F90FLAGS) -c $(SRC)/calculator.F90 -o "$(OBJ)/calculator.o"
 
-main: $(SRC)/main.F90 utility.o extrapolation_integration.o calculator.o integrator.o
-			$(F90) $(F90FLAGS) $(SRC)/main.F90 $(OBJ)/utility.o $(OBJ)/extrapolation_integration.o $(OBJ)/calculator.o $(OBJ)/integrator.o -o "$(BIN)/tb.x"
+integrator.o : $(SRC)/integrator.F90 utility.o extrapolation_integration.o calculator.o system.o
+							 $(F90) $(F90FLAGS) -c $(SRC)/integrator.F90 -o "$(OBJ)/integrator.o"
+
+main: $(SRC)/main.F90 utility.o extrapolation_integration.o calculator.o integrator.o system.o
+			$(F90) $(F90FLAGS) $(SRC)/*.F90 -o "$(BIN)/tb.x"
 			rm *.mod
 
 .PHONY: clean
