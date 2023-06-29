@@ -1,10 +1,10 @@
 module integrator
 
   USE OMP_LIB
+
   use utility
-  use extrapolation_integration
-  use calculator
   use system
+  use extrapolation_integration
 
   public :: sample_and_integrate_in_BZ
 
@@ -15,15 +15,15 @@ module integrator
 
     type(BZ_integrated_data), intent(inout) :: task
     type(sys),                intent(in)    :: system
-    type(external_vars),      intent(in)    :: external_variable_data
-    integer,                  intent(in)    :: samples(:)
+    type(external_vars),      intent(in)    :: external_variable_data(:)
+    integer,                  intent(in)    :: samples(3)
 
     interface
       function calculator(task, system, external_variable_data, i_arr, r_arr, k) result(u)
         import :: BZ_integrated_data, sys, external_vars, dp
         type(BZ_integrated_data), intent(in) :: task
         type(sys),                intent(in) :: system
-        type(external_vars),      intent(in) :: external_variable_data
+        type(external_vars),      intent(in) :: external_variable_data(:)
         integer,                  intent(in) :: i_arr(:), r_arr(:)
         real(kind=dp),            intent(in) :: k(3)
 
@@ -31,7 +31,7 @@ module integrator
       end function calculator
     end interface
 
-    complex(kind=dp), allocatable :: data_k(:, :, :), sdata_k(:)
+    complex(kind=dp) :: data_k(samples(1), samples(2), samples(3)), sdata_k(product(samples))
 
     real(kind=dp) :: k(3)
 
@@ -48,8 +48,6 @@ module integrator
 
         r_arr = continuous_memory_element_to_array_element(task, r) !Pass to array layout.
 
-        allocate(data_k(samples(1), samples(2), samples(3)), sdata_k(product(samples)))
-
         !!$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(ik1, ik2, ik3)!For each k-point.
           do ik1=1, samples(1)
             k(1) = real(ik1-1,dp)/real(samples(1)-1,dp)
@@ -58,16 +56,17 @@ module integrator
               do ik3 = 1, samples(3)
                 k(3) = real(ik3-1,dp)/real(samples(3)-1,dp)
                 
-                data_k(ik1, ik2, ik3) = calculator(task, system, external_variable_data, i_arr, r_arr, k)!Do
+                data_k(ik1, ik2, ik3) = calculator(task, system, external_variable_data, i_arr, r_arr, k)
                 
               enddo
             enddo
           enddo
         !!$OMP END PARALLEL DO
 
-        call shrink_array(data_k, sdata_k, info) !Pass data array to memory layout.
-        call integral_extrapolation(sdata_k, samples, (/0.0_dp, 1.0_dp, 0.0_dp, 1.0_dp, 0.0_dp, 1.0_dp/), task%res(i, r), info) !Integrate, if possible extrapolation method.
-        deallocate(data_k, sdata_k)
+        !Pass data array to memory layout.
+        call shrink_array(data_k, sdata_k, info)
+        !Integrate, if possible extrapolation method.
+        call integral_extrapolation(sdata_k, samples, (/0.0_dp, 1.0_dp, 0.0_dp, 1.0_dp, 0.0_dp, 1.0_dp/), task%res(i, r), info)
 
       enddo
 

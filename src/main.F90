@@ -1,65 +1,44 @@
 program floquet_tight_binding
 
   USE OMP_LIB
+
   use, intrinsic :: iso_c_binding 
+
   use utility
-  use calculator
-  use integrator
   use system
+  use integrator
+
   include 'fftw3.f03'
 
-  type(BZ_integrated_data) :: test_result(2)
-  type(external_vars) :: variables(2)
   type(sys) :: a
 
-  integer :: i
-
-  a%name = "test"
-
-  allocate(variables(1)%data(1))
-  variables(1)%data = 3.0_dp
-  allocate(variables(2)%data(10))
-  do i = 1, 10
-    variables(2)%data(i) = 2*real(i, dp)
-  enddo
-
-  !Declare that task "test" aims to calculate a quantitiy which has 2 integer indices of size 3 and a contonous index of size 1.
-  test_result(1)%task = "test"
-  allocate(test_result(1)%integer_indices(2))
-  test_result(1)%integer_indices(1) = 3
-  test_result(1)%integer_indices(2) = 3
-  allocate(test_result(1)%continuous_indices(1))
-  test_result(1)%continuous_indices(1) = 1
-  allocate(test_result(1)%res(product(test_result(1)%integer_indices),&
-  product(test_result(1)%continuous_indices)))
-
-  !Declare that task "test" aims to calculate a quantitiy which has 2 integer indices of size 3 and a contonous index of size 1,
-  !but we only weant to calculate the 2nd integer component.
-  test_result(2)%task = "test"
-  allocate(test_result(2)%integer_indices(2))
-  test_result(2)%integer_indices(1) = 3
-  test_result(2)%integer_indices(2) = 3
-  allocate(test_result(2)%continuous_indices(1))
-  test_result(2)%continuous_indices(1) = 10
-  allocate(test_result(2)%res(product(test_result(2)%integer_indices),&
-  product(test_result(2)%continuous_indices)))
-  !test_result(2)%particular_integer_component = integer_array_element_to_memory_element(test_result(2), (/3, 2/))
+  type(external_vars) :: omega(1)
+  type(BZ_integrated_data) :: test
 
   call omp_set_nested(.true.)
   !call OMP_SET_MAX_ACTIVE_LEVELS(2)
 
-  call sample_and_integrate_in_BZ(test_result(1), a, variables(1), (/2049, 1, 1/), calculator_test)
+  !EXAMPLE OF USAGE.
+  omega(1) = external_variable_constructor(start = 0.0_dp,  &
+                                           end   = 20.0_dp, &
+                                           steps = 10)
 
-  print*, "Task:", test_result(1)%task
-  print*, test_result(1)%res
+  test = task_constructor(name      = "benchmark", &
+                          nint      = 2,           &
+                          int_range = (/3, 3/),    &
+                          ext_vars  = omega)
 
-  call sample_and_integrate_in_BZ(test_result(2), a, variables(2), (/2049, 1, 1/), calculator_test)
+  a%name = "test"
 
-  print*, "Task:", test_result(2)%task
-  print*, test_result(2)%res
+  call sample_and_integrate_in_BZ(task = test,                    &
+                                  system = a,                     &
+                                  external_variable_data = omega, &
+                                  samples = (/2049, 1, 1/),       &
+                                  calculator = calculator_test)
 
-  !call print_task_result(test_result(1), a, variables(1))
-  call print_task_result(test_result(2), a, variables(2))
+  call print_task_result(task = test, &
+                         system = a, &
+                         external_variables = omega)
 
   contains
 
@@ -67,7 +46,7 @@ program floquet_tight_binding
 
     type(BZ_integrated_data), intent(in) :: task
     type(sys),                intent(in) :: system
-    type(external_vars),      intent(in) :: external_variable_data
+    type(external_vars),      intent(in) :: external_variable_data(:)
     integer,                  intent(in) :: i_arr(:), r_arr(:)
     real(kind=dp),            intent(in) :: k(3)
 
