@@ -20,21 +20,33 @@ program floquet_tight_binding
 
   !EXAMPLE OF USAGE.
   omega(1) = external_variable_constructor(start = 0.0_dp,  &
-                                           end   = 20.0_dp, &
-                                           steps = 10)
+                                           end   = 10.0_dp, &
+                                           steps = 11)
 
   test = task_constructor(name      = "benchmark", &
                           nint      = 2,           &
                           int_range = (/3, 3/),    &
                           ext_vars  = omega)
 
-  a%name = "test"
+  a%name = "CHLM"
 
-  call sample_and_integrate_in_BZ(task = test,                    &
-                                  system = a,                     &
-                                  external_variable_data = omega, &
-                                  samples = (/2049, 1, 1/),       &
-                                  calculator = calculator_test)
+  call sample_and_integrate_in_BZ_CHLM(task = test,                    &
+                                       system = a,                     &
+                                       external_variable_data = omega, &
+                                       samples = (/1, 1, 1/),         & !Carefull, this corresponds to a 16*product(samples) byte array, if it surpasses 4MB it will yield SIGSEGV. Use "ulimit -s unlimited"
+                                       calculator_CHLM = calculator_test_CHLM)
+
+  call print_task_result(task = test, &
+                         system = a, &
+                         external_variables = omega)
+
+  a%name = "CLHM"
+
+  call sample_and_integrate_in_BZ_CLHM(task = test,                    &
+                                       system = a,                     &
+                                       external_variable_data = omega, &
+                                       samples = (/65, 9, 9/),         & !Carefull, this corresponds to a 16*product(samples)*product(task%continuous_indices) byte array, if it surpasses 4MB it will yield SIGSEGV. Use "ulimit -s unlimited"
+                                       calculator_CLHM = calculator_test_CLHM)
 
   call print_task_result(task = test, &
                          system = a, &
@@ -42,7 +54,26 @@ program floquet_tight_binding
 
   contains
 
-  function calculator_test(task, system, external_variable_data, i_arr, r_arr, k) result(u)
+  function calculator_test_CLHM(task, system, external_variable_data, i_arr, k) result(u)
+
+    type(BZ_integrated_data), intent(in) :: task
+    type(sys),                intent(in) :: system
+    type(external_vars),      intent(in) :: external_variable_data(:)
+    integer,                  intent(in) :: i_arr(:)
+    real(kind=dp),            intent(in) :: k(3)
+
+    complex(kind=dp)                     :: u(product(task%continuous_indices))
+    integer                              :: r, r_arr(size(task%continuous_indices))
+
+    u = i_arr(1)*(k(1)**2)*exp(sin(10*k(1)))
+    do r = 1, product(task%continuous_indices) !For each continuous index.
+      r_arr = continuous_memory_element_to_array_element(task, r) !Pass to array layout.
+      u(r) = u(r)*external_variable_data(1)%data(r_arr(1))
+    enddo
+  end function calculator_test_CLHM
+
+  
+  function calculator_test_CHLM(task, system, external_variable_data, i_arr, r_arr, k) result(u)
 
     type(BZ_integrated_data), intent(in) :: task
     type(sys),                intent(in) :: system
@@ -52,9 +83,9 @@ program floquet_tight_binding
 
     complex(kind=dp)                     :: u
 
-    u = r_arr(1)*i_arr(1)*(k(1)**2)*exp(sin(10*k(1)))
+    u = external_variable_data(1)%data(r_arr(1))*i_arr(1)*(k(1)**2)*exp(sin(10*k(1)))
 
-  end function calculator_test
+  end function calculator_test_CHLM
 
   subroutine init_model
 
