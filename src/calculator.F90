@@ -54,6 +54,10 @@ module calculator
 
   public :: BZ_integrated_data
   public :: calculator_dict
+  public :: integer_array_element_to_memory_element
+  public :: integer_memory_element_to_array_element
+  public :: continuous_array_element_to_memory_element
+  public :: continuous_memory_element_to_array_element
 
   contains
 
@@ -84,5 +88,77 @@ module calculator
     u = r_arr(1)*i_arr(1)*(k(1)**2)*exp(sin(10*k(1)))
 
   end function calculator_test
+
+  function integer_array_element_to_memory_element(task, i_arr) result (i_mem)
+    !Get integer indices from array layout to memory layout.
+    type(BZ_integrated_data), intent(in) :: task
+    integer, intent(in) :: i_arr(size(task%integer_indices))
+    integer :: i_mem
+
+    integer :: counter
+
+    i_mem = 1
+    do counter = 0, size(task%integer_indices) - 1
+      i_mem = (i_mem-1)*task%integer_indices(counter+1) + i_arr(counter+1)
+    enddo
+
+  end function integer_array_element_to_memory_element
+
+  function integer_memory_element_to_array_element(task, i_mem) result (i_arr)
+    !Get integer indices from memory layout to array layout.
+    type(BZ_integrated_data), intent(in) :: task
+    integer, intent(in) :: i_mem
+    integer :: i_arr(size(task%integer_indices))
+
+    integer :: counter, reduction
+
+    reduction = i_mem
+    do counter = size(task%integer_indices), 1, -1
+      if (counter == 1) then
+        i_arr(counter) = reduction
+      else
+        i_arr(counter) = modulo(reduction, task%integer_indices(counter))
+        if (i_arr(counter)==0) i_arr(counter) = task%integer_indices(counter)
+        reduction = int((reduction-i_arr(counter))/task%integer_indices(counter)) + 1
+      endif
+    enddo
+
+  end function integer_memory_element_to_array_element
+
+  function continuous_array_element_to_memory_element(task, r_arr) result (r_mem)
+    !Get continuous indices from array layout to memory layout.
+    type(BZ_integrated_data), intent(in) :: task
+    integer, intent(in) :: r_arr(size(task%continuous_indices))
+    integer :: r_mem
+
+    integer :: counter
+
+    r_mem = 1
+    do counter = 0, size(task%continuous_indices) - 1
+      r_mem = (r_mem-1)*task%continuous_indices(counter+1) + r_arr(counter+1)
+    enddo
+
+  end function continuous_array_element_to_memory_element
+
+  function continuous_memory_element_to_array_element(task, r_mem) result (r_arr)
+    !Get continuous indices from memory layout to array layout.
+    type(BZ_integrated_data), intent(in) :: task
+    integer, intent(in) :: r_mem
+    integer :: r_arr(size(task%continuous_indices))
+
+    integer :: counter, reduction
+
+    reduction = r_mem
+    do counter = size(task%continuous_indices), 1, -1
+      if (counter == 1) then
+        r_arr(counter) = reduction
+      else
+        r_arr(counter) = modulo(reduction, task%continuous_indices(counter))
+        if (r_arr(counter)==0) r_arr(counter) = task%continuous_indices(counter)
+        reduction = int((reduction-r_arr(counter))/task%continuous_indices(counter)) + 1
+      endif
+    enddo
+
+  end function continuous_memory_element_to_array_element
 
 end module calculator
