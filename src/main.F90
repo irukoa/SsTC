@@ -9,6 +9,15 @@ program floquet_tight_binding
   include 'fftw3.f03'
 
   type(BZ_integrated_data) :: test_result(2)
+  type(external_vars) :: variables(2)
+  type(sys) :: a
+
+  a%name = "test"
+
+  allocate(variables(1)%data(1))
+  variables(1)%data = 3.0_dp
+  allocate(variables(2)%data(10))
+  variables(2)%data = 7.0_dp
 
   !Declare that task "test" aims to calculate a quantitiy which has 2 integer indices of size 3 and a contonous index of size 1.
   test_result(1)%task = "test"
@@ -27,10 +36,10 @@ program floquet_tight_binding
   test_result(2)%integer_indices(1) = 3
   test_result(2)%integer_indices(2) = 3
   allocate(test_result(2)%continuous_indices(1))
-  test_result(2)%continuous_indices(1) = 1
+  test_result(2)%continuous_indices(1) = 10
   allocate(test_result(2)%res(product(test_result(2)%integer_indices),&
   product(test_result(2)%continuous_indices)))
-  test_result(2)%particular_integer_component = integer_array_element_to_memory_element(test_result(2), (/3, 2/))
+  !test_result(2)%particular_integer_component = integer_array_element_to_memory_element(test_result(2), (/3, 2/))
 
   call omp_set_nested(.true.)
   !call OMP_SET_MAX_ACTIVE_LEVELS(2)
@@ -44,6 +53,9 @@ program floquet_tight_binding
 
   print*, "Task:", test_result(2)%task
   print*, test_result(2)%res
+
+  call print_task_result(test_result(1), a, variables(1))
+  !call print_task_result(test_result(2), a, variables(2))
 
   contains
 

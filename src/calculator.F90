@@ -16,6 +16,10 @@ module calculator
     integer                       :: particular_integer_component = 0 
   end type BZ_integrated_data
 
+  type external_vars
+    real(kind=dp), allocatable :: data(:)
+  end type external_vars
+
   !=======EXAMPLE=======!
   !Let's say that we want to integrate the complex optical conductivity \sigma^{ab}(\omega).
   !In this case, a, b are integer indices ranging each from 1 to 3 and \omega is a continuous
@@ -32,7 +36,7 @@ module calculator
   !   complex_optical_conductivity%integer_indices(1) = 3                 <- Meaning that a takes ONLY the values 1, 2, 3.
   !   complex_optical_conductivity%integer_indices(2) = 3                 <- Meaning that b takes ONLY the values 1, 2, 3.
   !   allocate(complex_optical_conductivity%continuous_indices(1))        <- Meaning that we consider the continuous variable \omega.
-  !   complex_optical_conductivity%continuous_indices(1) = 1              <- Meaning that \omega_i can ONLY take the N values 1, 2, ..., N.
+  !   complex_optical_conductivity%continuous_indices(1) = N              <- Meaning that \omega_i can ONLY take the N values 1, 2, ..., N.
   !   allocate(complex_optical_conductivity%res( &                        <- Allocate result.
   !            product(complex_optical_conductivity%integer_indices),&
   !            product(complex_optical_conductivity%continuous_indices)))
@@ -54,6 +58,8 @@ module calculator
   !of a given kpt.
 
   public :: BZ_integrated_data
+  public :: external_vars
+  public :: print_task_result
   public :: calculator_dict
   public :: integer_array_element_to_memory_element
   public :: integer_memory_element_to_array_element
@@ -61,6 +67,43 @@ module calculator
   public :: continuous_memory_element_to_array_element
 
   contains
+
+  subroutine print_task_result(task, system, external_variables)
+    !Subroutine to format and output files.
+    type(BZ_integrated_data), intent(in) :: task
+    type(sys),                intent(in) :: system
+    type(external_vars),      intent(in) :: external_variables(size(task%continuous_indices))
+
+    character(len=400) :: filename
+    integer :: i_arr(size(task%integer_indices)), r_arr(size(task%continuous_indices))
+    integer :: i_mem, r_mem, count
+
+    do i_mem = 1, product(task%integer_indices) !For each integer index.
+
+      i_arr = integer_memory_element_to_array_element(task, i_mem) !Pass to array layout.
+
+      filename = trim(system%name)//'-'//trim(task%task)//'_'
+      do count = 1, size(task%integer_indices)
+        filename = trim(filename)//achar(48 + i_arr(count))
+      enddo
+      filename = trim(filename)//'.dat'
+
+      open(unit=111, action="write", file=filename)
+
+      do r_mem = 1, product(task%continuous_indices) !For each continuous index.
+
+        r_arr = continuous_memory_element_to_array_element(task, r_mem) !Pass to array layout.
+
+        write(unit=111, fmt=*) (external_variables(count)%data(r_arr(count)), count = 1, size(task%continuous_indices)),&
+        real(task%res(i_mem, r_mem), dp), aimag(task%res(i_mem, r_mem))
+
+      enddo
+
+      close(unit=111)
+
+    enddo
+
+  end subroutine print_task_result
 
   subroutine calculator_dict(task, i_arr, r_arr, k, data_k)
     !General calculator dictionary. Specify the task and refer to a 
