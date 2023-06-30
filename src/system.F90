@@ -23,6 +23,8 @@ module system
     complex(kind=dp), allocatable :: res(:, :)
     !If only some component out of the integer indices wants to be calculated this can be specified here in memory layout.
     integer                       :: particular_integer_component = 0 
+    !Integration method.
+    character(len=120)            :: method
   end type BZ_integrated_data
 
   type external_vars
@@ -65,12 +67,13 @@ module system
 
   end function external_variable_constructor
 
-  function task_constructor(name, Nint, int_range, ext_vars, part_int_comp) result(task)
+  function task_constructor(name, Nint, int_range, ext_vars, part_int_comp, method) result(task)
     character(len=*), intent(in)  :: name
     integer, intent(in)           :: Nint
     integer, intent(in)           :: int_range(Nint)
     type (external_vars), optional, intent(in) :: ext_vars(:)
     integer, optional, intent(in) :: part_int_comp(Nint)
+    character(len=*), optional, intent(in)  :: method
 
     type(BZ_integrated_data) :: task
 
@@ -96,6 +99,19 @@ module system
     allocate(task%res(product(task%integer_indices), product(task%continuous_indices)))
 
     if (present(part_int_comp)) task%particular_integer_component = integer_array_element_to_memory_element(task, part_int_comp)
+
+    if (present(method)) then
+      if (method == "extrapolation") then
+        task%method = "extrapolation"
+      elseif (method == "rectangle") then
+        task%method = "rectangle"
+      else
+        print*, "Integration method not recognized. Setting up rectangle method"
+        task%method = "rectangle"
+      endif
+    else
+      task%method = "rectangle"
+    endif
 
   end function task_constructor
 
