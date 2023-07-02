@@ -8,6 +8,8 @@ program floquet_tight_binding
   use data_structures
   use integrator
 
+  use calculator_test
+
   include 'fftw3.f03'
 
   type(sys) :: a
@@ -47,11 +49,11 @@ program floquet_tight_binding
                            ext_vars_start = (/0.0_dp/), &
                            ext_vars_end   = (/10.0_dp/), &
                            ext_vars_steps = (/11/), &
-                           method         = "rectangle", & !!Required memory: 16*product(int_ind_range)*product(ext_vars_steps)
+                           method         = "rectangle", & !Required memory: 16*product(int_ind_range)*product(ext_vars_steps)
                            samples        = (/200000, 9, 9/), &
                            part_int_comp  = (/2, 1/))
 
-  call sample_and_integrate_in_BZ(task = test2,                    &
+  call sample_and_integrate_in_BZ(task = test2, &
                                   system = a)
 
 call print_task_result(task = test2, &
@@ -60,29 +62,6 @@ call print_task_result(task = test2, &
   close(unit=112)
 
   contains
-
-  function calculator_test_C1M3(task, system, k) result(u)
-    type(BZ_integral_task), intent(in) :: task
-    type(sys),              intent(in) :: system
-    real(kind=dp),          intent(in) :: k(3)
-
-    complex(kind=dp)                   :: u(product(task%integer_indices), product(task%continuous_indices))
-    integer                            :: r, r_arr(size(task%continuous_indices)), i, i_arr(size(task%integer_indices))
-
-    real(kind=dp)                      :: part
-
-    u = 0.0_dp
-    part = (k(1)**2)*exp(sin(10*k(1)))
-    do i = 1, product(task%integer_indices)
-      if ((task%particular_integer_component.ne.0).and.(i.ne.task%particular_integer_component)) cycle
-      i_arr = integer_memory_element_to_array_element(task, i)
-      do r = 1, product(task%continuous_indices) !For each continuous index.
-        r_arr = continuous_memory_element_to_array_element(task, r) !Pass to array layout.
-        u(i, r) = part*task%ext_var_data(1)%data(r_arr(1))*i_arr(1)
-      enddo
-    enddo
-
-  end function calculator_test_C1M3
 
   subroutine init_model
 
