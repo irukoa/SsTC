@@ -1,4 +1,4 @@
-module system
+module data_structures
 
   integer, parameter, private :: dp = 8
 
@@ -283,4 +283,4 @@ module system
 
   end function continuous_memory_element_to_array_element
 
-end module system
+end module data_structures

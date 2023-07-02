@@ -2,7 +2,7 @@ module integrator
 
   USE OMP_LIB
 
-  use system
+  use data_structures
   use extrapolation_integration
 
   integer, parameter, private :: dp = 8

@@ -5,7 +5,7 @@ program floquet_tight_binding
   use, intrinsic :: iso_c_binding 
 
   use utility
-  use system
+  use data_structures
   use integrator
 
   include 'fftw3.f03'
