@@ -6,12 +6,13 @@ module data_structures
 
   type sys
     character(len=120)            :: name
-    integer                       :: num_bands
-    real(kind=dp)                 :: lattice_constant !In A.
-    real(kind=dp)                 :: direct_lattice_basis(3, 3), &  !Relative to lattice_constant.
-                                     reciprocal_lattice_basis(3, 3) !Relative to 1/lattice_constant.
-    complex(kind=dp), allocatable :: real_space_hamiltonian_elements(:, :, :) !In eV.
-    complex(kind=dp), allocatable :: real_space_position_elements(:, :, :, :) !In A.
+    integer                       :: num_bands !Number of bands.
+    real(kind=dp)                 :: direct_lattice_basis(3, 3) !Direct lattice basis vectors in A. 1st index is vector label, 2nd index is vector component.
+    integer                       :: num_R_points !Number of R points given in the *_tb.dat file.
+    integer, allocatable          :: R_point(:, :) !Memory layout id of the R-point (1st index) and R-vector coords. relative to the direct lattice basis vectors (2nd index).
+    integer, allocatable          :: deg_R_point(:) !Degeneracy of the R-point specified by its memory layout id.
+    complex(kind=dp), allocatable :: real_space_hamiltonian_elements(:, :, :) !Hamiltonian matrix elements (1st and 2nd indexes) and memory layout id of the R-point (3rd index) in eV.
+    complex(kind=dp), allocatable :: real_space_position_elements(:, :, :, :) !Position operator matrix elements (1st and 2nd indexes), cartesian coordinate (3rd index) and memory layout id of the R-point (4th index) in A.
   end type sys
 
   type BZ_integral_task
@@ -54,6 +55,7 @@ module data_structures
   end interface
 
   public  :: sys
+  public  :: sys_constructor
 
   public  :: BZ_integral_task
   public  :: task_constructor
@@ -70,7 +72,105 @@ module data_structures
 
   contains
 
-  !I will do the constructor for the system later on the line.
+  function sys_constructor(name, path_to_tb_file) result(system)
+    character(len=*), intent(in) :: name
+    character(len=*), intent(in) :: path_to_tb_file
+
+    type(sys) :: system
+
+    character(len=400) :: filename
+    integer            :: num_bands, nrpts, &
+                          division, remainder, &
+                          irpts, i, j, &
+                          dummy1, dummy2, dummy3
+
+    real(kind=dp), allocatable :: dummyR(:)
+
+    system%name = name
+
+    filename = trim(path_to_tb_file)//trim(name)//"_tb.dat"
+    filename = trim(filename)
+
+    write(unit=112, fmt = "(A)") "Reading file"//filename//"."
+
+    open(unit=113, action="read", file = filename)
+    read(unit=113, fmt = *)
+    do i = 1, 3
+      read(unit=113, fmt = *) (system%direct_lattice_basis(i, j), j = 1, 3)
+    enddo
+    read(unit=113, fmt = *) num_bands
+    system%num_bands = num_bands
+    read(unit=113, fmt = *) nrpts
+    system%num_R_points = nrpts
+    allocate(system%R_point(system%num_R_points, 3), &
+             system%deg_R_point(system%num_R_points), &
+             system%real_space_hamiltonian_elements(system%num_bands, system%num_bands, system%num_R_points), &
+             system%real_space_position_elements(system%num_bands, system%num_bands, 3, system%num_R_points))
+
+    division = nrpts/15
+    remainder = modulo(nrpts, 15)
+
+    if (remainder == 0) then
+      do i = 1, division
+          read(unit=113, fmt = *) (system%deg_R_point(15*(i - 1) + j), j = 1, 15)
+      enddo
+    else
+      do i = 1, division
+        read(unit=113, fmt = *) (system%deg_R_point(15*(i - 1) + j), j = 1, 15)
+      enddo
+      read(unit=113, fmt = *) (system%deg_R_point(15*(i - 1) + j), j = 1, remainder)
+    endif
+
+    read(unit=113, fmt = *)
+    allocate(dummyR(2))
+    write(unit=112, fmt = "(A)") "Reading Hamiltonian."
+
+    do irpts = 1, nrpts
+      read(unit=113, fmt = *) (system%R_point(irpts, i), i = 1, 3)
+      do i = 1, num_bands
+        do j = 1, num_bands
+          read(unit=113, fmt = *) dummy1, dummy2, dummyR(1), dummyR(2)
+          system%real_space_hamiltonian_elements(i, j, irpts) = cmplx(dummyR(1), dummyR(2), dp)
+        enddo
+      enddo
+      read(unit=113, fmt = *)
+    enddo
+
+    deallocate(dummyR)
+    write(unit=112, fmt = "(A)") "Done."
+
+    allocate(dummyR(6))
+    write(unit=112, fmt = "(A)") "Reading Position Operator."
+
+    do irpts = 1, nrpts - 1
+      read(unit=113, fmt = *) dummy1, dummy2, dummy3
+      do i = 1, num_bands
+        do j = 1, num_bands
+          read(unit=113, fmt = *) dummy1, dummy2, dummyR(1), dummyR(2), dummyR(3), dummyR(4), dummyR(5), dummyR(6)
+          system%real_space_position_elements(i, j, 1, irpts) = cmplx(dummyR(1), dummyR(2), dp)
+          system%real_space_position_elements(i, j, 2, irpts) = cmplx(dummyR(3), dummyR(4), dp)
+          system%real_space_position_elements(i, j, 3, irpts) = cmplx(dummyR(5), dummyR(6), dp)
+        enddo
+      enddo
+      read(unit=113, fmt = *)
+    enddo
+
+    read(unit=113, fmt = *) dummy1, dummy2, dummy3
+    do i = 1, num_bands
+      do j = 1, num_bands
+        read(unit=113, fmt = *) dummy1, dummy2, dummyR(1), dummyR(2), dummyR(3), dummyR(4), dummyR(5), dummyR(6)
+        system%real_space_position_elements(i, j, 1, nrpts) = cmplx(dummyR(1), dummyR(2), dp)
+        system%real_space_position_elements(i, j, 2, nrpts) = cmplx(dummyR(3), dummyR(4), dp)
+        system%real_space_position_elements(i, j, 3, nrpts) = cmplx(dummyR(5), dummyR(6), dp)
+      enddo
+    enddo
+
+    deallocate(dummyR)
+    write(unit=112, fmt = "(A)") "Done."
+
+    close(unit=113)
+
+  end function sys_constructor
 
   function external_variable_constructor(start, end, steps) result(vars)
     !Function to set external variable data.
@@ -221,7 +321,7 @@ module data_structures
 
     i_mem = 1
     do counter = 0, size(task%integer_indices) - 1
-      i_mem = (i_mem - 1)*task%integer_indices(counter + 1) + i_arr(counter+1)
+      i_mem = (i_mem - 1)*task%integer_indices(counter + 1) + i_arr(counter + 1)
     enddo
 
   end function integer_array_element_to_memory_element
@@ -259,7 +359,7 @@ module data_structures
 
     r_mem = 1
     do counter = 0, size(task%continuous_indices) - 1
-      r_mem = (r_mem - 1)*task%continuous_indices(counter+1) + r_arr(counter + 1)
+      r_mem = (r_mem - 1)*task%continuous_indices(counter + 1) + r_arr(counter + 1)
     enddo
 
   end function continuous_array_element_to_memory_element

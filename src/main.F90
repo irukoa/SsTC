@@ -21,6 +21,8 @@ program floquet_tight_binding
   call omp_set_nested(.true.)
   !call OMP_SET_MAX_ACTIVE_LEVELS(2)
 
+  a = sys_constructor("GaAs", "./")
+
   !EXAMPLE OF USAGE.
   test = task_constructor(name           = "ext_ben", &
                           calculator     = calculator_test_C1M3, &
