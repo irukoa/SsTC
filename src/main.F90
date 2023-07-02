@@ -25,59 +25,35 @@ program floquet_tight_binding
                                            end   = 10.0_dp, &
                                            steps = 11)
 
-  test = task_constructor(name      = "benchmark", &
+  test = task_constructor(name      = "ext_ben", &
                           nint      = 2,           &
                           int_range = (/3, 3/),    &
                           ext_vars  = omega,       &
-                          method = "extrapolation" )
-
-  a%name = "CHLM"
-
-  call sample_and_integrate_in_BZ_CHLM(task = test,                    &
-                                       system = a,                     &
-                                       external_variable_data = omega, &
-                                       samples = (/65, 9, 9/),         & !Carefull, this corresponds to a 16*product(samples) byte array, if it surpasses 4MB it will yield SIGSEGV. Use "ulimit -s unlimited"
-                                       calculator_CHLM = calculator_test_CHLM)
-
-  call print_task_result(task = test, &
-                         system = a, &
-                         external_variables = omega)
-
-  a%name = "CLHM"
-
-  call sample_and_integrate_in_BZ_CLHM(task = test,                    &
-                                       system = a,                     &
-                                       external_variable_data = omega, &
-                                       samples = (/65, 9, 9/),         & !Carefull, this corresponds to a 16*product(samples)*product(task%continuous_indices) byte array, if it surpasses 4MB it will yield SIGSEGV. Use "ulimit -s unlimited"
-                                       calculator_CLHM = calculator_test_CLHM)
-
-  call print_task_result(task = test, &
-                         system = a, &
-                         external_variables = omega)
+                          calculator = calculator_test_C1M3, &
+                          method = "extrapolation", &
+                          samples = (/65, 65, 65/) )
 
   a%name = "C1M3"
 
-  call sample_and_integrate_in_BZ_C1M3(task = test,                    &
+  call sample_and_integrate_in_BZ(task = test,                    &
                                       system = a,                     &
-                                      external_variable_data = omega, &
-                                      samples = (/129, 9, 9/),         & !Carefull, this corresponds to a 16*product(samples)*product(task%continuous_indices) byte array, if it surpasses 4MB it will yield SIGSEGV. Use "ulimit -s unlimited"
-                                      calculator_C1M3 = calculator_test_C1M3)
-
+                                      external_variable_data = omega)        !Carefull, this corresponds to a 16*product(samples)*product(task%continuous_indices) byte array, if it surpasses 4MB it will yield SIGSEGV. Use "ulimit -s unlimited"
   call print_task_result(task = test, &
                         system = a, &
                         external_variables = omega)
 
-  test2 = task_constructor(name      = "benchmarkrec", &
+  test2 = task_constructor(name      = "rec_ben", &
                            nint      = 2,           &
                            int_range = (/3, 3/),    &
                            ext_vars  = omega,       &
-                           method = "rectangle" )
+                           calculator = calculator_test_C1M3, &
+                           part_int_comp = (/2, 1/), &
+                           method = "rectangle", &
+                           samples = (/20000, 9, 9/) )
 
-  call sample_and_integrate_in_BZ_C1M3(task = test2,                    &
+  call sample_and_integrate_in_BZ(task = test2,                    &
                                        system = a,                     &
-                                       external_variable_data = omega, &
-                                       samples = (/200000, 9, 9/),         & !Carefull, this corresponds to a 16*product(samples)*product(task%continuous_indices) byte array, if it surpasses 4MB it will yield SIGSEGV. Use "ulimit -s unlimited"
-                                       calculator_C1M3 = calculator_test_C1M3)
+                                       external_variable_data = omega)  !Carefull, this corresponds to a 16*product(samples)*product(task%continuous_indices) byte array, if it surpasses 4MB it will yield SIGSEGV. Use "ulimit -s unlimited"
 
 call print_task_result(task = test2, &
                        system = a, &
@@ -86,24 +62,6 @@ call print_task_result(task = test2, &
   close(unit=112)
 
   contains
-
-  function calculator_test_CLHM(task, system, external_variable_data, i_arr, k) result(u)
-
-    type(BZ_integrated_data), intent(in) :: task
-    type(sys),                intent(in) :: system
-    type(external_vars),      intent(in) :: external_variable_data(:)
-    integer,                  intent(in) :: i_arr(:)
-    real(kind=dp),            intent(in) :: k(3)
-
-    complex(kind=dp)                     :: u(product(task%continuous_indices))
-    integer                              :: r, r_arr(size(task%continuous_indices))
-
-    u = i_arr(1)*(k(1)**2)*exp(sin(10*k(1)))
-    do r = 1, product(task%continuous_indices) !For each continuous index.
-      r_arr = continuous_memory_element_to_array_element(task, r) !Pass to array layout.
-      u(r) = u(r)*external_variable_data(1)%data(r_arr(1))
-    enddo
-  end function calculator_test_CLHM
 
   function calculator_test_C1M3(task, system, external_variable_data, k) result(u)
     type(BZ_integrated_data), intent(in) :: task
@@ -114,31 +72,20 @@ call print_task_result(task = test2, &
     complex(kind=dp)                     :: u(product(task%integer_indices), product(task%continuous_indices))
     integer                              :: r, r_arr(size(task%continuous_indices)), i, i_arr(size(task%integer_indices))
 
-    u = (k(1)**2)*exp(sin(10*k(1)))
+    real(kind=dp)                        :: part
+
+    u = 0.0_dp
+    part = (k(1)**2)*exp(sin(10*k(1)))
     do i = 1, product(task%integer_indices)
+      if ((task%particular_integer_component.ne.0).and.(i.ne.task%particular_integer_component)) cycle
       i_arr = integer_memory_element_to_array_element(task, i)
       do r = 1, product(task%continuous_indices) !For each continuous index.
         r_arr = continuous_memory_element_to_array_element(task, r) !Pass to array layout.
-        u(i, r) = u(i, r)*external_variable_data(1)%data(r_arr(1))*i_arr(1)
+        u(i, r) = part*external_variable_data(1)%data(r_arr(1))*i_arr(1)
       enddo
     enddo
 
   end function calculator_test_C1M3
-
-  
-  function calculator_test_CHLM(task, system, external_variable_data, i_arr, r_arr, k) result(u)
-
-    type(BZ_integrated_data), intent(in) :: task
-    type(sys),                intent(in) :: system
-    type(external_vars),      intent(in) :: external_variable_data(:)
-    integer,                  intent(in) :: i_arr(:), r_arr(:)
-    real(kind=dp),            intent(in) :: k(3)
-
-    complex(kind=dp)                     :: u
-
-    u = external_variable_data(1)%data(r_arr(1))*i_arr(1)*(k(1)**2)*exp(sin(10*k(1)))
-
-  end function calculator_test_CHLM
 
   subroutine init_model
 

@@ -1,6 +1,6 @@
 module system
 
-  use utility
+  integer, parameter, private :: dp = 8
 
   type sys
     character(len=120)            :: name
@@ -23,14 +23,33 @@ module system
     complex(kind=dp), allocatable :: res(:, :)
     !If only some component out of the integer indices wants to be calculated this can be specified here in memory layout.
     integer                       :: particular_integer_component = 0 
+    !Pointer to calculator function.
+    procedure (calculator_C1M3), pointer, nopass :: calculator
     !Integration method.
     character(len=120)            :: method
+    !Integration samples.
+    integer                       :: samples(3)
+    
+    type(external_vars), allocatable :: ext_var_data(:)
   end type BZ_integrated_data
 
   type external_vars
     !External variable data array.
     real(kind=dp), allocatable    :: data(:)
   end type external_vars
+
+
+  abstract interface
+    function calculator_C1M3(task, system, external_variable_data, k) result(u)
+      import :: BZ_integrated_data, sys, external_vars, dp
+      type(BZ_integrated_data), intent(in) :: task
+      type(sys),                intent(in) :: system
+      type(external_vars),      intent(in) :: external_variable_data(:)
+      real(kind=dp),            intent(in) :: k(3)
+
+      complex(kind=dp)                     :: u(product(task%integer_indices), product(task%continuous_indices))
+    end function calculator_C1M3
+  end interface
 
   public :: sys
   public :: BZ_integrated_data
@@ -67,13 +86,15 @@ module system
 
   end function external_variable_constructor
 
-  function task_constructor(name, Nint, int_range, ext_vars, part_int_comp, method) result(task)
+  function task_constructor(name, Nint, int_range, ext_vars, calculator, part_int_comp, method, samples) result(task)
     character(len=*), intent(in)  :: name
     integer, intent(in)           :: Nint
     integer, intent(in)           :: int_range(Nint)
     type (external_vars), optional, intent(in) :: ext_vars(:)
+    procedure (calculator_C1M3)   :: calculator
     integer, optional, intent(in) :: part_int_comp(Nint)
     character(len=*), optional, intent(in)  :: method
+    integer, intent(in) :: samples(3)
 
     type(BZ_integrated_data) :: task
 
@@ -93,8 +114,10 @@ module system
       enddo
     else
       allocate(task%continuous_indices(1))
-      task%continuous_indices(1) = 0.0_dp
+      task%continuous_indices(1) = 1.0_dp
     endif
+
+    task%calculator => calculator
 
     allocate(task%res(product(task%integer_indices), product(task%continuous_indices)))
 
@@ -112,6 +135,8 @@ module system
     else
       task%method = "rectangle"
     endif
+
+    task%samples = samples
 
   end function task_constructor
 
