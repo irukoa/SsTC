@@ -40,11 +40,10 @@ module system
 
 
   abstract interface
-    function calculator_C1M3(task, system, external_variable_data, k) result(u)
+    function calculator_C1M3(task, system, k) result(u)
       import :: BZ_integrated_data, sys, external_vars, dp
       type(BZ_integrated_data), intent(in) :: task
       type(sys),                intent(in) :: system
-      type(external_vars),      intent(in) :: external_variable_data(:)
       real(kind=dp),            intent(in) :: k(3)
 
       complex(kind=dp)                     :: u(product(task%integer_indices), product(task%continuous_indices))
@@ -86,11 +85,13 @@ module system
 
   end function external_variable_constructor
 
-  function task_constructor(name, Nint, int_range, ext_vars, calculator, part_int_comp, method, samples) result(task)
+  function task_constructor(name, Nint, int_range, Next_vars, ext_vars_start, ext_vars_end, ext_vars_steps, calculator, part_int_comp, method, samples) result(task)
     character(len=*), intent(in)  :: name
     integer, intent(in)           :: Nint
     integer, intent(in)           :: int_range(Nint)
-    type (external_vars), optional, intent(in) :: ext_vars(:)
+    integer, intent(in) :: Next_vars
+    real(kind=dp), optional, intent(in) :: ext_vars_start(Next_vars), ext_vars_end(Next_vars)
+    integer, optional, intent(in) :: ext_vars_steps(Next_vars)
     procedure (calculator_C1M3)   :: calculator
     integer, optional, intent(in) :: part_int_comp(Nint)
     character(len=*), optional, intent(in)  :: method
@@ -107,10 +108,12 @@ module system
       task%integer_indices(i) = int_range(i)
     enddo
 
-    if (present(ext_vars)) then
-      allocate(task%continuous_indices(size(ext_vars)))
-      do i = 1, size(ext_vars)
-        task%continuous_indices(i) = size(ext_vars(i)%data)
+    if (((Next_vars).ge.1).and.(present(ext_vars_start)).and.(present(ext_vars_end)).and.(present(ext_vars_steps))) then
+      allocate(task%continuous_indices(Next_vars), task%ext_var_data(Next_vars))
+      do i = 1, Next_vars
+        task%continuous_indices(i) = ext_vars_steps(i)
+        allocate(task%ext_var_data(i)%data(ext_vars_steps(i)))
+        task%ext_var_data(i) = external_variable_constructor(ext_vars_start(i), ext_vars_end(i), ext_vars_steps(i))
       enddo
     else
       allocate(task%continuous_indices(1))
@@ -140,11 +143,10 @@ module system
 
   end function task_constructor
 
-  subroutine print_task_result(task, system, external_variables)
+  subroutine print_task_result(task, system)
     !Subroutine to format and output files.
     type(BZ_integrated_data), intent(in) :: task
     type(sys),                intent(in) :: system
-    type(external_vars),      intent(in) :: external_variables(size(task%continuous_indices))
 
     character(len=400) :: filename
     integer :: i_arr(size(task%integer_indices)), r_arr(size(task%continuous_indices))
@@ -166,7 +168,7 @@ module system
 
         r_arr = continuous_memory_element_to_array_element(task, r_mem) !Pass to array layout.
 
-        write(unit=111, fmt=*) (external_variables(count)%data(r_arr(count)), count = 1, size(task%continuous_indices)),&
+        write(unit=111, fmt=*) (task%ext_var_data(count)%data(r_arr(count)), count = 1, size(task%continuous_indices)),&
         real(task%res(i_mem, r_mem), dp), aimag(task%res(i_mem, r_mem))
 
       enddo

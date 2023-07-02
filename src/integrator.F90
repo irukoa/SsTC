@@ -12,11 +12,10 @@ module integrator
   contains
 
   !Sub to integrate calculators which return a complex array with integer and continuous indices.
-  subroutine sample_and_integrate_in_BZ(task, system, external_variable_data)
+  subroutine sample_and_integrate_in_BZ(task, system)
 
     type(BZ_integrated_data), intent(inout) :: task
     type(sys),                intent(in)    :: system
-    type(external_vars),      intent(in)    :: external_variable_data(:)
 
     complex(kind=dp), allocatable :: data_k(: , :, :, :, :), &
                                      sdata_k(:, :, :), temp_res(:, :)
@@ -56,7 +55,7 @@ module integrator
             do ik3 = 1, task%samples(3)
               k(3) = real(ik3-1,dp)/real(task%samples(3)-1,dp)
               
-              data_k(ik1, ik2, ik3, :, :) = task%calculator(task, system, external_variable_data, k)
+              data_k(ik1, ik2, ik3, :, :) = task%calculator(task, system, k)
               
             enddo
           enddo
@@ -109,7 +108,7 @@ module integrator
           do ik3 = 1, task%samples(3)
             k(3) = real(ik3-1,dp)/real(task%samples(3)-1,dp)
             
-            temp_res = temp_res + task%calculator(task, system, external_variable_data, k)
+            temp_res = temp_res + task%calculator(task, system, k)
             
           enddo
         enddo
