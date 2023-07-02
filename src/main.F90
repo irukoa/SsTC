@@ -28,16 +28,16 @@ program floquet_tight_binding
                           ext_vars_start = (/0.0_dp/), &
                           ext_vars_end   = (/10.0_dp/), &
                           ext_vars_steps = (/11/), &
-                          method         = "extrapolation", &
+                          method         = "extrapolation", & !Required memory: 16*product(samples)*product(int_ind_range)*product(ext_vars_steps)
                           samples        = (/65, 65, 65/))
 
   a%name = "C1M3"
 
-  call sample_and_integrate_in_BZ(task = test,                    &
-                                      system = a)                    
-     !Carefull, this corresponds to a 16*product(samples)*product(task%continuous_indices) byte array, if it surpasses 4MB it will yield SIGSEGV. Use "ulimit -s unlimited"
+  call sample_and_integrate_in_BZ(task = test, &
+                                  system = a)                    
+
   call print_task_result(task = test, &
-                        system = a)
+                         system = a)
 
   test2 = task_constructor(name           = "rec_ben", &
                            calculator     = calculator_test_C1M3, &
@@ -47,12 +47,12 @@ program floquet_tight_binding
                            ext_vars_start = (/0.0_dp/), &
                            ext_vars_end   = (/10.0_dp/), &
                            ext_vars_steps = (/11/), &
-                           method         = "rectangle", &
+                           method         = "rectangle", & !!Required memory: 16*product(int_ind_range)*product(ext_vars_steps)
                            samples        = (/200000, 9, 9/), &
                            part_int_comp  = (/2, 1/))
 
   call sample_and_integrate_in_BZ(task = test2,                    &
-                                       system = a) !Carefull, this corresponds to a 16*product(samples)*product(task%continuous_indices) byte array, if it surpasses 4MB it will yield SIGSEGV. Use "ulimit -s unlimited"
+                                  system = a)
 
 call print_task_result(task = test2, &
                        system = a)
@@ -63,13 +63,13 @@ call print_task_result(task = test2, &
 
   function calculator_test_C1M3(task, system, k) result(u)
     type(BZ_integral_task), intent(in) :: task
-    type(sys),                intent(in) :: system
-    real(kind=dp),            intent(in) :: k(3)
+    type(sys),              intent(in) :: system
+    real(kind=dp),          intent(in) :: k(3)
 
-    complex(kind=dp)                     :: u(product(task%integer_indices), product(task%continuous_indices))
-    integer                              :: r, r_arr(size(task%continuous_indices)), i, i_arr(size(task%integer_indices))
+    complex(kind=dp)                   :: u(product(task%integer_indices), product(task%continuous_indices))
+    integer                            :: r, r_arr(size(task%continuous_indices)), i, i_arr(size(task%integer_indices))
 
-    real(kind=dp)                        :: part
+    real(kind=dp)                      :: part
 
     u = 0.0_dp
     part = (k(1)**2)*exp(sin(10*k(1)))
