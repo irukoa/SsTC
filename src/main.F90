@@ -12,7 +12,7 @@ program floquet_tight_binding
 
   type(sys) :: a
 
-  type(BZ_integrated_data) :: test, test2
+  type(BZ_integral_task) :: test, test2
 
   open(unit=112, action="write", file="exec.out")
 
@@ -20,17 +20,16 @@ program floquet_tight_binding
   !call OMP_SET_MAX_ACTIVE_LEVELS(2)
 
   !EXAMPLE OF USAGE.
-
-  test = task_constructor(name      = "ext_ben", &
-                          nint      = 2,           &
-                          int_range = (/3, 3/),    &
-                          Next_vars = 1, &
+  test = task_constructor(name           = "ext_ben", &
+                          calculator     = calculator_test_C1M3, &
+                          N_int_ind      = 2, &
+                          int_ind_range  = (/3, 3/), &
+                          N_ext_vars     = 1, &
                           ext_vars_start = (/0.0_dp/), &
-                          ext_vars_end = (/10.0_dp/), &
+                          ext_vars_end   = (/10.0_dp/), &
                           ext_vars_steps = (/11/), &
-                          calculator = calculator_test_C1M3, &
-                          method = "extrapolation", &
-                          samples = (/65, 65, 65/) )
+                          method         = "extrapolation", &
+                          samples        = (/65, 65, 65/))
 
   a%name = "C1M3"
 
@@ -40,17 +39,17 @@ program floquet_tight_binding
   call print_task_result(task = test, &
                         system = a)
 
-  test2 = task_constructor(name      = "rec_ben", &
-                           nint      = 2,           &
-                           int_range = (/3, 3/),    &
-                           Next_vars = 1, &
+  test2 = task_constructor(name           = "rec_ben", &
+                           calculator     = calculator_test_C1M3, &
+                           N_int_ind      = 2, &
+                           int_ind_range  = (/3, 3/), &
+                           N_ext_vars     = 1, &
                            ext_vars_start = (/0.0_dp/), &
-                           ext_vars_end = (/10.0_dp/), &
+                           ext_vars_end   = (/10.0_dp/), &
                            ext_vars_steps = (/11/), &
-                           calculator = calculator_test_C1M3, &
-                           part_int_comp = (/2, 1/), &
-                           method = "rectangle", &
-                           samples = (/200000, 9, 9/) )
+                           method         = "rectangle", &
+                           samples        = (/200000, 9, 9/), &
+                           part_int_comp  = (/2, 1/))
 
   call sample_and_integrate_in_BZ(task = test2,                    &
                                        system = a) !Carefull, this corresponds to a 16*product(samples)*product(task%continuous_indices) byte array, if it surpasses 4MB it will yield SIGSEGV. Use "ulimit -s unlimited"
@@ -63,7 +62,7 @@ call print_task_result(task = test2, &
   contains
 
   function calculator_test_C1M3(task, system, k) result(u)
-    type(BZ_integrated_data), intent(in) :: task
+    type(BZ_integral_task), intent(in) :: task
     type(sys),                intent(in) :: system
     real(kind=dp),            intent(in) :: k(3)
 

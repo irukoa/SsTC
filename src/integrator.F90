@@ -14,7 +14,7 @@ module integrator
   !Sub to integrate calculators which return a complex array with integer and continuous indices.
   subroutine sample_and_integrate_in_BZ(task, system)
 
-    type(BZ_integrated_data), intent(inout) :: task
+    type(BZ_integral_task), intent(inout) :: task
     type(sys),                intent(in)    :: system
 
     complex(kind=dp), allocatable :: data_k(: , :, :, :, :), &
@@ -29,7 +29,7 @@ module integrator
     if (task%method == "extrapolation") then 
 
       write(unit=112, fmt="(A)") "Starting BZ sampling and integration subroutine C1M3 with extrapolation method."
-      write(unit=112, fmt="(A)") "Integrating task: "//trim(task%task)//" in the BZ for the system "//trim(system%name)//"."
+      write(unit=112, fmt="(A)") "Integrating task: "//trim(task%name)//" in the BZ for the system "//trim(system%name)//"."
       write(unit=112, fmt="(A)") "The required memory for the integration process is approximately,"
       write(unit=112, fmt="(F15.3, A)") 16.0_dp*real(product(task%samples)*product(task%integer_indices)*product(task%continuous_indices),dp)/1024.0_dp**2, "MB."
       write(unit=112, fmt="(A)") "Some computers limit the maximum memory an array can allocate."
@@ -71,7 +71,7 @@ module integrator
         !Pass data array to memory layout.
         call shrink_array(data_k(:, :, :, i, r), sdata_k(:, i, r), info)
         !Integrate, if possible extrapolation method.
-        call integral_extrapolation(sdata_k(:, i, r), task%samples, (/0.0_dp, 1.0_dp, 0.0_dp, 1.0_dp, 0.0_dp, 1.0_dp/), task%res(i, r), info)
+        call integral_extrapolation(sdata_k(:, i, r), task%samples, (/0.0_dp, 1.0_dp, 0.0_dp, 1.0_dp, 0.0_dp, 1.0_dp/), task%result(i, r), info)
         enddo
       enddo
 
@@ -86,7 +86,7 @@ module integrator
     elseif (task%method == "rectangle") then
 
       write(unit=112, fmt="(A)") "Starting BZ sampling and integration subroutine C1M3 with rectangle method."
-      write(unit=112, fmt="(A)") "Integrating task: "//trim(task%task)//" in the BZ for the system "//trim(system%name)//"."
+      write(unit=112, fmt="(A)") "Integrating task: "//trim(task%name)//" in the BZ for the system "//trim(system%name)//"."
       write(unit=112, fmt="(A)") "The required memory for the integration process is approximately,"
       write(unit=112, fmt="(F15.3, A)") 16.0_dp*real(product(task%integer_indices)*product(task%continuous_indices),dp)/1024.0_dp**2, "MB."
 
@@ -117,7 +117,7 @@ module integrator
     !$OMP END DO
     !$OMP END PARALLEL
 
-    task%res = temp_res/product(task%samples)
+    task%result = temp_res/product(task%samples)
 
     deallocate(temp_res)
 
