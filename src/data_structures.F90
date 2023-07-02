@@ -1,5 +1,7 @@
 module data_structures
 
+  implicit none
+
   integer, parameter, private :: dp = 8
 
   type sys

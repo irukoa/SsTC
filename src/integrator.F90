@@ -5,6 +5,8 @@ module integrator
   use data_structures
   use extrapolation_integration
 
+  implicit none
+
   integer, parameter, private :: dp = 8
 
   public :: sample_and_integrate_in_BZ
