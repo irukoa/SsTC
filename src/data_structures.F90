@@ -206,6 +206,7 @@ module data_structures
   end subroutine print_task_result
 
   !==UTILITY FUNCTIONS TO PASS "MEMORY LAYOUT" INDICES TO "ARRAY LAYOUT" AND VICE-VERSA==!
+  !See discussion at https://eli.thegreenplace.net/2015/memory-layout-of-multi-dimensional-arrays
 
   function integer_array_element_to_memory_element(task, i_arr) result (i_mem)
     !Get integer indices from array layout to memory layout.
