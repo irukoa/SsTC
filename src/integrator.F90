@@ -94,7 +94,7 @@ module integrator
 
       allocate(temp_res(product(task%integer_indices), product(task%continuous_indices)))
 
-      !$OMP PARALLEL
+      !$OMP PARALLEL !!TODO: Check why this integral is not giving consistent results through the runs while approximating the correct result.
 
       TID = OMP_GET_THREAD_NUM()
       IF (TID .EQ. 0) THEN

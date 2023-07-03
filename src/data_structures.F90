@@ -15,11 +15,17 @@ module data_structures
     complex(kind=dp), allocatable :: real_space_position_elements(:, :, :, :) !Position operator matrix elements (1st and 2nd indexes), cartesian coordinate (3rd index) and memory layout id of the R-point (4th index) in A.
   end type sys
 
-  type BZ_integral_task
-    !Label for the integration task.
-    character(len=120)                           :: name
-    !Specification of the integer indices of the quantity which will be integrated.
-    integer,          allocatable                :: integer_indices(:)
+  type local_k_data
+    !Name of the local quantity or in the extended type case, the name of the task to integrate.
+    character(len=120) :: name
+    !Specification of the integer indices of the local quantity, or in the extended type case,
+    !the integer indices which will be integrated.
+    integer, allocatable :: integer_indices(:)
+    !Local k-data.
+    complex(kind=dp), allocatable :: k_data(:)
+  end type local_k_data
+
+  type, extends(local_k_data) :: BZ_integral_task
     !Specification of the continuous indices of the quantity which will be integrated.
     integer,          allocatable                :: continuous_indices(:)
     !External variable data.
@@ -47,8 +53,8 @@ module data_structures
     function calculator_C1M3(task, system, k) result(u)
       import :: BZ_integral_task, sys, external_vars, dp
       type(BZ_integral_task), intent(in) :: task
-      type(sys),                intent(in) :: system
-      real(kind=dp),            intent(in) :: k(3)
+      type(sys),              intent(in) :: system
+      real(kind=dp),          intent(in) :: k(3)
 
       complex(kind=dp)                     :: u(product(task%integer_indices), product(task%continuous_indices))
     end function calculator_C1M3
@@ -310,39 +316,39 @@ module data_structures
   !==UTILITY FUNCTIONS TO PASS "MEMORY LAYOUT" INDICES TO "ARRAY LAYOUT" AND VICE-VERSA==!
   !See discussion at https://eli.thegreenplace.net/2015/memory-layout-of-multi-dimensional-arrays
 
-  function integer_array_element_to_memory_element(task, i_arr) result (i_mem)
+  function integer_array_element_to_memory_element(data_k, i_arr) result (i_mem)
     !Get integer indices from array layout to memory layout.
-    type(BZ_integral_task), intent(in) :: task
-    integer,                intent(in) :: i_arr(size(task%integer_indices))
+    class(local_k_data), intent(in) :: data_k
+    integer,                intent(in) :: i_arr(size(data_k%integer_indices))
 
     integer :: i_mem
 
     integer :: counter
 
     i_mem = 1
-    do counter = 0, size(task%integer_indices) - 1
-      i_mem = (i_mem - 1)*task%integer_indices(counter + 1) + i_arr(counter + 1)
+    do counter = 0, size(data_k%integer_indices) - 1
+      i_mem = (i_mem - 1)*data_k%integer_indices(counter + 1) + i_arr(counter + 1)
     enddo
 
   end function integer_array_element_to_memory_element
 
-  function integer_memory_element_to_array_element(task, i_mem) result (i_arr)
+  function integer_memory_element_to_array_element(data_k, i_mem) result (i_arr)
     !Get integer indices from memory layout to array layout.
-    type(BZ_integral_task), intent(in) :: task
+    class(local_k_data), intent(in) :: data_k
     integer, intent(in)                :: i_mem
 
-    integer :: i_arr(size(task%integer_indices))
+    integer :: i_arr(size(data_k%integer_indices))
 
     integer :: counter, reduction
 
     reduction = i_mem
-    do counter = size(task%integer_indices), 1, -1
+    do counter = size(data_k%integer_indices), 1, -1
       if (counter == 1) then
         i_arr(counter) = reduction
       else
-        i_arr(counter) = modulo(reduction, task%integer_indices(counter))
-        if (i_arr(counter) == 0) i_arr(counter) = task%integer_indices(counter)
-        reduction = int((reduction - i_arr(counter))/task%integer_indices(counter)) + 1
+        i_arr(counter) = modulo(reduction, data_k%integer_indices(counter))
+        if (i_arr(counter) == 0) i_arr(counter) = data_k%integer_indices(counter)
+        reduction = int((reduction - i_arr(counter))/data_k%integer_indices(counter)) + 1
       endif
     enddo
 
