@@ -73,7 +73,7 @@ module local_k_quantities
         do irpts = 1, system%num_R_points !For each point in the Bravais lattice.
 
           !Compute factor appearing in the exponential (k is in coords relative to recip. lattice vectors).
-          kdotr = 2.0_dp*pi*dot_product(system%R_point(i_mem, :), k)
+          kdotr = 2.0_dp*pi*dot_product(system%R_point(irpts, :), k)
 
           !Compute Bravais lattice vector for label irpts.
           vec = 0.0_dp
@@ -113,7 +113,7 @@ module local_k_quantities
           do irpts = 1, system%num_R_points !For each point in the Bravais lattice.
   
             !Compute factor appearing in the exponential (k is in coords relative to recip. lattice vectors).
-            kdotr = 2.0_dp*pi*dot_product(system%R_point(i_mem, :), k)
+            kdotr = 2.0_dp*pi*dot_product(system%R_point(irpts, :), k)
   
             !Compute Bravais lattice vector for label irpts.
             vec = 0.0_dp

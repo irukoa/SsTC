@@ -24,9 +24,11 @@ program floquet_tight_binding
 
   call OMP_SET_MAX_ACTIVE_LEVELS(2)
 
-  a = sys_constructor("GaAs", "./")
+  !a = sys_constructor("GaAs", "./")
+  a = sys_constructor("HM", "./")
 
   call get_hamiltonian(system = a, k = (/0.0_dp, 0.0_dp, 0.0_dp/), H = H, Nder_i = 0, only_i = .false.)!TEST
+  print*, H(1)%k_data
 
   !EXAMPLE OF USAGE.
   test = task_constructor(name           = "ext_ben", &
