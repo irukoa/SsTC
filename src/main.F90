@@ -18,8 +18,7 @@ program floquet_tight_binding
 
   open(unit=112, action="write", file="exec.out")
 
-  call omp_set_nested(.true.)
-  !call OMP_SET_MAX_ACTIVE_LEVELS(2)
+  call OMP_SET_MAX_ACTIVE_LEVELS(2)
 
   a = sys_constructor("GaAs", "./")
 
