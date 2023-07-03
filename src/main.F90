@@ -10,17 +10,23 @@ program floquet_tight_binding
 
   use calculator_test
 
+  use local_k_quantities!TEST
+
   include 'fftw3.f03'
 
   type(sys) :: a
 
   type(BZ_integral_task) :: test, test2
 
+  type(local_k_data), allocatable :: H(:)!TEST
+
   open(unit=112, action="write", file="exec.out")
 
   call OMP_SET_MAX_ACTIVE_LEVELS(2)
 
   a = sys_constructor("GaAs", "./")
+
+  call get_hamiltonian(system = a, k = (/0.0_dp, 0.0_dp, 0.0_dp/), H = H, Nder_i = 0, only_i = .false.)!TEST
 
   !EXAMPLE OF USAGE.
   test = task_constructor(name           = "ext_ben", &
