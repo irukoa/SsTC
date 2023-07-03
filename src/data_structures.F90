@@ -43,6 +43,20 @@ module data_structures
     integer                                      :: particular_integer_component = 0 
   end type BZ_integral_task
 
+  type, extends(local_k_data) :: k_slice !TODO: MAKE CONSTRUCTOR.
+    real(kind=dp) :: corner(3), vector(2, 3)
+    integer       :: mesh(2)
+    !Pointer to calculator function.
+    procedure (calculator_local), pointer, nopass :: calculator
+  end type k_slice
+
+type, extends(local_k_data) :: k_path !TODO: MAKE CONSTRUCTOR.
+    real(kind=dp), allocatable :: vectors(:, :) !1st index is the index of the vector in the path. 2nd index corresponds to the component of the vector in the path, so its size is vectors(size(number_of_vecotrs), 3).
+    integer, allocatable       :: number_of_vectors(:) !Its size is the number of vectors in the BZ, vector(i) contains the number of k-points between vector i and vector i+1.
+    !Pointer to calculator function.
+    procedure (calculator_local), pointer, nopass :: calculator
+  end type k_path
+
   type external_vars
     !External variable data array.
     real(kind=dp), allocatable :: data(:)
@@ -59,6 +73,17 @@ module data_structures
 
       complex(kind=dp)                     :: u(product(task%integer_indices), product(task%continuous_indices))
     end function calculator_C1M3
+  end interface
+
+  abstract interface
+    function calculator_local(k_data, system, k) result(u)
+      import :: local_k_data, sys, external_vars, dp
+      type(local_k_data), intent(in) :: k_data
+      type(sys),              intent(in) :: system
+      real(kind=dp),          intent(in) :: k(3)
+
+      complex(kind=dp)                     :: u(product(k_data%integer_indices))
+    end function calculator_local
   end interface
 
   public  :: sys
