@@ -86,33 +86,4 @@ call print_task_result(task = test2, &
 
   close(unit=112)
 
-  contains
-
-  subroutine init_model
-
-    real(kind=dp) :: lattice_const
-
-    real(kind=dp) :: offset, tunnelling
-
-    real(kind=dp), dimension(2) :: dipole
-
-    real(kind=dp), dimension(2, 2) :: brav, recip 
-
-    lattice_const = 1.0_dp !in A.
-
-    offset     = 0.0_dp !In eV.
-    tunnelling = 1.0_dp
-
-    dipole     = lattice_const*(/1.0_dp, 0.0_dp/)/sqrt(3.0_dp) !In A.
-
-    brav(1, :) = 0.5_dp*(/sqrt(3.0_dp),  1.0_dp/)!Relative to lattice_const.
-    brav(2, :) = 0.5_dp*(/-sqrt(3.0_dp), 1.0_dp/)
-
-    recip(1, :) = 2*pi*(/1.0_dp,  sqrt(3.0_dp)/)/sqrt(3.0_dp)!Relative to 1/lattice_const.
-    recip(2, :) = 2*pi*(/-1.0_dp, sqrt(3.0_dp)/)/sqrt(3.0_dp)
-
-    print*, dot_product(brav(1, :), recip(2, :))
-
-  end subroutine init_model
-
 end program floquet_tight_binding
