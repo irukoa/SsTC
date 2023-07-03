@@ -18,7 +18,7 @@ program floquet_tight_binding
 
   type(BZ_integral_task) :: test, test2
 
-  type(local_k_data), allocatable :: H(:)!TEST
+  type(local_k_data), allocatable :: H(:), POS(:)!TEST
 
   integer :: i_mem
   integer, allocatable :: i_arr(:)
@@ -30,12 +30,20 @@ program floquet_tight_binding
   a = sys_constructor("HM", "./")
 
   call get_hamiltonian(system = a, k = (/0.0_dp, 0.0_dp, 0.0_dp/), H = H, Nder_i = 1, only_i = .false.)!TEST
+  call get_position(system = a, k = (/0.0_dp, 0.0_dp, 0.0_dp/), A = POS, Nder_i = 1, only_i = .false.)!TEST
   print*, H(1)%k_data!Hamiltonian 0th derivative.
   print*, ""
   allocate(i_arr(product(H(2)%integer_indices)))
   do i_mem = 1, product(H(2)%integer_indices)
     write(*, fmt="(3I2, 2F8.5)"), integer_memory_element_to_array_element(H(2), i_mem), &
     real(H(2)%k_data(i_mem), dp), aimag(H(2)%k_data(i_mem))!Hamiltonian 1st Derivative.
+  enddo
+  deallocate(i_arr)
+  print*, ""
+  allocate(i_arr(product(POS(2)%integer_indices)))
+  do i_mem = 1, product(POS(2)%integer_indices)
+    write(*, fmt="(4I2, 2F8.5)"), integer_memory_element_to_array_element(POS(2), i_mem), &
+    real(POS(2)%k_data(i_mem), dp), aimag(POS(2)%k_data(i_mem))!Pos. op. 1st Derivative.
   enddo
 
   !EXAMPLE OF USAGE.

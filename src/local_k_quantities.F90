@@ -5,13 +5,18 @@ module local_k_quantities
 
   implicit none
 
+  public :: get_hamiltonian
+  public :: get_position
+
+  !TODO: PARALLELIZE THE SUM OVER RPOINTS OR MORE.
+
   contains
 
   subroutine get_hamiltonian(system, k, H, Nder_i, only_i)
     type(sys), intent(in) :: system
     real(kind=dp), intent(in) :: k(3)
     integer, optional :: Nder_i !Order of the derivative. Nder = 0 means normal Hamiltonian, Nder = 1, \partial H/\partial k^i...
-    logical, optional :: only_i !
+    logical, optional :: only_i !Determine, in the case of Nder > 0, if all derivatives i with i < Nder are requested. 
 
     type(local_k_data), allocatable, intent(out) :: H(:)
 
@@ -144,5 +149,145 @@ module local_k_quantities
     endif
 
   end subroutine get_hamiltonian
+
+  subroutine get_position(system, k, A, Nder_i, only_i)
+    type(sys), intent(in) :: system
+    real(kind=dp), intent(in) :: k(3)
+    integer, optional :: Nder_i !Order of the derivative. Nder = 0 means normal Berry connection, Nder = 1, \partial A^i/\partial k^j...
+    logical, optional :: only_i !Determine, in the case of Nder > 0, if all derivatives i with i < Nder are requested. 
+
+    type(local_k_data), allocatable, intent(out) :: A(:)
+
+    integer :: Nder
+    logical :: only
+
+    integer :: i, j, i_mem, irpts, ivec
+    integer, allocatable ::  i_arr(:)
+
+    real(kind=dp) :: kdotr, prod_R, vec(3)
+
+    if (.not.(present(Nder_i))) then
+      Nder = 0
+    else
+      Nder = Nder_i
+    endif
+
+    if (.not.(present(only_i))) then
+      only = .true.
+    else
+      only = only_i
+    endif
+
+    if ((only .EQV. .true.)) allocate(A(1)) !Only compute the Nth position operator's derivative.
+    if ((only .EQV. .false.)) allocate(A(Nder + 1)) !Compute from the 0th to the Nth position operator's derivative.
+
+    if ((only .EQV. .false.)) then
+      do i = 1, Nder + 1
+        allocate(A(i)%integer_indices(3 + i - 1)) !2 band indices, 1 component index and i - 1 derivative indices.
+        A(i)%integer_indices(1) = system%num_bands
+        A(i)%integer_indices(2) = system%num_bands
+        A(i)%integer_indices(3) = 3
+        if (i/=1) then
+          do j = 1, i - 1
+            A(i)%integer_indices(3 + j) = 3
+          enddo
+        endif
+      enddo
+    else
+      allocate(A(1)%integer_indices(3 + Nder)) !2 band indices, 1 component index and i - 1 derivative indices.
+      A(1)%integer_indices(1) = system%num_bands
+      A(1)%integer_indices(2) = system%num_bands
+      A(1)%integer_indices(3) = 3
+      if (Nder/=0) then
+        do i = 1, Nder
+          A(1)%integer_indices(3 + i) = 3
+        enddo
+      endif
+    endif
+
+    if ((only .EQV. .true.)) then !Case of only a requested derivative.
+
+      allocate(i_arr(size(A(1)%integer_indices))) !Array indices storage.
+      allocate(A(1)%k_data(product(A(1)%integer_indices))) !Data storage.
+      A(1)%k_data = cmplx_0 !Initialize.
+
+      do i_mem = 1, product(A(1)%integer_indices) !For each integer index.
+
+        i_arr = integer_memory_element_to_array_element(A(1), i_mem) !Get array index.
+
+        do irpts = 1, system%num_R_points !For each point in the Bravais lattice.
+
+          !Compute factor appearing in the exponential (k is in coords relative to recip. lattice vectors).
+          kdotr = 2.0_dp*pi*dot_product(system%R_point(irpts, :), k)
+
+          !Compute Bravais lattice vector for label irpts.
+          vec = 0.0_dp
+          do ivec = 1, 3
+            vec = vec + system%R_point(irpts, ivec)*system%direct_lattice_basis(ivec, :)
+          enddo
+
+          !In the case of derivatives compute the prefactor involving a product of Bravais lattice vector components.
+          prod_R = 1.0_dp
+          if (Nder/=0) then
+            do j = 1, Nder
+              prod_R = prod_R*vec(i_arr(j + 3))
+            enddo
+          endif
+
+          A(1)%k_data(i_mem) = A(1)%k_data(i_mem) + & !Compute sum.
+          ((cmplx_i)**Nder)*(prod_R)*exp(cmplx_i*kdotr)*system%real_space_position_elements(i_arr(1), i_arr(2), i_arr(3), irpts)
+
+        enddo!irpts
+      enddo!i_mem
+
+      deallocate(i_arr)
+
+    else !Case of requestad all derivatives.
+      do i = 1, Nder + 1
+
+
+
+        allocate(i_arr(size(A(i)%integer_indices))) !Array indices storage.
+        allocate(A(i)%k_data(product(A(i)%integer_indices))) !Data storage.
+        A(i)%k_data = cmplx_0 !Initialize.
+  
+        do i_mem = 1, product(A(i)%integer_indices) !For each integer index.
+  
+          i_arr = integer_memory_element_to_array_element(A(i), i_mem) !Get array index.
+  
+          do irpts = 1, system%num_R_points !For each point in the Bravais lattice.
+  
+            !Compute factor appearing in the exponential (k is in coords relative to recip. lattice vectors).
+            kdotr = 2.0_dp*pi*dot_product(system%R_point(irpts, :), k)
+  
+            !Compute Bravais lattice vector for label irpts.
+            vec = 0.0_dp
+            do ivec = 1, 3
+              vec = vec + system%R_point(irpts, ivec)*system%direct_lattice_basis(ivec, :)
+            enddo
+  
+            !In the case of derivatives compute the prefactor involving a product of Bravais lattice vector components.
+            prod_R = 1.0_dp
+            if (i/=1) then
+              do j = 1, i - 1
+                prod_R = prod_R*vec(i_arr(j + 3))
+              enddo
+            endif
+  
+            A(i)%k_data(i_mem) = A(i)%k_data(i_mem) + & !Compute sum.
+            ((cmplx_i)**(i - 1))*(prod_R)*exp(cmplx_i*kdotr)*system%real_space_position_elements(i_arr(1), i_arr(2), i_arr(3), irpts)
+  
+          enddo!irpts
+        enddo!i_mem
+  
+        deallocate(i_arr)
+
+
+
+
+      enddo
+    endif
+
+  end subroutine get_position
 
 end module local_k_quantities
