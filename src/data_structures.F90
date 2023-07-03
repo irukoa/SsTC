@@ -13,6 +13,7 @@ module data_structures
     integer, allocatable          :: deg_R_point(:) !Degeneracy of the R-point specified by its memory layout id.
     complex(kind=dp), allocatable :: real_space_hamiltonian_elements(:, :, :) !Hamiltonian matrix elements (1st and 2nd indexes) and memory layout id of the R-point (3rd index) in eV.
     complex(kind=dp), allocatable :: real_space_position_elements(:, :, :, :) !Position operator matrix elements (1st and 2nd indexes), cartesian coordinate (3rd index) and memory layout id of the R-point (4th index) in A.
+    real(kind=dp)                 :: e_fermi = 0.0_dp !Fermi energy.
   end type sys
 
   type local_k_data
@@ -78,9 +79,10 @@ module data_structures
 
   contains
 
-  function sys_constructor(name, path_to_tb_file) result(system)
+  function sys_constructor(name, path_to_tb_file, efermi) result(system)
     character(len=*), intent(in) :: name
     character(len=*), intent(in) :: path_to_tb_file
+    real(kind=dp), optional, intent(in) :: efermi
 
     type(sys) :: system
 
@@ -93,6 +95,8 @@ module data_structures
     real(kind=dp), allocatable :: dummyR(:)
 
     system%name = name
+
+    if(present(efermi)) system%e_fermi = efermi
 
     filename = trim(path_to_tb_file)//trim(name)//"_tb.dat"
     filename = trim(filename)
