@@ -21,7 +21,7 @@ module calculator_test
     real(kind=dp)                      :: part
 
     u = 0.0_dp
-    part = (k(1)**2)*exp(sin(10*k(1)))
+    part = ((k(1)+0.5_dp)**2)*exp(sin(10*(k(1)+0.5_dp)))
     do i = 1, product(task%integer_indices)
       if ((task%particular_integer_component.ne.0).and.(i.ne.task%particular_integer_component)) cycle
       i_arr = integer_memory_element_to_array_element(task, i)

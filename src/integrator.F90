@@ -52,11 +52,11 @@ module integrator
 
         !$OMP DO
         do ik1=1, task%samples(1)
-          k(1) = real(ik1-1,dp)/real(task%samples(1)-1,dp)
+          k(1) = -0.5_dp + real(ik1-1,dp)/real(task%samples(1)-1,dp)
           do ik2 = 1, task%samples(2)
-            k(2) = real(ik2-1,dp)/real(task%samples(2)-1,dp)
+            k(2) = -0.5_dp + real(ik2-1,dp)/real(task%samples(2)-1,dp)
             do ik3 = 1, task%samples(3)
-              k(3) = real(ik3-1,dp)/real(task%samples(3)-1,dp)
+              k(3) = -0.5_dp + real(ik3-1,dp)/real(task%samples(3)-1,dp)
               
               data_k(ik1, ik2, ik3, :, :) = task%calculator(task, system, k)
             
@@ -73,7 +73,7 @@ module integrator
         !Pass data array to memory layout.
         call shrink_array(data_k(:, :, :, i, r), sdata_k(:, i, r), info)
         !Integrate, if possible extrapolation method.
-        call integral_extrapolation(sdata_k(:, i, r), task%samples, (/0.0_dp, 1.0_dp, 0.0_dp, 1.0_dp, 0.0_dp, 1.0_dp/), task%result(i, r), info)
+        call integral_extrapolation(sdata_k(:, i, r), task%samples, (/-0.5_dp, 0.5_dp, -0.5_dp, 0.5_dp, -0.5_dp, 0.5_dp/), task%result(i, r), info)
         enddo
       enddo
 
@@ -103,11 +103,11 @@ module integrator
 
       !$OMP DO REDUCTION (+: temp_res)
       do ik1 = 1, task%samples(1)
-        k(1) = real(ik1 - 1,dp)/real(task%samples(1) - 1,dp)
+        k(1) = -0.5_dp + real(ik1 - 1,dp)/real(task%samples(1) - 1,dp)
         do ik2 = 1, task%samples(2)
-          k(2) = real(ik2 - 1,dp)/real(task%samples(2) - 1,dp)
+          k(2) = -0.5_dp + real(ik2 - 1,dp)/real(task%samples(2) - 1,dp)
           do ik3 = 1, task%samples(3)
-            k(3) = real(ik3 - 1,dp)/real(task%samples(3) - 1,dp)
+            k(3) = -0.5_dp + real(ik3 - 1,dp)/real(task%samples(3) - 1,dp)
             
             temp_res = temp_res + task%calculator(task, system, k)
             
