@@ -25,6 +25,7 @@ program floquet_tight_binding
 
   open(unit=112, action="write", file="exec.out")
 
+  !call OMP_SET_NUM_THREADS(4)
   call OMP_SET_MAX_ACTIVE_LEVELS(2)
 
   a = sys_constructor("HM", "./")
@@ -75,7 +76,7 @@ program floquet_tight_binding
                            ext_vars_end   = (/10.0_dp/), &
                            ext_vars_steps = (/11/), &
                            method         = "rectangle", & !Required memory: 16*product(int_ind_range)*product(ext_vars_steps)
-                           samples        = (/200000, 9, 9/), &
+                           samples        = (/400000, 1, 1/), &
                            part_int_comp  = (/2, 1/))
 
   call sample_and_integrate_in_BZ(task = test2, &

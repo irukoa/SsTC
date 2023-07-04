@@ -52,11 +52,23 @@ module integrator
 
         !$OMP DO
         do ik1=1, task%samples(1)
-          k(1) = -0.5_dp + real(ik1-1,dp)/real(task%samples(1)-1,dp)
+          if (task%samples(1) == 1) then
+            k(1) = 0.0_dp
+          else
+            k(1) = -0.5_dp + real(ik1 - 1,dp)/real(task%samples(1) - 1,dp)
+          endif
           do ik2 = 1, task%samples(2)
-            k(2) = -0.5_dp + real(ik2-1,dp)/real(task%samples(2)-1,dp)
+            if (task%samples(2) == 1) then
+              k(2) = 0.0_dp
+            else
+              k(2) = -0.5_dp + real(ik2 - 1,dp)/real(task%samples(2) - 1,dp)
+            endif
             do ik3 = 1, task%samples(3)
-              k(3) = -0.5_dp + real(ik3-1,dp)/real(task%samples(3)-1,dp)
+              if (task%samples(3) == 1) then
+                k(3) = 0.0_dp
+              else
+                k(3) = -0.5_dp + real(ik3 - 1,dp)/real(task%samples(3) - 1,dp)
+              endif
               
               data_k(ik1, ik2, ik3, :, :) = task%calculator(task, system, k)
             
@@ -94,20 +106,32 @@ module integrator
 
       allocate(temp_res(product(task%integer_indices), product(task%continuous_indices)))
 
-      !$OMP PARALLEL !!TODO: Check why this integral is not giving consistent results through the runs while approximating the correct result.
+      !$OMP PARALLEL DEFAULT (SHARED) PRIVATE (k) REDUCTION (+: temp_res)
 
       TID = OMP_GET_THREAD_NUM()
       IF (TID .EQ. 0) THEN
         write(unit=112, fmt="(A, I6, A)") "Running on ", OMP_GET_NUM_THREADS(), " threads."
       ENDIF
 
-      !$OMP DO REDUCTION (+: temp_res)
+      !$OMP DO
       do ik1 = 1, task%samples(1)
-        k(1) = -0.5_dp + real(ik1 - 1,dp)/real(task%samples(1) - 1,dp)
+        if (task%samples(1) == 1) then
+          k(1) = 0.0_dp
+        else
+          k(1) = -0.5_dp + real(ik1 - 1,dp)/real(task%samples(1) - 1,dp)
+        endif
         do ik2 = 1, task%samples(2)
-          k(2) = -0.5_dp + real(ik2 - 1,dp)/real(task%samples(2) - 1,dp)
+          if (task%samples(2) == 1) then
+            k(2) = 0.0_dp
+          else
+            k(2) = -0.5_dp + real(ik2 - 1,dp)/real(task%samples(2) - 1,dp)
+          endif
           do ik3 = 1, task%samples(3)
-            k(3) = -0.5_dp + real(ik3 - 1,dp)/real(task%samples(3) - 1,dp)
+            if (task%samples(3) == 1) then
+              k(3) = 0.0_dp
+            else
+              k(3) = -0.5_dp + real(ik3 - 1,dp)/real(task%samples(3) - 1,dp)
+            endif
             
             temp_res = temp_res + task%calculator(task, system, k)
             
