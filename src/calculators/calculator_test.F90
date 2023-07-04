@@ -7,6 +7,7 @@ module calculator_test
   implicit none
 
   public :: calculator_test_C1M3
+  public :: bands
 
   contains
 
@@ -32,5 +33,33 @@ module calculator_test
     enddo
 
   end function calculator_test_C1M3
+
+  function bands(k_data, system, k) result(u)
+    class(local_k_data), intent(in) :: k_data
+    type(sys),          intent(in)  :: system
+    real(kind=dp),      intent(in)  :: k(3)
+
+    complex(kind=dp)                :: u(product(k_data%integer_indices))
+
+    type(local_k_data), allocatable :: H(:)
+    complex(kind=dp) :: hamiltonian(k_data%integer_indices(1), k_data%integer_indices(1)),&
+                        rot(k_data%integer_indices(1), k_data%integer_indices(1))
+    real(kind=dp) :: eig(k_data%integer_indices(1))
+    integer, allocatable :: i_arr(:)
+    integer :: i_mem
+
+    logical :: error
+    character(len=120) :: errormsg
+
+    call get_hamiltonian(system, k, H)
+
+    do i_mem = 1, product(H(1)%integer_indices)
+      i_arr = integer_memory_element_to_array_element(H(1), i_mem)
+      hamiltonian(i_arr(1), i_arr(2)) = H(1)%k_data(i_mem)
+    enddo
+    deallocate(H, i_arr)
+    call utility_diagonalize(hamiltonian, k_data%integer_indices(1), eig, rot, error, errormsg)
+    u = eig
+  end function bands
 
 end module calculator_test

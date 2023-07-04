@@ -26,6 +26,8 @@ module data_structures
     complex(kind=dp), allocatable                 :: k_data(:)
     !Pointer to calculator function.
     procedure (local_calculator), pointer, nopass :: local_calculator
+    !If only some component out of the integer indices wants to be calculated this can be specified here in memory layout.
+    integer                                        :: particular_integer_component = 0 
   end type local_k_data
 
   type, extends(local_k_data) :: BZ_integral_task
@@ -41,8 +43,6 @@ module data_structures
     character(len=120)                             :: method
     !Integration samples.
     integer                                        :: samples(3)
-    !If only some component out of the integer indices wants to be calculated this can be specified here in memory layout.
-    integer                                        :: particular_integer_component = 0 
   end type BZ_integral_task
 
   type external_vars
@@ -66,11 +66,11 @@ module data_structures
   abstract interface
     function local_calculator(k_data, system, k) result(u)
       import :: local_k_data, sys, external_vars, dp
-      type(local_k_data), intent(in) :: k_data
-      type(sys),          intent(in) :: system
-      real(kind=dp),      intent(in) :: k(3)
+      class(local_k_data), intent(in) :: k_data
+      type(sys),          intent(in)  :: system
+      real(kind=dp),      intent(in)  :: k(3)
 
-      complex(kind=dp)               :: u(product(k_data%integer_indices))
+      complex(kind=dp)                :: u(product(k_data%integer_indices))
     end function local_calculator
   end interface
 
