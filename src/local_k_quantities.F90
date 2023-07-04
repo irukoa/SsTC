@@ -28,6 +28,8 @@ module local_k_quantities
 
     real(kind=dp) :: kdotr, prod_R, vec(3)
 
+    complex(kind=dp) :: temp_res
+
     if (.not.(present(Nder_i))) then
       Nder = 0
     else
@@ -75,6 +77,9 @@ module local_k_quantities
 
         i_arr = integer_memory_element_to_array_element(H(1), i_mem) !Get array index.
 
+        temp_res = cmplx_0
+        !$OMP PARALLEL PRIVATE (kdotr, vec, prod_R) REDUCTION (+: temp_res)
+        !$OMP DO
         do irpts = 1, system%num_R_points !For each point in the Bravais lattice.
 
           !Compute factor appearing in the exponential (k is in coords relative to recip. lattice vectors).
@@ -94,18 +99,20 @@ module local_k_quantities
             enddo
           endif
 
-          H(1)%k_data(i_mem) = H(1)%k_data(i_mem) + & !Compute sum.
-          ((cmplx_i)**Nder)*(prod_R)*exp(cmplx_i*kdotr)*system%real_space_hamiltonian_elements(i_arr(1), i_arr(2), irpts)
-
+          temp_res = temp_res + & !Compute sum.
+          ((cmplx_i)**Nder)*(prod_R)*exp(cmplx_i*kdotr)*system%real_space_hamiltonian_elements(i_arr(1), i_arr(2), irpts) &
+          /real(system%deg_R_point(irpts), dp)
+          !TODO: Recheck if system%deg_R_point(irpts) appears dividing.
         enddo!irpts
+        !$OMP END DO
+        !$OMP END PARALLEL
+        H(1)%k_data(i_mem) = temp_res
       enddo!i_mem
 
       deallocate(i_arr)
 
     else !Case of requestad all derivatives.
       do i = 1, Nder + 1
-
-
 
         allocate(i_arr(size(H(i)%integer_indices))) !Array indices storage.
         allocate(H(i)%k_data(product(H(i)%integer_indices))) !Data storage.
@@ -115,6 +122,9 @@ module local_k_quantities
   
           i_arr = integer_memory_element_to_array_element(H(i), i_mem) !Get array index.
   
+          temp_res = cmplx_0
+          !$OMP PARALLEL PRIVATE (kdotr, vec, prod_R) REDUCTION (+: temp_res)
+          !$OMP DO
           do irpts = 1, system%num_R_points !For each point in the Bravais lattice.
   
             !Compute factor appearing in the exponential (k is in coords relative to recip. lattice vectors).
@@ -134,16 +144,17 @@ module local_k_quantities
               enddo
             endif
   
-            H(i)%k_data(i_mem) = H(i)%k_data(i_mem) + & !Compute sum.
-            ((cmplx_i)**(i - 1))*(prod_R)*exp(cmplx_i*kdotr)*system%real_space_hamiltonian_elements(i_arr(1), i_arr(2), irpts)
-  
+            temp_res = temp_res + & !Compute sum.
+            ((cmplx_i)**(i - 1))*(prod_R)*exp(cmplx_i*kdotr)*system%real_space_hamiltonian_elements(i_arr(1), i_arr(2), irpts) &
+            /real(system%deg_R_point(irpts), dp)
+            !TODO: Recheck if system%deg_R_point(irpts) appears dividing.
           enddo!irpts
+          !$OMP END DO
+          !$OMP END PARALLEL
+          H(i)%k_data(i_mem) = temp_res
         enddo!i_mem
   
         deallocate(i_arr)
-
-
-
 
       enddo
     endif
@@ -165,6 +176,8 @@ module local_k_quantities
     integer, allocatable ::  i_arr(:)
 
     real(kind=dp) :: kdotr, prod_R, vec(3)
+
+    complex(kind=dp) :: temp_res
 
     if (.not.(present(Nder_i))) then
       Nder = 0
@@ -215,6 +228,9 @@ module local_k_quantities
 
         i_arr = integer_memory_element_to_array_element(A(1), i_mem) !Get array index.
 
+        temp_res = cmplx_0
+        !$OMP PARALLEL PRIVATE (kdotr, vec, prod_R) REDUCTION (+: temp_res)
+        !$OMP DO
         do irpts = 1, system%num_R_points !For each point in the Bravais lattice.
 
           !Compute factor appearing in the exponential (k is in coords relative to recip. lattice vectors).
@@ -234,18 +250,20 @@ module local_k_quantities
             enddo
           endif
 
-          A(1)%k_data(i_mem) = A(1)%k_data(i_mem) + & !Compute sum.
-          ((cmplx_i)**Nder)*(prod_R)*exp(cmplx_i*kdotr)*system%real_space_position_elements(i_arr(1), i_arr(2), i_arr(3), irpts)
-
+          temp_res = temp_res + & !Compute sum.
+          ((cmplx_i)**Nder)*(prod_R)*exp(cmplx_i*kdotr)*system%real_space_position_elements(i_arr(1), i_arr(2), i_arr(3), irpts) &
+          /real(system%deg_R_point(irpts), dp)
+          !TODO: Recheck if system%deg_R_point(irpts) appears dividing.
         enddo!irpts
+        !$OMP END DO
+        !$OMP END PARALLEL
+        A(1)%k_data(i_mem) = temp_res
       enddo!i_mem
 
       deallocate(i_arr)
 
     else !Case of requestad all derivatives.
       do i = 1, Nder + 1
-
-
 
         allocate(i_arr(size(A(i)%integer_indices))) !Array indices storage.
         allocate(A(i)%k_data(product(A(i)%integer_indices))) !Data storage.
@@ -255,6 +273,9 @@ module local_k_quantities
   
           i_arr = integer_memory_element_to_array_element(A(i), i_mem) !Get array index.
   
+          temp_res = cmplx_0
+          !$OMP PARALLEL PRIVATE (kdotr, vec, prod_R) REDUCTION (+: temp_res)
+          !$OMP DO
           do irpts = 1, system%num_R_points !For each point in the Bravais lattice.
   
             !Compute factor appearing in the exponential (k is in coords relative to recip. lattice vectors).
@@ -274,16 +295,17 @@ module local_k_quantities
               enddo
             endif
   
-            A(i)%k_data(i_mem) = A(i)%k_data(i_mem) + & !Compute sum.
-            ((cmplx_i)**(i - 1))*(prod_R)*exp(cmplx_i*kdotr)*system%real_space_position_elements(i_arr(1), i_arr(2), i_arr(3), irpts)
-  
+            temp_res = temp_res + & !Compute sum.
+            ((cmplx_i)**(i - 1))*(prod_R)*exp(cmplx_i*kdotr)*system%real_space_position_elements(i_arr(1), i_arr(2), i_arr(3), irpts) &
+            /real(system%deg_R_point(irpts), dp)
+            !TODO: Recheck if system%deg_R_point(irpts) appears dividing.
           enddo!irpts
+          !$OMP END DO
+          !$OMP END PARALLEL
+          A(i)%k_data(i_mem) = temp_res
         enddo!i_mem
   
         deallocate(i_arr)
-
-
-
 
       enddo
     endif

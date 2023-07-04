@@ -43,7 +43,7 @@ module integrator
       allocate(data_k(task%samples(1), task%samples(2), task%samples(3), product(task%integer_indices), product(task%continuous_indices)), &
               sdata_k(product(task%samples), product(task%integer_indices), product(task%continuous_indices)))
 
-      !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(k)
+      !$OMP PARALLEL DEFAULT(SHARED) PRIVATE(k) !!TODO: Check if the comporobation for task%samples() == 1 slows down the code too much.
 
         TID = OMP_GET_THREAD_NUM()
         IF (TID .EQ. 0) THEN
@@ -105,8 +105,9 @@ module integrator
       write(unit=112, fmt = "(F15.3, A)") 16.0_dp*real(product(task%integer_indices)*product(task%continuous_indices),dp)/1024.0_dp**2, "MB."
 
       allocate(temp_res(product(task%integer_indices), product(task%continuous_indices)))
+      temp_res = cmplx(0.0_dp, 0.0_dp, dp)
 
-      !$OMP PARALLEL DEFAULT (SHARED) PRIVATE (k) REDUCTION (+: temp_res)
+      !$OMP PARALLEL DEFAULT (SHARED) PRIVATE (k) REDUCTION (+: temp_res) !!TODO: Check if the comporobation for task%samples() == 1 slows down the code too much.
 
       TID = OMP_GET_THREAD_NUM()
       IF (TID .EQ. 0) THEN
