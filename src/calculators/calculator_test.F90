@@ -12,7 +12,7 @@ module calculator_test
   contains
 
   function calculator_test_C1M3(task, system, k) result(u)
-    type(global_k_data), intent(in) :: task
+    class(global_k_data), intent(in) :: task
     type(sys),              intent(in) :: system
     real(kind=dp),          intent(in) :: k(3)
 

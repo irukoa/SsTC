@@ -39,11 +39,14 @@ module data_structures
     complex(kind=dp), allocatable                  :: result(:, :)
     !Pointer to calculator function.
     procedure (global_calculator), pointer, nopass :: global_calculator
+  end type global_k_data
+
+  type, extends(global_k_data) :: BZ_integral_task
     !Integration method.
     character(len=120)                             :: method
     !Integration samples.
     integer                                        :: samples(3)
-  end type global_k_data
+  end type BZ_integral_task
 
   type external_vars
     !External variable data array.
@@ -55,7 +58,7 @@ module data_structures
   abstract interface
     function global_calculator(task, system, k) result(u)
       import :: global_k_data, sys, external_vars, dp
-      type(global_k_data), intent(in) :: task
+      class(global_k_data), intent(in) :: task
       type(sys),              intent(in) :: system
       real(kind=dp),          intent(in) :: k(3)
 
@@ -240,7 +243,7 @@ module data_structures
     integer, intent(in)                     :: samples(3)
     integer,          optional,  intent(in) :: part_int_comp(N_int_ind)
 
-    type(global_k_data) :: task
+    type(BZ_integral_task) :: task
 
     integer :: i
 
@@ -297,7 +300,7 @@ module data_structures
 
   subroutine print_task_result(task, system)
     !Subroutine to format and output files related to the result of the task "task".
-    type(global_k_data), intent(in) :: task
+    class(global_k_data), intent(in) :: task
     type(sys),              intent(in) :: system
 
     character(len=400) :: filename

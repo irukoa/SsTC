@@ -17,7 +17,7 @@ module integrator
   !The interface for the generic calculator function is given in data_structures module.
   subroutine sample_and_integrate_in_BZ(task, system)
 
-    type(global_k_data), intent(inout) :: task
+    type(BZ_integral_task), intent(inout) :: task
     type(sys),              intent(in)    :: system
 
     complex(kind=dp), allocatable :: data_k(: , :, :, :, :), &
