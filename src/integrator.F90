@@ -70,7 +70,7 @@ module integrator
                 k(3) = -0.5_dp + real(ik3 - 1,dp)/real(task%samples(3) - 1,dp)
               endif
               
-              data_k(ik1, ik2, ik3, :, :) = task%calculator(task, system, k)
+              data_k(ik1, ik2, ik3, :, :) = task%global_calculator(task, system, k)
             
             enddo
           enddo
@@ -134,7 +134,7 @@ module integrator
               k(3) = -0.5_dp + real(ik3 - 1,dp)/real(task%samples(3) - 1,dp)
             endif
             
-            temp_res = temp_res + task%calculator(task, system, k)
+            temp_res = temp_res + task%global_calculator(task, system, k)
             
           enddo
         enddo

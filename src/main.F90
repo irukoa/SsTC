@@ -8,6 +8,8 @@ program floquet_tight_binding
   use data_structures
   use integrator
 
+  use kpath
+  use kslice
   use calculator_test
 
   use local_k_quantities!TEST

@@ -18,44 +18,32 @@ module data_structures
 
   type local_k_data
     !Name of the local quantity or in the extended type case, the name of the task to integrate.
-    character(len=120) :: name
+    character(len=120)                            :: name
     !Specification of the integer indices of the local quantity, or in the extended type case,
     !the integer indices which will be integrated.
-    integer, allocatable :: integer_indices(:)
+    integer, allocatable                          :: integer_indices(:)
     !Local k-data.
-    complex(kind=dp), allocatable :: k_data(:)
+    complex(kind=dp), allocatable                 :: k_data(:)
+    !Pointer to calculator function.
+    procedure (local_calculator), pointer, nopass :: local_calculator
   end type local_k_data
 
   type, extends(local_k_data) :: BZ_integral_task
     !Specification of the continuous indices of the quantity which will be integrated.
-    integer,          allocatable                :: continuous_indices(:)
+    integer,          allocatable                  :: continuous_indices(:)
     !External variable data.
-    type(external_vars), allocatable             :: ext_var_data(:)
+    type(external_vars), allocatable               :: ext_var_data(:)
     !Result of the integration, contains the integer index and the continuous index in memory layout, respectively.
-    complex(kind=dp), allocatable                :: result(:, :)
+    complex(kind=dp), allocatable                  :: result(:, :)
     !Pointer to calculator function.
-    procedure (calculator_C1M3), pointer, nopass :: calculator
+    procedure (global_calculator), pointer, nopass :: global_calculator
     !Integration method.
-    character(len=120)                           :: method
+    character(len=120)                             :: method
     !Integration samples.
-    integer                                      :: samples(3)
+    integer                                        :: samples(3)
     !If only some component out of the integer indices wants to be calculated this can be specified here in memory layout.
-    integer                                      :: particular_integer_component = 0 
+    integer                                        :: particular_integer_component = 0 
   end type BZ_integral_task
-
-  type, extends(local_k_data) :: k_slice !TODO: MAKE CONSTRUCTOR.
-    real(kind=dp) :: corner(3), vector(2, 3)
-    integer       :: mesh(2)
-    !Pointer to calculator function.
-    procedure (calculator_local), pointer, nopass :: calculator
-  end type k_slice
-
-type, extends(local_k_data) :: k_path !TODO: MAKE CONSTRUCTOR.
-    real(kind=dp), allocatable :: vectors(:, :) !1st index is the index of the vector in the path. 2nd index corresponds to the component of the vector in the path, so its size is vectors(size(number_of_vecotrs), 3).
-    integer, allocatable       :: number_of_vectors(:) !Its size is the number of vectors in the BZ, vector(i) contains the number of k-points between vector i and vector i+1.
-    !Pointer to calculator function.
-    procedure (calculator_local), pointer, nopass :: calculator
-  end type k_path
 
   type external_vars
     !External variable data array.
@@ -65,29 +53,31 @@ type, extends(local_k_data) :: k_path !TODO: MAKE CONSTRUCTOR.
   !Interface for the generic function returning the integrand of the quantity to be integrated at point "k",
   !a.k.a. the "calculator".
   abstract interface
-    function calculator_C1M3(task, system, k) result(u)
+    function global_calculator(task, system, k) result(u)
       import :: BZ_integral_task, sys, external_vars, dp
       type(BZ_integral_task), intent(in) :: task
       type(sys),              intent(in) :: system
       real(kind=dp),          intent(in) :: k(3)
 
-      complex(kind=dp)                     :: u(product(task%integer_indices), product(task%continuous_indices))
-    end function calculator_C1M3
+      complex(kind=dp)                   :: u(product(task%integer_indices), product(task%continuous_indices))
+    end function global_calculator
   end interface
 
   abstract interface
-    function calculator_local(k_data, system, k) result(u)
+    function local_calculator(k_data, system, k) result(u)
       import :: local_k_data, sys, external_vars, dp
       type(local_k_data), intent(in) :: k_data
-      type(sys),              intent(in) :: system
-      real(kind=dp),          intent(in) :: k(3)
+      type(sys),          intent(in) :: system
+      real(kind=dp),      intent(in) :: k(3)
 
-      complex(kind=dp)                     :: u(product(k_data%integer_indices))
-    end function calculator_local
+      complex(kind=dp)               :: u(product(k_data%integer_indices))
+    end function local_calculator
   end interface
 
   public  :: sys
   public  :: sys_constructor
+
+  public  :: local_k_data
 
   public  :: BZ_integral_task
   public  :: task_constructor
@@ -240,7 +230,7 @@ type, extends(local_k_data) :: k_path !TODO: MAKE CONSTRUCTOR.
     !"calculator" with the interface calculator_C1M3.
 
     character(len=*),            intent(in) :: name
-    procedure (calculator_C1M3)             :: calculator
+    procedure (global_calculator)           :: calculator
     integer, intent(in)                     :: N_int_ind
     integer, intent(in)                     :: int_ind_range(N_int_ind)
     integer, intent(in)                     :: N_ext_vars
@@ -277,7 +267,7 @@ type, extends(local_k_data) :: k_path !TODO: MAKE CONSTRUCTOR.
     endif
 
     !Set calculator pointer (function alias).
-    task%calculator => calculator
+    task%global_calculator => calculator
 
     !Set result.
     allocate(task%result(product(task%integer_indices), product(task%continuous_indices)))
