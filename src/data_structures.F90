@@ -30,7 +30,7 @@ module data_structures
     integer                                        :: particular_integer_component = 0 
   end type local_k_data
 
-  type, extends(local_k_data) :: BZ_integral_task
+  type, extends(local_k_data) :: global_k_data
     !Specification of the continuous indices of the quantity which will be integrated.
     integer,          allocatable                  :: continuous_indices(:)
     !External variable data.
@@ -43,7 +43,7 @@ module data_structures
     character(len=120)                             :: method
     !Integration samples.
     integer                                        :: samples(3)
-  end type BZ_integral_task
+  end type global_k_data
 
   type external_vars
     !External variable data array.
@@ -54,8 +54,8 @@ module data_structures
   !a.k.a. the "calculator".
   abstract interface
     function global_calculator(task, system, k) result(u)
-      import :: BZ_integral_task, sys, external_vars, dp
-      type(BZ_integral_task), intent(in) :: task
+      import :: global_k_data, sys, external_vars, dp
+      type(global_k_data), intent(in) :: task
       type(sys),              intent(in) :: system
       real(kind=dp),          intent(in) :: k(3)
 
@@ -79,7 +79,7 @@ module data_structures
 
   public  :: local_k_data
 
-  public  :: BZ_integral_task
+  public  :: global_k_data
   public  :: task_constructor
 
   private :: external_vars
@@ -240,7 +240,7 @@ module data_structures
     integer, intent(in)                     :: samples(3)
     integer,          optional,  intent(in) :: part_int_comp(N_int_ind)
 
-    type(BZ_integral_task) :: task
+    type(global_k_data) :: task
 
     integer :: i
 
@@ -297,7 +297,7 @@ module data_structures
 
   subroutine print_task_result(task, system)
     !Subroutine to format and output files related to the result of the task "task".
-    type(BZ_integral_task), intent(in) :: task
+    type(global_k_data), intent(in) :: task
     type(sys),              intent(in) :: system
 
     character(len=400) :: filename
@@ -375,7 +375,7 @@ module data_structures
 
   function continuous_array_element_to_memory_element(task, r_arr) result (r_mem)
     !Get continuous indices from array layout to memory layout.
-    type(BZ_integral_task), intent(in) :: task
+    type(global_k_data), intent(in) :: task
     integer,                intent(in) :: r_arr(size(task%continuous_indices))
 
     integer :: r_mem
@@ -391,7 +391,7 @@ module data_structures
 
   function continuous_memory_element_to_array_element(task, r_mem) result (r_arr)
     !Get continuous indices from memory layout to array layout.
-    type(BZ_integral_task), intent(in) :: task
+    type(global_k_data), intent(in) :: task
     integer,                intent(in) :: r_mem
 
     integer :: r_arr(size(task%continuous_indices))

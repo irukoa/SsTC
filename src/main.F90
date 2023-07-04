@@ -18,7 +18,7 @@ program floquet_tight_binding
 
   type(sys) :: a
 
-  type(BZ_integral_task) :: test, test2
+  type(global_k_data) :: test, test2
 
   type(k_path) :: path
 
