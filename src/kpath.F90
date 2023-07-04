@@ -56,27 +56,27 @@ module kpath
     type(k_path), intent(inout) :: path
     type(sys), intent(in)    :: system
 
-    integer :: ivec, isampling, count
+    integer :: ivec, isampling
     real(kind=dp) :: k(3)
 
-    !complex(kind=dp), allocatable :: temp_res(:, :)
+    complex(kind=dp), allocatable :: temp_res(:, :)
 
-    count = 0
-    !allocate(temp_res(product(path%integer_indices), sum(path%number_of_pts)))
+    allocate(temp_res(product(path%integer_indices), sum(path%number_of_pts)))
 
+    !$OMP PARALLEL SHARED(temp_res) PRIVATE(ivec, isampling, k)
+    !$OMP DO
     do ivec = 1, size(path%vectors(:, 1)) - 1 !For each considered vector except the last one.
       do isampling = 1, path%number_of_pts(ivec)
-
-        count = count + 1
-
         !Define a local vector from ivec-th vector to ivec+1-th vector discretized in path%number_of_pts(ivec) steps.
         k = path%vectors(ivec, :) + (path%vectors(ivec + 1, :) - path%vectors(ivec, :))*real(isampling - 1, dp)/real(path%number_of_pts(ivec) - 1, dp)
         !Gather data.
-        path%kpath_data(:, count) = path%local_calculator(path, system, k)
+        temp_res(:, sum(path%number_of_pts(1:ivec-1)) + isampling) = path%local_calculator(path, system, k)
       enddo
     enddo
-
-    !deallocate(temp_res)
+    !$OMP END DO
+    !$OMP END PARALLEL
+    path%kpath_data = temp_res
+    deallocate(temp_res)
 
   end subroutine kpath_sampler
 

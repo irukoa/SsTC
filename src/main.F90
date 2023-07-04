@@ -40,7 +40,7 @@ program floquet_tight_binding
                            calculator = bands, &
                            Nvec = 4, &
                            vec_coord = kvecs, &
-                           nkpts = (/100, 100, 100/), &
+                           nkpts = (/3, 9, 27/), &
                            N_int_ind = 1, &
                            int_ind_range = (/a%num_bands/))
 
