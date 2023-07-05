@@ -380,7 +380,7 @@ module data_structures
 
   function continuous_array_element_to_memory_element(task, r_arr) result (r_mem)
     !Get continuous indices from array layout to memory layout.
-    type(global_k_data), intent(in) :: task
+    class(global_k_data), intent(in) :: task
     integer,                intent(in) :: r_arr(size(task%continuous_indices))
 
     integer :: r_mem
@@ -396,7 +396,7 @@ module data_structures
 
   function continuous_memory_element_to_array_element(task, r_mem) result (r_arr)
     !Get continuous indices from memory layout to array layout.
-    type(global_k_data), intent(in) :: task
+    class(global_k_data), intent(in) :: task
     integer,                intent(in) :: r_mem
 
     integer :: r_arr(size(task%continuous_indices))

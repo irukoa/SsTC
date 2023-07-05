@@ -10,7 +10,7 @@ module kpath
   type, extends(global_k_data) :: k_path
     real(kind=dp), allocatable :: vectors(:, :) !1st index is the index of the vector in the path. 2nd index corresponds to the component of the vector in the path, so its size is vectors(size(number_of_vecotrs), 3).
     integer,       allocatable :: number_of_pts(:) !Its size is the number of vectors in the BZ, vector(i) contains the number of k-points between vector i and vector i+1.
-    complex(kind=dp), allocatable :: kpath_data(:, :)
+    complex(kind=dp), allocatable :: kpath_data(:, :, :)!Integer index, continuous index and kpt index respectively.
   end type k_path
 
   contains
@@ -67,16 +67,24 @@ module kpath
         path%ext_var_data(i) = external_variable_constructor(ext_vars_start(i), ext_vars_end(i), ext_vars_steps(i))
       enddo
     else
-      allocate(path%continuous_indices(1))
+      allocate(path%continuous_indices(1), path%ext_var_data(1))
       path%continuous_indices(1) = 1.0_dp
+      allocate(path%ext_var_data(1)%data(1))
+      path%ext_var_data(1)%data = (/1.0_dp/)
     endif
 
-    !Set calculator pointer (function alias).
-    path%local_calculator => l_calculator
-    if (present(g_calculator))     path%global_calculator => g_calculator
+    if (present(g_calculator)) then
+      !Set calculator pointer (function alias).
+      path%global_calculator => g_calculator
+      nullify(path%local_calculator)
+    else
+      !Set calculator pointer (function alias).
+      path%local_calculator => l_calculator
+      nullify(path%global_calculator)
+    endif
 
     !Set kdata.
-    allocate(path%kpath_data(product(path%integer_indices), sum(path%number_of_pts)))
+    allocate(path%kpath_data(product(path%integer_indices), product(path%continuous_indices), sum(path%number_of_pts)))
     path%kpath_data = cmplx_0
 
     !Set calculation of a particular integer component.
@@ -92,9 +100,9 @@ module kpath
     integer :: ivec, isampling
     real(kind=dp) :: k(3)
 
-    complex(kind=dp), allocatable :: temp_res(:, :)
+    complex(kind=dp), allocatable :: temp_res(:, :, :)
 
-    allocate(temp_res(product(path%integer_indices), sum(path%number_of_pts)))
+    allocate(temp_res(product(path%integer_indices), product(path%continuous_indices), sum(path%number_of_pts)))
 
     !$OMP PARALLEL SHARED(temp_res) PRIVATE(ivec, isampling, k)
     !$OMP DO
@@ -103,7 +111,11 @@ module kpath
         !Define a local vector from ivec-th vector to ivec+1-th vector discretized in path%number_of_pts(ivec) steps.
         k = path%vectors(ivec, :) + (path%vectors(ivec + 1, :) - path%vectors(ivec, :))*real(isampling - 1, dp)/real(path%number_of_pts(ivec) - 1, dp)
         !Gather data.
-        temp_res(:, sum(path%number_of_pts(1:ivec-1)) + isampling) = path%local_calculator(path, system, k)
+        if (associated(path%local_calculator)) then
+          temp_res(:, 1, sum(path%number_of_pts(1:ivec-1)) + isampling) = path%local_calculator(path, system, k)
+        else
+          temp_res(:, :, sum(path%number_of_pts(1:ivec-1)) + isampling) = path%global_calculator(path, system, k)
+        endif
       enddo
     enddo
     !$OMP END DO
@@ -119,36 +131,71 @@ module kpath
     type(sys), intent(in) :: system
 
     character(len=400) :: filename
-    integer :: i_arr(size(path%integer_indices))
-    integer :: i_mem, count, ivec, isampling
+    integer :: i_arr(size(path%integer_indices)), r_arr(size(path%continuous_indices))
+    integer :: i_mem, r_mem, count, countk, ivec, isampling
     real(kind=dp) :: k(3)
 
-    do i_mem = 1, product(path%integer_indices) !For each integer index.
+    if (associated(path%local_calculator)) then
+      do i_mem = 1, product(path%integer_indices) !For each integer index.
 
-      i_arr = integer_memory_element_to_array_element(path, i_mem) !Pass to array layout.
+        i_arr = integer_memory_element_to_array_element(path, i_mem) !Pass to array layout.
 
-      filename = trim(system%name)//'-'//trim(path%name)//'_'
-      do count = 1, size(path%integer_indices)
-        filename = trim(filename)//achar(48 + i_arr(count))
-      enddo
-      filename = trim(filename)//'.dat'
-
-      open(unit=111, action="write", file=filename)
-
-      count = 0
-      do ivec = 1, size(path%vectors(:, 1)) - 1 !For each considered vector except the last one.
-        do isampling = 1, path%number_of_pts(ivec)
-          count = count + 1
-          !Define a local vector from ivec-th vector to ivec+1-th vector discretized in path%number_of_pts(ivec) steps.
-          k = path%vectors(ivec, :) + (path%vectors(ivec + 1, :) - path%vectors(ivec, :))*real(isampling - 1, dp)/real(path%number_of_pts(ivec) - 1, dp)
-          write(unit=111, fmt="(6E18.8E3)") real(count, dp), k, real(path%kpath_data(i_mem, count), dp), aimag(path%kpath_data(i_mem, count))
+        filename = trim(system%name)//'-'//trim(path%name)//'_'
+        do count = 1, size(path%integer_indices)
+          filename = trim(filename)//achar(48 + i_arr(count))
         enddo
+        filename = trim(filename)//'.dat'
+
+        open(unit=111, action="write", file=filename)
+
+        countk = 0
+        do ivec = 1, size(path%vectors(:, 1)) - 1 !For each considered vector except the last one.
+          do isampling = 1, path%number_of_pts(ivec)
+            countk = countk + 1
+            !Define a local vector from ivec-th vector to ivec+1-th vector discretized in path%number_of_pts(ivec) steps.
+            k = path%vectors(ivec, :) + (path%vectors(ivec + 1, :) - path%vectors(ivec, :))*real(isampling - 1, dp)/real(path%number_of_pts(ivec) - 1, dp)
+            write(unit=111, fmt="(6E18.8E3)") real(countk, dp), k, real(path%kpath_data(i_mem, 1, countk), dp), aimag(path%kpath_data(i_mem, 1, countk))
+          enddo
+        enddo
+
+        close(unit=111)
+
       enddo
+    else!global calculator is associated.
+      do i_mem = 1, product(path%integer_indices) !For each integer index.
 
-      close(unit=111)
+        i_arr = integer_memory_element_to_array_element(path, i_mem) !Pass to array layout.
 
-    enddo
+        filename = trim(system%name)//'-'//trim(path%name)//'_'
+        do count = 1, size(path%integer_indices)
+          filename = trim(filename)//achar(48 + i_arr(count))
+        enddo
+        filename = trim(filename)//'.dat'
 
+        open(unit=111, action="write", file=filename)
+
+        do r_mem = 1, product(path%continuous_indices) !For each continuous index.
+
+          r_arr = continuous_memory_element_to_array_element(path, r_mem) !Pass to array layout.
+
+          countk = 0
+          do ivec = 1, size(path%vectors(:, 1)) - 1 !For each considered vector except the last one.
+            do isampling = 1, path%number_of_pts(ivec)
+              countk = countk + 1
+              !Define a local vector from ivec-th vector to ivec+1-th vector discretized in path%number_of_pts(ivec) steps.
+              k = path%vectors(ivec, :) + (path%vectors(ivec + 1, :) - path%vectors(ivec, :))*real(isampling - 1, dp)/real(path%number_of_pts(ivec) - 1, dp)
+
+              write(unit=111, fmt=*) real(countk, dp), k, (path%ext_var_data(count)%data(r_arr(count)), count = 1, size(path%continuous_indices)), &
+              real(path%kpath_data(i_mem, r_mem, countk), dp), aimag(path%kpath_data(i_mem, r_mem, countk))
+            enddo
+          enddo
+  
+        enddo
+
+        close(unit=111)
+
+      enddo
+    endif
   end subroutine print_kpath
 
 end module kpath
