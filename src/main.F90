@@ -11,6 +11,8 @@ program floquet_tight_binding
   use kpath
   use kslice
   use calculator_test
+  use calculators_general
+  use calculators_floquet
 
   use local_k_quantities!TEST
 
