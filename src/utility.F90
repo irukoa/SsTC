@@ -9,6 +9,19 @@ module utility
   complex(kind=dp), parameter, public :: cmplx_0 = cmplx(0.0_dp, 0.0_dp, dp), &
                                          cmplx_i = cmplx(0.0_dp, 1.0_dp, dp)
 
+
+  !Physical constants.
+  real(kind=dp), parameter, public :: e_charge    = 1.602176565e-19_dp, &
+                                      e_mass      = 9.10938291e-31_dp,  &
+                                      hbar        = 1.054571726e-34_dp, &
+                                      k_B         = 1.3806488e-23_dp,   &
+                                      bohr_mag    = 927.400968e-26_dp,  &
+                                      eps0        = 8.854187817e-12_dp, &
+                                      c_light     = 299792458.0_dp,     &
+                                      hbar_over_e = 6.582119e-16_dp
+  
+  
+  !TODO: ADD UTILITY TO COMPUTE \DELTA(X).
   public :: utility_get_degen
   public :: utility_diagonalize
   public :: utility_schur

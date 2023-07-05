@@ -1,5 +1,7 @@
 module extrapolation_integration
 
+  use utility
+
   !V1.0.1(modified) By Álvaro R. Puente-Uriona.
 
   !Standalone module to compute integrals using the extrapolation
@@ -30,8 +32,6 @@ module extrapolation_integration
   !(*) See documentation.
 
   implicit none
-
-  integer, parameter, private :: dp = 8
 
   public :: integral_extrapolation
   public :: shrink_array

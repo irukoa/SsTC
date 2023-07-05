@@ -2,12 +2,11 @@ module integrator
 
   USE OMP_LIB
 
+  use utility
   use data_structures
   use extrapolation_integration
 
   implicit none
-
-  integer, parameter, private :: dp = 8
 
   public :: sample_and_integrate_in_BZ
 

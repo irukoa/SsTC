@@ -1,8 +1,8 @@
 module data_structures
 
-  implicit none
+  use utility
 
-  integer, parameter, private :: dp = 8
+  implicit none
 
   type sys
     character(len=120)            :: name

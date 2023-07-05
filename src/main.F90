@@ -29,18 +29,23 @@ program floquet_tight_binding
   kvecs(3, :) = (/1.0_dp/3, 1.0_dp/3, 0.0_dp/)
   kvecs(4, :) = (/0.0_dp, 0.0_dp, 0.0_dp/)
 
+  !kvecs(2, :) = (/0.00000,      0.50000,      0.00000/)!L
+  !kvecs(3, :) = (/0.00000,      0.62500,      0.37500/)!K
+  !kvecs(4, :) = (/0.00000,      0.50000,      0.50000/)!X
+
   open(unit=112, action="write", file="exec.out")
 
   !call OMP_SET_NUM_THREADS(4)
   call OMP_SET_MAX_ACTIVE_LEVELS(2)
 
+  !a = sys_constructor("GaAs", "./")
   a = sys_constructor("HM", "./")
 
   path = kpath_constructor(name = "bands", &
                            calculator = bands, &
                            Nvec = 4, &
                            vec_coord = kvecs, &
-                           nkpts = (/3, 9, 27/), &
+                           nkpts = (/100, 100, 100/), &
                            N_int_ind = 1, &
                            int_ind_range = (/a%num_bands/))
 

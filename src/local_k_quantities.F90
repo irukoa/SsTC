@@ -8,8 +8,6 @@ module local_k_quantities
   public :: get_hamiltonian
   public :: get_position
 
-  !TODO: PARALLELIZE THE SUM OVER RPOINTS OR MORE.
-
   contains
 
   subroutine get_hamiltonian(system, k, H, Nder_i, only_i)
