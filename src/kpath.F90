@@ -7,7 +7,7 @@ module kpath
 
   implicit none
 
-  type, extends(local_k_data) :: k_path !TODO: MAKE CONSTRUCTOR.
+  type, extends(global_k_data) :: k_path
     real(kind=dp), allocatable :: vectors(:, :) !1st index is the index of the vector in the path. 2nd index corresponds to the component of the vector in the path, so its size is vectors(size(number_of_vecotrs), 3).
     integer,       allocatable :: number_of_pts(:) !Its size is the number of vectors in the BZ, vector(i) contains the number of k-points between vector i and vector i+1.
     complex(kind=dp), allocatable :: kpath_data(:, :)
@@ -15,14 +15,30 @@ module kpath
 
   contains
 
-  function kpath_constructor(name, calculator, Nvec, vec_coord, nkpts, N_int_ind, int_ind_range) result(path)
+  function kpath_constructor(name, &
+                             l_calculator, g_calculator, &
+                             Nvec, vec_coord, nkpts, &
+                             N_int_ind, int_ind_range, &
+                             N_ext_vars, ext_vars_start, ext_vars_end, ext_vars_steps, &
+                             part_int_comp) result(path)
+
     character(len=*) :: name
-    procedure (local_calculator) :: calculator
+
+    procedure (local_calculator) :: l_calculator
+    procedure (global_calculator), optional :: g_calculator
+
     integer, intent(in) :: Nvec
     real(kind=dp), intent(in) :: vec_coord(Nvec, 3)
     integer, intent(in) :: nkpts(Nvec - 1)
+
     integer, intent(in) :: N_int_ind
     integer, intent(in) :: int_ind_range(N_int_ind)
+
+    integer, intent(in)                     :: N_ext_vars
+    real(kind=dp),    optional,  intent(in) :: ext_vars_start(N_ext_vars), ext_vars_end(N_ext_vars)
+    integer,          optional,  intent(in) :: ext_vars_steps(N_ext_vars)
+
+    integer,          optional,  intent(in) :: part_int_comp(N_int_ind)
 
     type(k_path) :: path
 
@@ -42,12 +58,29 @@ module kpath
       path%integer_indices(i) = int_ind_range(i)
     enddo
 
+    !Set external variable data.
+    if (((N_ext_vars).ge.1).and.(present(ext_vars_start)).and.(present(ext_vars_end)).and.(present(ext_vars_steps))) then
+      allocate(path%continuous_indices(N_ext_vars), path%ext_var_data(N_ext_vars))
+      do i = 1, N_ext_vars
+        path%continuous_indices(i) = ext_vars_steps(i)
+        allocate(path%ext_var_data(i)%data(ext_vars_steps(i)))
+        path%ext_var_data(i) = external_variable_constructor(ext_vars_start(i), ext_vars_end(i), ext_vars_steps(i))
+      enddo
+    else
+      allocate(path%continuous_indices(1))
+      path%continuous_indices(1) = 1.0_dp
+    endif
+
     !Set calculator pointer (function alias).
-    path%local_calculator => calculator
+    path%local_calculator => l_calculator
+    if (present(g_calculator))     path%global_calculator => g_calculator
 
     !Set kdata.
     allocate(path%kpath_data(product(path%integer_indices), sum(path%number_of_pts)))
     path%kpath_data = cmplx_0
+
+    !Set calculation of a particular integer component.
+    if (present(part_int_comp)) path%particular_integer_component = integer_array_element_to_memory_element(path, part_int_comp)
 
   end function kpath_constructor
 

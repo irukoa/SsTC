@@ -85,8 +85,8 @@ module data_structures
   public  :: global_k_data
   public  :: task_constructor
 
-  private :: external_vars
-  private :: external_variable_constructor
+  public :: external_vars
+  public :: external_variable_constructor
 
   public  :: print_task_result
 

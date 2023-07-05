@@ -42,12 +42,13 @@ program floquet_tight_binding
   a = sys_constructor("HM", "./")
 
   path = kpath_constructor(name = "bands", &
-                           calculator = bands, &
+                           l_calculator = bands, &
                            Nvec = 4, &
                            vec_coord = kvecs, &
                            nkpts = (/100, 100, 100/), &
                            N_int_ind = 1, &
-                           int_ind_range = (/a%num_bands/))
+                           int_ind_range = (/a%num_bands/), &
+                           N_ext_vars = 1)
 
   call kpath_sampler(path, a)
   call print_kpath(path, a)
