@@ -21,7 +21,8 @@ module utility
                                       hbar_over_e = 6.582119e-16_dp
   
   
-  !TODO: ADD UTILITY TO COMPUTE \DELTA(X).
+  public :: utility_delta
+  public :: utility_delta_vec
   public :: utility_get_degen
   public :: utility_diagonalize
   public :: utility_schur
@@ -29,6 +30,40 @@ module utility
   public :: utility_logu
 
   contains
+
+  !=============================================================!
+  function utility_delta(x) result (res)
+    !========================================================================!
+    !Auxiliary routine to approximate the Dirac delta of x.                  !
+    !========================================================================!
+
+    implicit none
+
+    real(kind=dp), intent(in) :: x
+    real(kind=dp) :: arg
+    real(kind=dp) :: res
+
+    arg = min(200.0_dp, x**2)
+    res = exp(-arg)/sqrt(pi)
+
+  end function utility_delta
+
+  function utility_delta_vec(x) result (res)
+    !========================================================================!
+    !Auxiliary routine to approximate the Dirac delta of an array x.         !
+    !For each x_i returns res_i = \delta(x_i).                               !
+    !========================================================================!
+
+    implicit none
+
+    real(kind=dp), intent(in) :: x(:)
+    real(kind=dp) :: arg(size(x))
+    real(kind=dp) :: res(size(x))
+
+    arg = min(200.0_dp, x**2)
+    res = exp(-arg)/sqrt(pi)
+
+  end function utility_delta_vec
 
   !=============================================================!
   function utility_get_degen(eig, degen_thr) result (deg)
