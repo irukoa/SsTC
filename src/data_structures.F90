@@ -14,6 +14,8 @@ module data_structures
     complex(kind=dp), allocatable :: real_space_hamiltonian_elements(:, :, :) !Hamiltonian matrix elements (1st and 2nd indexes) and memory layout id of the R-point (3rd index) in eV.
     complex(kind=dp), allocatable :: real_space_position_elements(:, :, :, :) !Position operator matrix elements (1st and 2nd indexes), cartesian coordinate (3rd index) and memory layout id of the R-point (4th index) in A.
     real(kind=dp)                 :: e_fermi = 0.0_dp !Fermi energy.
+    real(kind=dp)                 :: deg_thr = 1.0E-4_dp !Degeneracy threshold in eV.
+    real(kind=dp)                 :: deg_offset = 0.04_dp !Offset for regularization in case of deeneracies in eV.
   end type sys
 
   type local_k_data
