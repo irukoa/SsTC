@@ -6,57 +6,37 @@ module data_structures
 
   type sys
     character(len=120)            :: name
-    integer                       :: num_bands !Number of bands.
-    real(kind=dp)                 :: direct_lattice_basis(3, 3) !Direct lattice basis vectors in A. 1st index is vector label, 2nd index is vector component.
-    integer                       :: num_R_points !Number of R points given in the *_tb.dat file.
-    integer, allocatable          :: R_point(:, :) !Memory layout id of the R-point (1st index) and R-vector coords. relative to the direct lattice basis vectors (2nd index).
-    integer, allocatable          :: deg_R_point(:) !Degeneracy of the R-point specified by its memory layout id.
+    integer                       :: num_bands                                !Number of bands.
+    real(kind=dp)                 :: direct_lattice_basis(3, 3)               !Direct lattice basis vectors in A. 1st index is vector label, 2nd index is vector component.
+    integer                       :: num_R_points                             !Number of R points given in the *_tb.dat file.
+    integer, allocatable          :: R_point(:, :)                            !Memory layout id of the R-point (1st index) and R-vector coords. relative to the direct lattice basis vectors (2nd index).
+    integer, allocatable          :: deg_R_point(:)                           !Degeneracy of the R-point specified by its memory layout id.
     complex(kind=dp), allocatable :: real_space_hamiltonian_elements(:, :, :) !Hamiltonian matrix elements (1st and 2nd indexes) and memory layout id of the R-point (3rd index) in eV.
     complex(kind=dp), allocatable :: real_space_position_elements(:, :, :, :) !Position operator matrix elements (1st and 2nd indexes), cartesian coordinate (3rd index) and memory layout id of the R-point (4th index) in A.
-    real(kind=dp)                 :: e_fermi = 0.0_dp !Fermi energy.
-    real(kind=dp)                 :: deg_thr = 1.0E-4_dp !Degeneracy threshold in eV.
-    real(kind=dp)                 :: deg_offset = 0.04_dp !Offset for regularization in case of deeneracies in eV.
+    real(kind=dp)                 :: e_fermi = 0.0_dp                         !Fermi energy.
+    real(kind=dp)                 :: deg_thr = 1.0E-4_dp                      !Degeneracy threshold in eV.
+    real(kind=dp)                 :: deg_offset = 0.04_dp                     !Offset for regularization in case of deeneracies in eV.
   end type sys
 
   type local_k_data
-    !Name of the local quantity or in the extended type case, the name of the task to integrate.
     character(len=120)                            :: name
-    !Specification of the integer indices of the local quantity, or in the extended type case,
-    !the integer indices which will be integrated.
-    integer, allocatable                          :: integer_indices(:)
-    !Local k-data.
-    complex(kind=dp), allocatable                 :: k_data(:)
-    !Pointer to calculator function.
-    procedure (local_calculator), pointer, nopass :: local_calculator
-    !If only some component out of the integer indices wants to be calculated this can be specified here in memory layout.
-    integer                                        :: particular_integer_component = 0 
+    integer, allocatable                          :: integer_indices(:)               !Each entry contains the range of each of the integer indices.
+    complex(kind=dp), allocatable                 :: k_data(:)                        !Data local for each k with integer index in memory array,
+    procedure (local_calculator), pointer, nopass :: local_calculator                 !Pointer to the local calculator.
+    integer                                       :: particular_integer_component = 0 !Specification of some integer component.
   end type local_k_data
 
   type, extends(local_k_data) :: global_k_data
-    !Specification of the continuous indices of the quantity which will be integrated.
-    integer,          allocatable                  :: continuous_indices(:)
-    !External variable data.
-    type(external_vars), allocatable               :: ext_var_data(:)
-    !Result of the integration, contains the integer index and the continuous index in memory layout, respectively.
-    complex(kind=dp), allocatable                  :: result(:, :)
-    !Pointer to calculator function.
-    procedure (global_calculator), pointer, nopass :: global_calculator
+    integer,          allocatable                  :: continuous_indices(:) !Each entry contains the range of each continuous indices.
+    type(external_vars), allocatable               :: ext_var_data(:)       !External variable data.
+    procedure (global_calculator), pointer, nopass :: global_calculator     !Pointer to the global calculator.
   end type global_k_data
 
-  type, extends(global_k_data) :: BZ_integral_task
-    !Integration method.
-    character(len=120)                             :: method
-    !Integration samples.
-    integer                                        :: samples(3)
-  end type BZ_integral_task
-
   type external_vars
-    !External variable data array.
-    real(kind=dp), allocatable :: data(:)
+    real(kind=dp), allocatable :: data(:) !External variable data array.
   end type external_vars
 
-  !Interface for the generic function returning the integrand of the quantity to be integrated at point "k",
-  !a.k.a. the "calculator".
+  !Interfaces for the generic functions returning k dependent quantities.
   abstract interface
     function global_calculator(task, system, k) result(u)
       import :: global_k_data, sys, external_vars, dp
@@ -79,30 +59,28 @@ module data_structures
     end function local_calculator
   end interface
 
-  public  :: sys
-  public  :: sys_constructor
+  public :: local_k_data
+  public :: global_k_data
 
-  public  :: local_k_data
-
-  public  :: global_k_data
-  public  :: task_constructor
+  public :: sys
+  public :: sys_constructor
 
   public :: external_vars
   public :: external_variable_constructor
 
-  public  :: print_task_result
-
-  public  :: integer_array_element_to_memory_element
-  public  :: integer_memory_element_to_array_element
-  public  :: continuous_array_element_to_memory_element
-  public  :: continuous_memory_element_to_array_element
+  public :: integer_array_element_to_memory_element
+  public :: integer_memory_element_to_array_element
+  public :: continuous_array_element_to_memory_element
+  public :: continuous_memory_element_to_array_element
 
   contains
 
-  function sys_constructor(name, path_to_tb_file, efermi) result(system)
-    character(len=*), intent(in) :: name
-    character(len=*), intent(in) :: path_to_tb_file
-    real(kind=dp), optional, intent(in) :: efermi
+  function sys_constructor(name, path_to_tb_file, efermi, deg_thr, deg_offset) result(system)
+
+    character(len=*),        intent(in) :: name
+    character(len=*),        intent(in) :: path_to_tb_file
+    real(kind=dp), optional, intent(in) :: efermi, &
+                                           deg_thr, deg_offset
 
     type(sys) :: system
 
@@ -116,7 +94,9 @@ module data_structures
 
     system%name = name
 
-    if(present(efermi)) system%e_fermi = efermi
+    if (present(efermi)) system%e_fermi = efermi
+    if (present(deg_thr)) system%deg_thr = deg_thr
+    if (present(deg_offset)) system%deg_offset = deg_offset
 
     filename = trim(path_to_tb_file)//trim(name)//"_tb.dat"
     filename = trim(filename)
@@ -222,120 +202,6 @@ module data_structures
     endif
 
   end function external_variable_constructor
-
-  function task_constructor(name, calculator, &
-                            N_int_ind, int_ind_range, &
-                            N_ext_vars, ext_vars_start, ext_vars_end, ext_vars_steps, &
-                            method, samples, &
-                            part_int_comp) result(task)
-    !Function to construct the data structure "task" containing all info for BN integration. 
-    !This function sets integer indices, external variables, integration method 
-    !and number of points in the BZ discretization. If only a particular integer component 
-    !wants to be computed, this can also be set. The BZ integrand must be given by function
-    !"calculator" with the interface calculator_C1M3.
-
-    character(len=*),            intent(in) :: name
-    procedure (global_calculator)           :: calculator
-    integer, intent(in)                     :: N_int_ind
-    integer, intent(in)                     :: int_ind_range(N_int_ind)
-    integer, intent(in)                     :: N_ext_vars
-    real(kind=dp),    optional,  intent(in) :: ext_vars_start(N_ext_vars), ext_vars_end(N_ext_vars)
-    integer,          optional,  intent(in) :: ext_vars_steps(N_ext_vars)
-    character(len=*), optional,  intent(in) :: method
-    integer, intent(in)                     :: samples(3)
-    integer,          optional,  intent(in) :: part_int_comp(N_int_ind)
-
-    type(BZ_integral_task) :: task
-
-    integer :: i
-
-    !Set name.
-    task%name = name
-
-    !Set integer index data.
-    allocate(task%integer_indices(N_int_ind))
-    do i = 1, N_int_ind
-      task%integer_indices(i) = int_ind_range(i)
-    enddo
-
-    !Set external variable data.
-    if (((N_ext_vars).ge.1).and.(present(ext_vars_start)).and.(present(ext_vars_end)).and.(present(ext_vars_steps))) then
-      allocate(task%continuous_indices(N_ext_vars), task%ext_var_data(N_ext_vars))
-      do i = 1, N_ext_vars
-        task%continuous_indices(i) = ext_vars_steps(i)
-        allocate(task%ext_var_data(i)%data(ext_vars_steps(i)))
-        task%ext_var_data(i) = external_variable_constructor(ext_vars_start(i), ext_vars_end(i), ext_vars_steps(i))
-      enddo
-    else
-      allocate(task%continuous_indices(1))
-      task%continuous_indices(1) = 1.0_dp
-    endif
-
-    !Set calculator pointer (function alias).
-    task%global_calculator => calculator
-
-    !Set result.
-    allocate(task%result(product(task%integer_indices), product(task%continuous_indices)))
-
-    !Set calculation of a particular integer component.
-    if (present(part_int_comp)) task%particular_integer_component = integer_array_element_to_memory_element(task, part_int_comp)
-
-    !Set integration method.
-    if (present(method)) then
-      if (method == "extrapolation") then
-        task%method = "extrapolation"
-        write(unit=112, fmt="(A)") "Warning: To employ the extrapolation method all the elements of the array 'samples' must be expressible as either 1 or 2^n + 1 for n = 0, 1, ..."
-      elseif (method == "rectangle") then
-        task%method = "rectangle"
-      else
-        print*, "Integration method not recognized. Setting up rectangle method"
-        task%method = "rectangle"
-      endif
-    else
-      task%method = "rectangle"
-    endif
-
-    !Set number of integration samples (discretization of BZ).
-    task%samples = samples
-
-  end function task_constructor
-
-  subroutine print_task_result(task, system)
-    !Subroutine to format and output files related to the result of the task "task".
-    class(global_k_data), intent(in) :: task
-    type(sys),              intent(in) :: system
-
-    character(len=400) :: filename
-    integer :: i_arr(size(task%integer_indices)), &
-               r_arr(size(task%continuous_indices))
-    integer :: i_mem, r_mem, count
-
-    do i_mem = 1, product(task%integer_indices) !For each integer index.
-
-      i_arr = integer_memory_element_to_array_element(task, i_mem) !Pass to array layout.
-
-      filename = trim(system%name)//'-'//trim(task%name)//'_'
-      do count = 1, size(task%integer_indices)
-        filename = trim(filename)//achar(48 + i_arr(count))
-      enddo
-      filename = trim(filename)//'.dat'
-
-      open(unit=111, action="write", file=filename)
-
-      do r_mem = 1, product(task%continuous_indices) !For each continuous index.
-
-        r_arr = continuous_memory_element_to_array_element(task, r_mem) !Pass to array layout.
-
-        write(unit=111, fmt=*) (task%ext_var_data(count)%data(r_arr(count)), count = 1, size(task%continuous_indices)),&
-        real(task%result(i_mem, r_mem), dp), aimag(task%result(i_mem, r_mem))
-
-      enddo
-
-      close(unit=111)
-
-    enddo
-
-  end subroutine print_task_result
 
   !==UTILITY FUNCTIONS TO PASS "MEMORY LAYOUT" INDICES TO "ARRAY LAYOUT" AND VICE-VERSA==!
   !See discussion at https://eli.thegreenplace.net/2015/memory-layout-of-multi-dimensional-arrays

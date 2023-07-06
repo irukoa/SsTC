@@ -22,7 +22,7 @@ program floquet_tight_binding
 
   type(BZ_integral_task) :: test, test2
 
-  type(k_path) :: path
+  type(k_path_task) :: path
 
   real(kind=dp) :: kvecs(4, 3)
 
@@ -53,7 +53,7 @@ program floquet_tight_binding
 
   !EXAMPLE OF USAGE.
   test = task_constructor(name           = "ext_ben", &
-                          calculator     = calculator_test_C1M3, &
+                          g_calculator   = calculator_test_C1M3, &
                           N_int_ind      = 2, &
                           int_ind_range  = (/3, 3/), &
                           N_ext_vars     = 1, &
@@ -72,7 +72,7 @@ program floquet_tight_binding
                          system = a)
 
   test2 = task_constructor(name           = "rec_ben", &
-                           calculator     = calculator_test_C1M3, &
+                           g_calculator   = calculator_test_C1M3, &
                            N_int_ind      = 2, &
                            int_ind_range  = (/3, 3/), &
                            N_ext_vars     = 1, &

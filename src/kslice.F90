@@ -5,9 +5,10 @@ module kslice
 
   implicit none
 
-  type, extends(local_k_data) :: k_slice !TODO: MAKE CONSTRUCTOR, SAMPLER AND PRINTER BASED ON KSLICE.
+  type, extends(global_k_data) :: k_slice_task !TODO: MAKE CONSTRUCTOR, SAMPLER AND PRINTER BASED ON KPATH.
     real(kind=dp) :: corner(3), vector(2, 3)
     integer       :: mesh(2)
-  end type k_slice
+    complex(kind=dp), allocatable :: kslice_data(:, :, :)!Integer index, continuous index and kpt index respectively.
+  end type k_slice_task
 
 end module kslice

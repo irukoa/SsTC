@@ -47,7 +47,7 @@ module calculators_general
     real(kind=dp), intent(in) :: vec_coord(Nvec, 3)
     integer, intent(in) :: nkpts(Nvec - 1)
 
-    type(k_path) :: default_bands_kpath_task
+    type(k_path_task) :: default_bands_kpath_task
 
     default_bands_kpath_task = kpath_constructor(name = "def_bands", &
                                                  l_calculator = bands, &
