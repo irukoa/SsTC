@@ -107,7 +107,7 @@ module integrator
       elseif (method == "rectangle") then
         task%method = "rectangle"
       else
-        print*, "Integration method not recognized. Setting up rectangle method"
+        write(unit=112, fmt="(A)") "Integration method not recognized. Setting up rectangle method"
         task%method = "rectangle"
       endif
     else
@@ -280,31 +280,55 @@ module integrator
     integer :: i_arr(size(task%integer_indices)), &
     r_arr(size(task%continuous_indices))
     integer :: i_mem, r_mem, count
+
+    if (associated(task%local_calculator)) then
+
+      do i_mem = 1, product(task%integer_indices) !For each integer index.
+      
+        i_arr = integer_memory_element_to_array_element(task, i_mem) !Pass to array layout.
+        
+        filename = trim(system%name)//'-'//trim(task%name)//'_'
+        do count = 1, size(task%integer_indices)
+          filename = trim(filename)//achar(48 + i_arr(count))
+        enddo
+        filename = trim(filename)//'.dat'
+        
+        open(unit=111, action="write", file=filename)
+
+        write(unit=111, fmt="(2E18.8E3)") real(task%result(i_mem, 1), dp), aimag(task%result(i_mem, 1))
+
+        close(unit=111)
+      
+      enddo
     
-    do i_mem = 1, product(task%integer_indices) !For each integer index.
-    
-    i_arr = integer_memory_element_to_array_element(task, i_mem) !Pass to array layout.
-    
-    filename = trim(system%name)//'-'//trim(task%name)//'_'
-    do count = 1, size(task%integer_indices)
-    filename = trim(filename)//achar(48 + i_arr(count))
-    enddo
-    filename = trim(filename)//'.dat'
-    
-    open(unit=111, action="write", file=filename)
-    
-    do r_mem = 1, product(task%continuous_indices) !For each continuous index.
-    
-    r_arr = continuous_memory_element_to_array_element(task, r_mem) !Pass to array layout.
-    
-    write(unit=111, fmt=*) (task%ext_var_data(count)%data(r_arr(count)), count = 1, size(task%continuous_indices)),&
-                            real(task%result(i_mem, r_mem), dp), aimag(task%result(i_mem, r_mem))!TODO: SET FORMAT.
-    
-    enddo
-    
-    close(unit=111)
-    
-    enddo
+    elseif (associated(task%global_calculator)) then
+
+      do i_mem = 1, product(task%integer_indices) !For each integer index.
+      
+        i_arr = integer_memory_element_to_array_element(task, i_mem) !Pass to array layout.
+        
+        filename = trim(system%name)//'-'//trim(task%name)//'_'
+        do count = 1, size(task%integer_indices)
+          filename = trim(filename)//achar(48 + i_arr(count))
+        enddo
+        filename = trim(filename)//'.dat'
+        
+        open(unit=111, action="write", file=filename)
+        
+        do r_mem = 1, product(task%continuous_indices) !For each continuous index.
+        
+          r_arr = continuous_memory_element_to_array_element(task, r_mem) !Pass to array layout.
+          
+          write(unit=111, fmt=*) (task%ext_var_data(count)%data(r_arr(count)), count = 1, size(task%continuous_indices)),&
+                                  real(task%result(i_mem, r_mem), dp), aimag(task%result(i_mem, r_mem))!TODO: SET FORMAT.
+        
+        enddo
+        
+        close(unit=111)
+      
+      enddo
+
+    endif
     
     end subroutine print_task_result
 
