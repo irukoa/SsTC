@@ -117,8 +117,8 @@ module kpath
     allocate(temp_res(product(task%integer_indices), product(task%continuous_indices), sum(task%number_of_pts)))
 
     !Sampling.
-    !$OMP PARALLEL SHARED(temp_res) PRIVATE(ivec, isampling, k)
-    !$OMP DO
+    !$OMP PARALLEL SHARED(temp_res) PRIVATE(ivec, isampling, k) 
+    !$OMP DO COLLAPSE(2)
     do ivec = 1, size(task%vectors(:, 1)) - 1 !For each considered vector except the last one.
       do isampling = 1, task%number_of_pts(ivec)
         !Define a local vector from ivec-th vector to ivec+1-th vector discretized in task%number_of_pts(ivec) steps.

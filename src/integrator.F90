@@ -229,7 +229,7 @@ module integrator
         write(unit=112, fmt="(A, I6, A)") "Running on ", OMP_GET_NUM_THREADS(), " threads."
       ENDIF
 
-      !$OMP DO
+      !$OMP DO !!Only outer loop is parallelized. Use collapse for the others and make different instances for each samples(i)== case.
       do ik1 = 1, task%samples(1)
         if (task%samples(1) == 1) then
           k(1) = 0.0_dp
