@@ -109,6 +109,8 @@ test3 = task_constructor(name           = "iterable", &
     print*, test3%iterables(i, :)
   enddo
 
+  print*, wannier_tdep_hamiltonian(a, (/0.3_dp, 0.0_dp, 0.0_dp/), (/0.0_dp, 0.0_dp, 0.0_dp/), .true.)
+
   close(unit=112)
 
 end program floquet_tight_binding
