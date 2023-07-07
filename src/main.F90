@@ -20,11 +20,12 @@ program floquet_tight_binding
 
   type(sys) :: a
 
-  type(BZ_integral_task) :: test, test2
+  type(BZ_integral_task) :: test, test2, test3
 
   type(k_path_task) :: path
 
   real(kind=dp) :: kvecs(4, 3)
+  integer :: i
 
   kvecs(1, :) = (/0.0_dp, 0.0_dp, 0.0_dp/)
   kvecs(2, :) = (/0.5_dp, 0.0_dp, 0.0_dp/)
@@ -88,6 +89,25 @@ program floquet_tight_binding
 
 call print_task_result(task = test2, &
                        system = a)
+
+
+!TEST ITERABLE
+test3 = task_constructor(name           = "iterable", &
+                       g_calculator   = calculator_test_C1M3, &
+                       N_int_ind      = 1, &
+                       int_ind_range  = (/1/), &
+                       N_ext_vars     = 3, &
+                       ext_vars_start = (/0.0_dp, 1.0_dp, 0.0_dp/), &
+                       ext_vars_end   = (/10.0_dp, 1.5_dp, 2.0_dp/), &
+                       ext_vars_steps = (/5, 3, 2/), &
+                       method         = "extrapolation", & !Required memory: 16*product(samples)*product(int_ind_range)*product(ext_vars_steps)
+                       samples        = (/65, 65, 65/))
+
+  call construct_iterable(test3, (/1, 2/))
+
+  do i = 1, size(test3%iterables(:, 1))
+    print*, test3%iterables(i, :)
+  enddo
 
   close(unit=112)
 

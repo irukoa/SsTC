@@ -30,6 +30,7 @@ module data_structures
     integer,          allocatable                  :: continuous_indices(:) !Each entry contains the range of each continuous indices.
     type(external_vars), allocatable               :: ext_var_data(:)       !External variable data.
     procedure (global_calculator), pointer, nopass :: global_calculator     !Pointer to the global calculator.
+    integer, allocatable                           :: iterables(:, :)
   end type global_k_data
 
   type external_vars
@@ -74,6 +75,50 @@ module data_structures
   public :: continuous_memory_element_to_array_element
 
   contains
+
+  subroutine construct_iterable(global, vars)
+    class(global_k_data) :: global
+    integer, intent(in) :: vars(:)
+
+    integer :: i, j, n, counter, reduction
+
+    integer, allocatable :: temp_arr(:)
+
+
+    n = 1
+    do i = 1, size(vars)
+      n = n * size(global%ext_var_data(vars(i))%data)
+    enddo
+
+    allocate(global%iterables(n, size(global%continuous_indices)), &
+             temp_arr(size(global%ext_var_data)))
+ 
+    global%iterables = 1
+    temp_arr = 0
+       
+    do i = 1, n
+
+      reduction = i
+      do counter = size(vars), 1, -1
+        if (counter == 1) then
+          temp_arr(vars(counter)) = reduction
+        else
+          temp_arr(vars(counter)) = modulo(reduction, size(global%ext_var_data(vars(counter))%data))
+          if (temp_arr(vars(counter)) == 0) temp_arr(vars(counter)) = size(global%ext_var_data(vars(counter))%data)
+          reduction = int((reduction - temp_arr(vars(counter)))/size(global%ext_var_data(vars(counter))%data)) + 1
+        endif
+      enddo
+
+      do j = 1, size(vars)
+        global%iterables(i, vars(j)) = temp_arr(vars(j))
+      enddo
+
+    enddo
+
+    deallocate(temp_arr)
+    
+
+  end subroutine construct_iterable
 
   function sys_constructor(name, path_to_tb_file, efermi, deg_thr, deg_offset) result(system)
 
