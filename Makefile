@@ -34,7 +34,7 @@ calculator_test.o: $(CALC)/calculator_test.F90 utility.o data_structures.o local
 calculators_general.o: $(CALC)/calculators_general.F90 utility.o data_structures.o local_k_quantities.o kpath.o
 									 $(F90) $(F90FLAGS) -c $(CALC)/calculators_general.F90 -o "$(OBJ)/calculators_general.o"
 
-calculators_floquet.o: $(CALC)/calculators_floquet.F90 utility.o data_structures.o local_k_quantities.o
+calculators_floquet.o: $(CALC)/calculators_floquet.F90 utility.o data_structures.o local_k_quantities.o kpath.o
 									 $(F90) $(F90FLAGS) -c $(CALC)/calculators_floquet.F90 -o "$(OBJ)/calculators_floquet.o"
 
 integrator.o : $(SRC)/integrator.F90 utility.o extrapolation_integration.o data_structures.o

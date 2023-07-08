@@ -111,7 +111,15 @@ test3 = task_constructor(name           = "iterable", &
 
   !print*, wannier_tdep_hamiltonian(a, (/0.3_dp, 0.0_dp, 0.0_dp/), (/0.0_dp, 0.0_dp, 0.0_dp/), .true.)
 
-  print*, quasienergy(test3, a, (/0.0_dp, 0.0_dp, 0.0_dp/))
+  !print*, quasienergy(test3, a, (/0.0_dp, 0.0_dp, 0.0_dp/))
+
+  path = quasienergy_kpath_task_constructor(system = a, &
+  Nvec = 2, &
+  vec_coord = kvecs(1:2, :), &
+  nkpts = (/1/))
+
+call kpath_sampler(path, a)
+call print_kpath(path, a)
 
   close(unit=112)
 

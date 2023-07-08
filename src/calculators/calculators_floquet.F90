@@ -3,6 +3,7 @@ module calculators_floquet
   use utility
   use data_structures
   use local_k_quantities
+  use kpath
 
   implicit none
 
@@ -88,6 +89,25 @@ module calculators_floquet
 
   end function wannier_tdep_hamiltonian
 
+  function quasienergy_kpath_task_constructor(system, Nvec, vec_coord, nkpts) result(default_quasienergy_kpath_task)
+
+    type(sys), intent(in)  :: system
+    integer, intent(in) :: Nvec
+    real(kind=dp), intent(in) :: vec_coord(Nvec, 3)
+    integer, intent(in) :: nkpts(Nvec - 1)
+
+    type(k_path_task) :: default_quasienergy_kpath_task
+
+    default_quasienergy_kpath_task = kpath_constructor(name = "quasienergy", &
+                                                 g_calculator = quasienergy, &
+                                                 Nvec = Nvec, vec_coord = vec_coord, nkpts = nkpts, &
+                                                 N_int_ind = 1, int_ind_range = (/system%num_bands/), &
+                                                 N_ext_vars     = 9, & !GENERALIZE
+                                                 ext_vars_start = (/0.1_dp, 0.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 1.0_dp, 0.0_dp/), &
+                                                 ext_vars_end   = (/1.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 2.0_dp, 0.0_dp/), &
+                                                 ext_vars_steps = (/5, 1, 1, 1, 1, 1, 1, 2, 1/))
+  end function quasienergy_kpath_task_constructor
+
   function quasienergy(floquet_task, system, k) result(u)
     class(global_k_data), intent(in) :: floquet_task
     type(sys), intent(in) :: system
@@ -109,6 +129,9 @@ module calculators_floquet
                         tev(system%num_bands, system%num_bands), &
                         hf(system%num_bands, system%num_bands), &
                         rot(system%num_bands, system%num_bands)
+
+    logical            :: error
+    character(len=120) :: errormsg
 
     Nharm = (size(floquet_task%continuous_indices)-3)/6
     allocate(amplitudes(Nharm, 3), phases(Nharm, 3))
@@ -150,11 +173,11 @@ module calculators_floquet
         tper = t0 + dt*real(it-1, dp) !In eV^-1.
         q = int_driving_field(amplitudes, phases, omega, tper) !In A^-1
         H_TK = wannier_tdep_hamiltonian(system, q, k, system%diag) !In eV.
-        expH_TK = utility_exphs(-cmplx_i*dt*H_TK, system%num_bands, .true.)
+        expH_TK = utility_exphs(-cmplx_i*dt*H_TK, system%num_bands, .true., error, errormsg)
         tev = matmul(tev, expH_TK)
       enddo
-      hf = cmplx_i*omega*utility_logu(tev, system%num_bands)/(2*pi)
-      call utility_diagonalize(hf, system%num_bands, quasi, rot)
+      hf = cmplx_i*omega*utility_logu(tev, system%num_bands, error, errormsg)/(2*pi)
+      call utility_diagonalize(hf, system%num_bands, quasi, rot, error, errormsg)
       do i_mem = 1, product(floquet_task%integer_indices)
         u(i_mem, r_mem) = quasi(i_mem)
       enddo
@@ -163,30 +186,7 @@ module calculators_floquet
     deallocate(amplitudes, phases)
 
   end function quasienergy
-!  !function tdep_hamiltonian(system, omega, t, amplitudes)
-!
-!  function driving_field(amplitudes, phases, omega, t, t0) result(u)
-!    real(kind=dp), intent(in) :: amplitudes(:, :), phases(:, :), &
-!                                 omega, t, t0
-!
-!    complex(kind=dp) :: u(3)
-!
-!    integer :: icoord, iharm
-!    real(kind=dp) :: n
-!
-!    u = cmplx_0
-!
-!    do iharm = 1, size(amplitudes(:, 1))
-!      n = real(iharm, dp) - 0.5_dp*real(size(amplitudes(:, 1)) + 1, dp)
-!      do icoord = 1, 3
-!        u(icoord) = u(icoord) + &
-!        amplitudes(iharm, icoord)*exp(cmplx_i*phases(iharm, icoord))*&
-!        exp(cmplx_i*n*omega*(t-t0))
-!      enddo
-!    enddo
-!
-!  end function driving_field
-!
+
   function int_driving_field(amplitudes, phases, omega, t) result(q)
 
     real(kind=dp), intent(in) :: amplitudes(:, :), phases(:, :), &
@@ -212,64 +212,5 @@ module calculators_floquet
     q = q*1.0E10_dp
 
   end function int_driving_field
-!
-!  function floq_current(system, floquet_curr, k) result(j)
-!    class(global_k_data), intent(in) :: floquet_curr
-!    type(sys),           intent(in) :: system
-!    real(kind=dp),       intent(in) :: k(3)
-!
-!    complex(kind=dp)                :: j(product(floquet_curr%integer_indices), product(floquet_curr%continuous_indices))
-!
-!    integer :: ie, iw, it
-!
-!    real(kind=dp) :: e, omega, t
-!
-!    count = 1
-!
-!    do iharm = 1, (size(floquet_curr%continuous_indices)-2)/6 !For each harmonic index.
-!      do icomp = 1, 3 !For each cartesian index.
-!
-!        !do iamp = 1, size(floq_curr%continuous_indices(count)%data) !For each considered change in amplitude with id iharm, icomp.
-!          !do iphs = 1, size(floq_curr%continuous_indices(count + 1)%data) !For each considered change in phase with id iharm, icomp.
-!            amplitudes(iharm, icomp)%data = floq_curr%continuous_indices(count)%data!(iamp)
-!            phases(iharm, icomp)%data = floq_curr%continuous_indices(count + 1)%data!(iphs)
-!          !enddo
-!        !enddo
-!        count = count + 2
-!
-!      enddo
-!    enddo
-!
-!    do iamp = 1, size(amplitudes(iharm, icomp)%data)
-!
-!
-!
-!
-!
-!
-!   BASICAMENTE ESTO ES LO QUE MAS CONVIENE.
-!    PARA CADA CASO QUE OCNSIDEREMOS CONVIENE CREAR UN CAMPO ELECTRICO 
-!    QUE CORRESPONDA A UNA INTERFACE GENERAL. LO QUE SE ME OCURRE ES
-!    AMPLITUDA VARIABLE (HASTA 2 AMPLITUDES), FRECUENCIA VARIABLE, POLARIZACION VARIABLE
-!    POLARIZACION Y FRECUENCIA VARIABLES.  
- !    !do ie = 1, floquet_curr%continuous_indices(1)
-!    !  e = floquet_curr%ext_var_data(1)%data(ie)
-!
-!    !  do iw = 1, floquet_curr%continuous_indices(2)
-!    !    omega = floquet_curr%ext_var_data(2)%data(iw)
-!
-!    !    do it = 1, floquet_curr%continuous_indices(3)
-!    !      t = floquet_curr%ext_var_data(3)%data(it)
-!
-!    !      rarr = (/ie, iw, it/)
-!    !      rmem = ...r_arr
-!    !      j(, r_mem)
-!    !    enddo
-!
-!    !  enddo
-!
-!    !enddo
-!
-!  end function floq_current
-!
+
 end module calculators_floquet
