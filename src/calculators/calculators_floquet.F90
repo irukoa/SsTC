@@ -23,12 +23,15 @@ module calculators_floquet
     integer          :: n, m, l, j, irpts, ivec
     complex(kind=dp) :: modulation, vecpos(3), temp_res, H_nm_TR
     real(kind=dp)    :: vecbrav(3), kdotr
-    logical          :: qis0, qisNaN
+    logical          :: qis0!, qisNaN
 
     qis0 = (sqrt(sum(q*q)).lt.1.0E-6_dp)
-    qisNaN = (sqrt(sum(q*q)).gt.1.0E6_dp)
+    !qisNaN = (sqrt(sum(q*q)).gt.1.0E6_dp)
 
-    if (qisNaN) H_TK = cmplx(0.0_dp, 0.0_dp); return !Raise an error?
+    !if (qisNaN) then
+    !  H_TK = cmplx(0.0_dp, 0.0_dp)
+    !  return !Raise an error?
+    !endif
 
     do n = 1, system%num_bands
       do m = 1, system%num_bands
@@ -92,23 +95,85 @@ module calculators_floquet
 
   end function wannier_tdep_hamiltonian
 
-  function quasienergy_kpath_task_constructor(system, Nvec, vec_coord, nkpts) result(default_quasienergy_kpath_task)
+  function quasienergy_kpath_task_constructor(system, Nvec, vec_coord, nkpts, &
+                                              Nharm, &
+                                              axstart, axend, axsteps, &
+                                              pxstart, pxend, pxsteps, &
+                                              aystart, ayend, aysteps, &
+                                              pystart, pyend, pysteps, &
+                                              azstart, azend, azsteps, &
+                                              pzstart, pzend, pzsteps, &
+                                              omegastart, omegaend, omegasteps, &
+                                              t0start, t0end, t0steps) result(default_quasienergy_kpath_task)
 
     type(sys), intent(in)  :: system
     integer, intent(in) :: Nvec
     real(kind=dp), intent(in) :: vec_coord(Nvec, 3)
     integer, intent(in) :: nkpts(Nvec - 1)
 
+    integer, intent(in) :: Nharm
+    real(kind=dp), dimension(Nharm), intent(in) :: axstart, axend, &
+                                                   pxstart, pxend, &
+                                                   aystart, ayend, &
+                                                   pystart, pyend, &
+                                                   azstart, azend, &
+                                                   pzstart, pzend
+
+    integer, dimension(Nharm), intent(in) :: axsteps, pxsteps, aysteps, pysteps, azsteps, pzsteps
+
+    real(kind=dp), intent(in) :: omegastart, omegaend, &
+                                 t0start, t0end
+
+    integer, intent(in) :: omegasteps, t0steps
+
+    real(kind=dp), dimension(6*Nharm + 2) :: start, end
+    integer, dimension(6*Nharm + 2) :: steps
+    integer :: iharm
+
     type(k_path_task) :: default_quasienergy_kpath_task
+
+    do iharm = 1, Nharm
+      start(6*(iharm - 1) + 1) = axstart(iharm)
+      end(6*(iharm - 1) + 1) = axend(iharm)
+      steps(6*(iharm - 1) + 1) = axsteps(iharm)
+
+      start(6*(iharm - 1) + 2) = pxstart(iharm)
+      end(6*(iharm - 1) + 2) = pxend(iharm)
+      steps(6*(iharm - 1) + 2) = pxsteps(iharm)
+
+      start(6*(iharm - 1) + 3) = aystart(iharm)
+      end(6*(iharm - 1) + 3) = ayend(iharm)
+      steps(6*(iharm - 1) + 3) = aysteps(iharm)
+
+      start(6*(iharm - 1) + 4) = pystart(iharm)
+      end(6*(iharm - 1) + 4) = pyend(iharm)
+      steps(6*(iharm - 1) + 4) = pysteps(iharm)
+
+      start(6*(iharm - 1) + 5) = azstart(iharm)
+      end(6*(iharm - 1) + 5) = azend(iharm)
+      steps(6*(iharm - 1) + 5) = azsteps(iharm)
+
+      start(6*(iharm - 1) + 6) = pzstart(iharm)
+      end(6*(iharm - 1) + 6) = pzend(iharm)
+      steps(6*(iharm - 1) + 6) = pzsteps(iharm)
+    enddo
+
+    start(6*Nharm + 1) = t0start
+    end(6*Nharm + 1) = t0end
+    steps(6*Nharm + 1) = t0steps
+
+    start(6*Nharm + 2) = omegastart
+    end(6*Nharm + 2) = omegaend
+    steps(6*Nharm + 2) = omegasteps
 
     default_quasienergy_kpath_task = kpath_constructor(name = "quasienergy", &
                                                  g_calculator = quasienergy, &
                                                  Nvec = Nvec, vec_coord = vec_coord, nkpts = nkpts, &
                                                  N_int_ind = 1, int_ind_range = (/system%num_bands/), &
-                                                 N_ext_vars     = 9, & !GENERALIZE
-                                                 ext_vars_start = (/0.1_dp, 0.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 1.0_dp, 0.0_dp/), &
-                                                 ext_vars_end   = (/1.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 2.0_dp, 0.0_dp/), &
-                                                 ext_vars_steps = (/5, 1, 1, 1, 1, 1, 1, 2, 1/))
+                                                 N_ext_vars     = 6*Nharm + 2, &
+                                                 ext_vars_start = start, &
+                                                 ext_vars_end   = end, &
+                                                 ext_vars_steps = steps)
   end function quasienergy_kpath_task_constructor
 
   function quasienergy(floquet_task, system, k) result(u)
@@ -121,7 +186,7 @@ module calculators_floquet
     integer :: r_mem, r_arr(size(floquet_task%continuous_indices)), &
                i_mem
 
-    real(kind=dp) :: t, omega, t0, tper, q(3), dt, &
+    real(kind=dp) :: omega, t0, tper, q(3), dt, &
     quasi(system%num_bands)
     real(kind=dp), allocatable :: amplitudes(:, :), &
                                   phases(:, :)
@@ -136,7 +201,7 @@ module calculators_floquet
     logical            :: error
     character(len=120) :: errormsg
 
-    Nharm = (size(floquet_task%continuous_indices)-3)/6
+    Nharm = (size(floquet_task%continuous_indices)-2)/6
     allocate(amplitudes(Nharm, 3), phases(Nharm, 3))
 
     u = cmplx_0
@@ -145,14 +210,11 @@ module calculators_floquet
 
       r_arr = continuous_memory_element_to_array_element(floquet_task, r_mem)
 
-      t = floquet_task%ext_var_data(size(floquet_task%continuous_indices))&
+      omega = floquet_task%ext_var_data(size(floquet_task%continuous_indices))&
       %data(r_arr(size(floquet_task%continuous_indices)))
 
-      omega = floquet_task%ext_var_data(size(floquet_task%continuous_indices)-1)&
+      t0 = floquet_task%ext_var_data(size(floquet_task%continuous_indices)-1)&
       %data(r_arr(size(floquet_task%continuous_indices)-1))
-
-      t0 = floquet_task%ext_var_data(size(floquet_task%continuous_indices)-2)&
-      %data(r_arr(size(floquet_task%continuous_indices)-2))
 
       do iharm = 1, Nharm
         amplitudes(iharm, 1) = floquet_task%ext_var_data(6*(iharm - 1) + 1)&
@@ -176,6 +238,7 @@ module calculators_floquet
         tper = t0 + dt*real(it-1, dp) !In eV^-1.
         q = int_driving_field(amplitudes, phases, omega, tper) !In A^-1
         H_TK = wannier_tdep_hamiltonian(system, q, k, system%diag) !In eV.
+        !print*, it, H_TK(1, 1), H_TK(1, 2)
         expH_TK = utility_exphs(-cmplx_i*dt*H_TK, system%num_bands, .true., error, errormsg)
         tev = matmul(tev, expH_TK)
       enddo

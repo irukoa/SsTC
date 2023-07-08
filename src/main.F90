@@ -38,7 +38,7 @@ program floquet_tight_binding
 
   open(unit=112, action="write", file="exec.out")
 
-  !call OMP_SET_NUM_THREADS(4)
+  !call OMP_SET_NUM_THREADS(1) !SERIAL.
   call OMP_SET_MAX_ACTIVE_LEVELS(2)
 
   !a = sys_constructor("GaAs", "./")
@@ -90,33 +90,19 @@ program floquet_tight_binding
 call print_task_result(task = test2, &
                        system = a)
 
-
-!TEST ITERABLE
-test3 = task_constructor(name           = "iterable", &
-                       g_calculator   = calculator_test_C1M3, &
-                       N_int_ind      = 1, &
-                       int_ind_range  = (/1/), &
-                       N_ext_vars     = 9, &
-                       ext_vars_start = (/0.1_dp, 0.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 1.0_dp, 0.0_dp/), &
-                       ext_vars_end   = (/1.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 2.0_dp, 0.0_dp/), &
-                       ext_vars_steps = (/5, 1, 1, 1, 1, 1, 1, 2, 1/), &
-                       method         = "extrapolation", & !Required memory: 16*product(samples)*product(int_ind_range)*product(ext_vars_steps)
-                       samples        = (/65, 65, 65/))
-
-  !call construct_iterable(test3, (/1, 2/))
-
-  !do i = 1, size(test3%iterables(:, 1))
-  !  print*, test3%iterables(i, :)
-  !enddo
-
-  !print*, wannier_tdep_hamiltonian(a, (/0.3_dp, 0.0_dp, 0.0_dp/), (/0.0_dp, 0.0_dp, 0.0_dp/), .true.)
-
-  !print*, quasienergy(test3, a, (/0.0_dp, 0.0_dp, 0.0_dp/))
-
   path = quasienergy_kpath_task_constructor(system = a, &
-  Nvec = 2, &
-  vec_coord = kvecs(1:2, :), &
-  nkpts = (/1/))
+                                            Nvec = 2, &
+                                            vec_coord = kvecs(3:4, :), &
+                                            nkpts = (/1/), &
+                                            Nharm = 1, &
+                                            axstart = (/1.0E4_dp/), axend = (/1.0E5_dp/), axsteps = (/100/), &
+                                            pxstart = (/0.0_dp/), pxend = (/0.0_dp/), pxsteps = (/1/), &
+                                            aystart = (/0.0_dp/), ayend = (/0.0_dp/), aysteps = (/1/), &
+                                            pystart = (/0.0_dp/), pyend = (/0.0_dp/), pysteps = (/1/), &
+                                            azstart = (/0.0_dp/), azend = (/0.0_dp/), azsteps = (/1/), &
+                                            pzstart = (/0.0_dp/), pzend = (/0.0_dp/), pzsteps = (/1/), &
+                                            omegastart = 3.0_dp, omegaend = 3.0_dp, omegasteps = 1, &
+                                            t0start = 0.0_dp, t0end = 0.0_dp, t0steps = 1)
 
 call kpath_sampler(path, a)
 call print_kpath(path, a)
