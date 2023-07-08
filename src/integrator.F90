@@ -276,7 +276,7 @@ module integrator
     type(BZ_integral_task), intent(in) :: task
     type(sys),              intent(in) :: system
     
-    character(len=400) :: filename
+    character(len=400) :: filename, fmtf
     integer :: i_arr(size(task%integer_indices)), &
     r_arr(size(task%continuous_indices))
     integer :: i_mem, r_mem, count
@@ -303,6 +303,9 @@ module integrator
     
     elseif (associated(task%global_calculator)) then
 
+      write(fmtf, "(I10)") size(task%continuous_indices) + 2
+      fmtf = '('//trim(adjustl(trim(fmtf)))//'E18.8E3)'
+
       do i_mem = 1, product(task%integer_indices) !For each integer index.
       
         i_arr = integer_memory_element_to_array_element(task, i_mem) !Pass to array layout.
@@ -319,8 +322,8 @@ module integrator
         
           r_arr = continuous_memory_element_to_array_element(task, r_mem) !Pass to array layout.
           
-          write(unit=111, fmt=*) (task%ext_var_data(count)%data(r_arr(count)), count = 1, size(task%continuous_indices)),&
-                                  real(task%result(i_mem, r_mem), dp), aimag(task%result(i_mem, r_mem))!TODO: SET FORMAT.
+          write(unit=111, fmt=fmtf) (task%ext_var_data(count)%data(r_arr(count)), count = 1, size(task%continuous_indices)),&
+                                  real(task%result(i_mem, r_mem), dp), aimag(task%result(i_mem, r_mem))
         
         enddo
         
