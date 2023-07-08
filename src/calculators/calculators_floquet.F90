@@ -23,9 +23,12 @@ module calculators_floquet
     integer          :: n, m, l, j, irpts, ivec
     complex(kind=dp) :: modulation, vecpos(3), temp_res, H_nm_TR
     real(kind=dp)    :: vecbrav(3), kdotr
-    logical          :: qis0
+    logical          :: qis0, qisNaN
 
     qis0 = (sqrt(sum(q*q)).lt.1.0E-6_dp)
+    qisNaN = (sqrt(sum(q*q)).gt.1.0E6_dp)
+
+    if (qisNaN) H_TK = cmplx(0.0_dp, 0.0_dp); return !Raise an error?
 
     do n = 1, system%num_bands
       do m = 1, system%num_bands
@@ -209,7 +212,7 @@ module calculators_floquet
     !q, the integral of the driving electric field, is now in V/(m*eV). 
     !we have to multiply by e to obatin the integral of the driving force field in J/(m*eV)
     !the divide by |e| to obain it in 1/m. Lastly pass to 1/A by multiplying by 1^-10.
-    q = q*1.0E10_dp
+    q = q*1.0E-10_dp
 
   end function int_driving_field
 
