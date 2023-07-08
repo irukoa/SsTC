@@ -96,20 +96,22 @@ test3 = task_constructor(name           = "iterable", &
                        g_calculator   = calculator_test_C1M3, &
                        N_int_ind      = 1, &
                        int_ind_range  = (/1/), &
-                       N_ext_vars     = 3, &
-                       ext_vars_start = (/0.0_dp, 1.0_dp, 0.0_dp/), &
-                       ext_vars_end   = (/10.0_dp, 1.5_dp, 2.0_dp/), &
-                       ext_vars_steps = (/5, 3, 2/), &
+                       N_ext_vars     = 9, &
+                       ext_vars_start = (/0.1_dp, 0.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 1.0_dp, 0.0_dp/), &
+                       ext_vars_end   = (/1.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 0.0_dp, 2.0_dp, 0.0_dp/), &
+                       ext_vars_steps = (/5, 1, 1, 1, 1, 1, 1, 2, 1/), &
                        method         = "extrapolation", & !Required memory: 16*product(samples)*product(int_ind_range)*product(ext_vars_steps)
                        samples        = (/65, 65, 65/))
 
-  call construct_iterable(test3, (/1, 2/))
+  !call construct_iterable(test3, (/1, 2/))
 
-  do i = 1, size(test3%iterables(:, 1))
-    print*, test3%iterables(i, :)
-  enddo
+  !do i = 1, size(test3%iterables(:, 1))
+  !  print*, test3%iterables(i, :)
+  !enddo
 
-  print*, wannier_tdep_hamiltonian(a, (/0.3_dp, 0.0_dp, 0.0_dp/), (/0.0_dp, 0.0_dp, 0.0_dp/), .true.)
+  !print*, wannier_tdep_hamiltonian(a, (/0.3_dp, 0.0_dp, 0.0_dp/), (/0.0_dp, 0.0_dp, 0.0_dp/), .true.)
+
+  print*, quasienergy(test3, a, (/0.0_dp, 0.0_dp, 0.0_dp/))
 
   close(unit=112)
 

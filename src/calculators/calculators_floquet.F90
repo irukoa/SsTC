@@ -88,6 +88,81 @@ module calculators_floquet
 
   end function wannier_tdep_hamiltonian
 
+  function quasienergy(floquet_task, system, k) result(u)
+    class(global_k_data), intent(in) :: floquet_task
+    type(sys), intent(in) :: system
+    real(kind=dp),          intent(in) :: k(3)
+
+    complex(kind=dp) :: u(product(floquet_task%integer_indices), product(floquet_task%continuous_indices))
+
+    integer :: r_mem, r_arr(size(floquet_task%continuous_indices)), &
+               i_mem
+
+    real(kind=dp) :: t, omega, t0, tper, q(3), dt, &
+    quasi(system%num_bands)
+    real(kind=dp), allocatable :: amplitudes(:, :), &
+                                  phases(:, :)
+    integer :: Nharm, iharm, it, i
+
+    complex(kind=dp) :: H_TK(system%num_bands, system%num_bands), &
+                        expH_TK(system%num_bands, system%num_bands), &
+                        tev(system%num_bands, system%num_bands), &
+                        hf(system%num_bands, system%num_bands), &
+                        rot(system%num_bands, system%num_bands)
+
+    Nharm = (size(floquet_task%continuous_indices)-3)/6
+    allocate(amplitudes(Nharm, 3), phases(Nharm, 3))
+
+    u = cmplx_0
+
+    do r_mem = 1, product(floquet_task%continuous_indices)
+
+      r_arr = continuous_memory_element_to_array_element(floquet_task, r_mem)
+
+      t = floquet_task%ext_var_data(size(floquet_task%continuous_indices))&
+      %data(r_arr(size(floquet_task%continuous_indices)))
+
+      omega = floquet_task%ext_var_data(size(floquet_task%continuous_indices)-1)&
+      %data(r_arr(size(floquet_task%continuous_indices)-1))
+
+      t0 = floquet_task%ext_var_data(size(floquet_task%continuous_indices)-2)&
+      %data(r_arr(size(floquet_task%continuous_indices)-2))
+
+      do iharm = 1, Nharm
+        amplitudes(iharm, 1) = floquet_task%ext_var_data(6*(iharm - 1) + 1)&
+        %data(r_arr(6*(iharm - 1) + 1))
+        phases(iharm, 1) = floquet_task%ext_var_data(6*(iharm - 1) + 2)&
+        %data(r_arr(6*(iharm - 1) + 2))
+        amplitudes(iharm, 2) = floquet_task%ext_var_data(6*(iharm - 1) + 3)&
+        %data(r_arr(6*(iharm - 1) + 3))
+        phases(iharm, 2) = floquet_task%ext_var_data(6*(iharm - 1) + 4)&
+        %data(r_arr(6*(iharm - 1) + 4))
+        amplitudes(iharm, 3) = floquet_task%ext_var_data(6*(iharm - 1) + 5)&
+        %data(r_arr(6*(iharm - 1) + 5))
+        phases(iharm, 3) = floquet_task%ext_var_data(6*(iharm - 1) + 6)&
+        %data(r_arr(6*(iharm - 1) + 6))
+      enddo
+
+      dt = (2*pi/omega)/real(system%Nt-1, dp)
+      tev = cmplx_0
+      forall (i = 1:system%num_bands) tev(i, i) = cmplx(1.0_dp, 0.0_dp)
+      do it = 1, system%Nt
+        tper = t0 + dt*real(it-1, dp) !In eV^-1.
+        q = int_driving_field(amplitudes, phases, omega, tper) !In A^-1
+        H_TK = wannier_tdep_hamiltonian(system, q, k, system%diag) !In eV.
+        expH_TK = utility_exphs(-cmplx_i*dt*H_TK, system%num_bands, .true.)
+        tev = matmul(tev, expH_TK)
+      enddo
+      hf = cmplx_i*omega*utility_logu(tev, system%num_bands)/(2*pi)
+      call utility_diagonalize(hf, system%num_bands, quasi, rot)
+      do i_mem = 1, product(floquet_task%integer_indices)
+        u(i_mem, r_mem) = quasi(i_mem)
+      enddo
+    enddo
+
+    deallocate(amplitudes, phases)
+
+  end function quasienergy
 !  !function tdep_hamiltonian(system, omega, t, amplitudes)
 !
 !  function driving_field(amplitudes, phases, omega, t, t0) result(u)
@@ -112,29 +187,31 @@ module calculators_floquet
 !
 !  end function driving_field
 !
-!  function int_driving_field(amplitudes, phases, omega, t, t0) result(u)
-!    real(kind=dp), intent(in) :: amplitudes(:, :), phases(:, :), &
-!                                 omega, t, t0
-!
-!    complex(kind=dp) :: u(3)
-!
-!    integer :: icoord, iharm
-!    real(kind=dp) :: n
-!
-!    u = cmplx_0
-!
-!    do iharm = 1, size(amplitudes(:, 1))
-!      n = real(iharm, dp) - 0.5_dp*real(size(amplitudes(:, 1)) + 1, dp)
-!      if (n == 0) cycle
-!      do icoord = 1, 3
-!        u(icoord) = u(icoord) + &
-!        amplitudes(iharm, icoord)*exp(cmplx_i*phases(iharm, icoord))*&
-!        exp(cmplx_i*n*omega*(t-t0))/&
-!        (cmplx_i*n*omega)
-!      enddo
-!    enddo
-!
-!  end function int_driving_field
+  function int_driving_field(amplitudes, phases, omega, t) result(q)
+
+    real(kind=dp), intent(in) :: amplitudes(:, :), phases(:, :), &
+                                 omega, t
+
+    real(kind=dp) :: q(3)
+
+    integer :: icoord, iharm
+
+    q = 0.0_dp
+
+    do iharm = 1, size(amplitudes(:, 1))
+      do icoord = 1, 3
+        q(icoord) = q(icoord) + &
+        amplitudes(iharm, icoord)*sin(iharm*omega*t - phases(iharm, icoord))/&
+        (iharm*omega)
+      enddo
+    enddo
+
+    !q, the integral of the driving electric field, is now in V/(m*eV). 
+    !we have to multiply by e to obatin the integral of the driving force field in J/(m*eV)
+    !the divide by |e| to obain it in 1/m. Lastly pass to 1/A by multiplying by 1^-10.
+    q = q*1.0E10_dp
+
+  end function int_driving_field
 !
 !  function floq_current(system, floquet_curr, k) result(j)
 !    class(global_k_data), intent(in) :: floquet_curr

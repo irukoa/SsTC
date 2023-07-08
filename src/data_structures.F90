@@ -16,6 +16,10 @@ module data_structures
     real(kind=dp)                 :: e_fermi = 0.0_dp                         !Fermi energy.
     real(kind=dp)                 :: deg_thr = 1.0E-4_dp                      !Degeneracy threshold in eV.
     real(kind=dp)                 :: deg_offset = 0.04_dp                     !Offset for regularization in case of deeneracies in eV.
+    !Below: Floquet stuff.
+    real(kind=dp)                 :: Nt = 65 !2^6 + 1 Discretization points of each period.
+    real(kind=dp)                 :: Ns = 10 !Considered Harmonics.
+    logical                       :: diag = .false.
   end type sys
 
   type local_k_data
