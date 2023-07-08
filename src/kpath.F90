@@ -122,7 +122,11 @@ module kpath
     do ivec = 1, size(task%vectors(:, 1)) - 1 !For each considered vector except the last one.
       do isampling = 1, task%number_of_pts(ivec)
         !Define a local vector from ivec-th vector to ivec+1-th vector discretized in task%number_of_pts(ivec) steps.
-        k = task%vectors(ivec, :) + (task%vectors(ivec + 1, :) - task%vectors(ivec, :))*real(isampling - 1, dp)/real(task%number_of_pts(ivec) - 1, dp)
+        if (task%number_of_pts(ivec)==1) then
+          k = task%vectors(ivec, :)
+        else
+          k = task%vectors(ivec, :) + (task%vectors(ivec + 1, :) - task%vectors(ivec, :))*real(isampling - 1, dp)/real(task%number_of_pts(ivec) - 1, dp)
+        endif
         !Gather data.
         if (associated(task%local_calculator)) then
           temp_res(:, 1, sum(task%number_of_pts(1:ivec-1)) + isampling) = task%local_calculator(task, system, k)
