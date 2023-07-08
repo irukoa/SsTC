@@ -131,8 +131,8 @@ module utility
     !                                                                  !
     !==================================================================!
 
-    logical,              intent(inout), optional            :: error
-    character(len=120),   intent(inout), optional            :: errormsg
+    logical,              intent(inout)            :: error
+    character(len=120),   intent(inout)            :: errormsg
 
     integer,              intent(in)               :: dim
     complex*16,           intent(in)               :: mat(dim,dim)
@@ -187,8 +187,8 @@ module utility
     !                                                                  !
     !==================================================================!
 
-    logical,              intent(inout), optional            :: error
-    character(len=120),   intent(inout), optional            :: errormsg
+    logical,              intent(inout)            :: error
+    character(len=120),   intent(inout)            :: errormsg
 
     integer,              intent(in)               :: dim
     complex*16,           intent(in)               :: mat(dim,dim)
@@ -248,8 +248,8 @@ module utility
     !                                                                  !
     !==================================================================!
 
-    logical,              intent(inout), optional            :: error
-    character(len=120),   intent(inout), optional            :: errormsg
+    logical,              intent(inout)            :: error
+    character(len=120),   intent(inout)            :: errormsg
 
     integer,              intent(in)               :: dim
     complex(kind=dp),     intent(in)               :: mat(dim, dim)
@@ -300,8 +300,8 @@ module utility
     !                                                                  !
     !==================================================================! 
 
-    logical,              intent(inout), optional            :: error
-    character(len=120),   intent(inout), optional            :: errormsg
+    logical,              intent(inout)            :: error
+    character(len=120),   intent(inout)            :: errormsg
 
     integer,              intent(in)               :: dim
     complex(kind=dp),     intent(in)               :: mat(dim, dim)
