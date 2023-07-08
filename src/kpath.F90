@@ -173,7 +173,11 @@ module kpath
           do isampling = 1, task%number_of_pts(ivec)
             countk = countk + 1
             !Define a local vector from ivec-th vector to ivec+1-th vector discretized in task%number_of_pts(ivec) steps.
-            k = task%vectors(ivec, :) + (task%vectors(ivec + 1, :) - task%vectors(ivec, :))*real(isampling - 1, dp)/real(task%number_of_pts(ivec) - 1, dp)
+            if (task%number_of_pts(ivec)==1) then
+              k = task%vectors(ivec, :)
+            else
+              k = task%vectors(ivec, :) + (task%vectors(ivec + 1, :) - task%vectors(ivec, :))*real(isampling - 1, dp)/real(task%number_of_pts(ivec) - 1, dp)
+            endif
             write(unit=111, fmt="(6E18.8E3)") real(countk, dp), k, real(task%kpath_data(i_mem, 1, countk), dp), aimag(task%kpath_data(i_mem, 1, countk))
           enddo
         enddo
@@ -204,7 +208,11 @@ module kpath
             do isampling = 1, task%number_of_pts(ivec)
               countk = countk + 1
               !Define a local vector from ivec-th vector to ivec+1-th vector discretized in task%number_of_pts(ivec) steps.
-              k = task%vectors(ivec, :) + (task%vectors(ivec + 1, :) - task%vectors(ivec, :))*real(isampling - 1, dp)/real(task%number_of_pts(ivec) - 1, dp)
+              if (task%number_of_pts(ivec)==1) then
+                k = task%vectors(ivec, :)
+              else
+                k = task%vectors(ivec, :) + (task%vectors(ivec + 1, :) - task%vectors(ivec, :))*real(isampling - 1, dp)/real(task%number_of_pts(ivec) - 1, dp)
+              endif
 
               write(unit=111, fmt=*) real(countk, dp), k, (task%ext_var_data(count)%data(r_arr(count)), count = 1, size(task%continuous_indices)), &
               real(task%kpath_data(i_mem, r_mem, countk), dp), aimag(task%kpath_data(i_mem, r_mem, countk)) !TODO: SET FORMAT.
