@@ -67,7 +67,7 @@ module calculators_floquet
           endif
 
           1 continue
-          H_nm_TR = modulation*H_nm_TR
+          H_nm_TR = modulation*H_nm_TR !TODO: SOME CHECK ON MODULATION AND ISSUE A WARNING?
           !At this point H_nm_TR stores the real lattice (Wannier) resolved time
           !dependent Hamiltonian for the force modulation q and R-point irpts.
 

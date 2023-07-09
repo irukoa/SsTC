@@ -21,7 +21,8 @@ program floquet_tight_binding
 
   type(sys) :: a
 
-  type(BZ_integral_task) :: test, test2, test3
+  type(BZ_integral_task) :: test, test2, test3, &
+                            optcond
 
   type(k_path_task) :: path
 
@@ -41,10 +42,10 @@ program floquet_tight_binding
   open(unit=113, action="write", file="exec.err")
 
   !call OMP_SET_NUM_THREADS(1) !SERIAL.
-  call OMP_SET_MAX_ACTIVE_LEVELS(2)
+  call OMP_SET_MAX_ACTIVE_LEVELS(1) !Only paralleize kpts, warning parallelizing also local-k quantities can create overhead. Only change to LEVELS>1 in very large clusters.
 
-  a = sys_constructor("GaAs", "./")
-  !a = sys_constructor("HM", "./", floq_diag = .true.)
+  !a = sys_constructor("GaAs", "./", efermi = 7.7414_dp, optical_smearing = 0.1_dp)
+  a = sys_constructor("HM", "./", floq_diag = .true., optical_smearing = 0.1_dp)
 
   path = bands_kpath_task_constructor(system = a, &
                                       Nvec = 4, &
@@ -86,11 +87,11 @@ program floquet_tight_binding
                            samples        = (/400000, 1, 1/), &
                            part_int_comp  = (/2, 1/))
 
-  call sample_and_integrate_in_BZ(task = test2, &
-                                  system = a)
+  !call sample_and_integrate_in_BZ(task = test2, &
+  !                                system = a)
 
-call print_task_result(task = test2, &
-                       system = a)
+  !call print_task_result(task = test2, &
+  !                       system = a)
 
   path = quasienergy_kpath_task_constructor(system = a, &
                                             Nvec = 2, &
@@ -106,8 +107,18 @@ call print_task_result(task = test2, &
                                             omegastart = 3.0_dp, omegaend = 30.0_dp, omegasteps = 100, &
                                             t0start = 0.0_dp, t0end = 0.0_dp, t0steps = 1)
 
-call kpath_sampler(path, a)
-call print_kpath(path, a)
+  !call kpath_sampler(path, a)
+  !call print_kpath(path, a)
+
+  optcond = default_optical_conductivity_constructor(system = a, &
+                                                    method = "extrapolation", samples = (/33, 33, 33/), &
+                                                    omegastart = 0.0_dp, omegaend = 10.0_dp, omegasteps = 100)
+
+  call sample_and_integrate_in_BZ(task = optcond, &
+                                  system = a)
+
+  call print_task_result(task = optcond, &
+                         system = a)
 
   close(unit=112)
   close(unit=113)

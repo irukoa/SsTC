@@ -280,6 +280,8 @@ module integrator
     !$OMP END DO
     !$OMP END PARALLEL
 
+    write(unit=112, fmt="(A)") "Integral done."
+
     task%result = temp_res/product(task%samples)
 
     deallocate(temp_res)

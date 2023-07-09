@@ -40,7 +40,7 @@ calculators_general.o: $(CALC)/calculators_general.F90 utility.o data_structures
 calculators_floquet.o: $(CALC)/calculators_floquet.F90 utility.o data_structures.o local_k_quantities.o kpath.o
 									 $(F90) $(F90FLAGS) -c $(CALC)/calculators_floquet.F90 -o "$(OBJ)/calculators_floquet.o"
 
-calculators_optical.o: $(CALC)/calculators_optical.F90 utility.o data_structures.o local_k_quantities.o integrator.o
+calculators_optical.o: $(CALC)/calculators_optical.F90 utility.o integrator.o data_structures.o local_k_quantities.o calculators_general.o
 									 $(F90) $(F90FLAGS) -c $(CALC)/calculators_optical.F90 -o "$(OBJ)/calculators_optical.o"
 
 
