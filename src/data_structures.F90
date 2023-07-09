@@ -19,7 +19,7 @@ module data_structures
     !Below: Floquet stuff.
     real(kind=dp)                 :: Nt = 65 !2^6 + 1 Discretization points of each period.
     real(kind=dp)                 :: Ns = 10 !Considered Harmonics.
-    logical                       :: diag = .false.
+    logical                       :: diag = .false. !If we only consider diagonal terms of the pos. operator.
   end type sys
 
   type local_k_data
@@ -124,12 +124,15 @@ module data_structures
 
   end subroutine construct_iterable
 
-  function sys_constructor(name, path_to_tb_file, efermi, deg_thr, deg_offset) result(system)
+  function sys_constructor(name, path_to_tb_file, efermi, deg_thr, deg_offset, &
+                           floq_Nt, floq_Ns, floq_diag) result(system)
 
     character(len=*),        intent(in) :: name
     character(len=*),        intent(in) :: path_to_tb_file
     real(kind=dp), optional, intent(in) :: efermi, &
                                            deg_thr, deg_offset
+    integer, optional, intent(in) :: floq_Nt, floq_NS
+    logical, optional, intent(in) :: floq_diag
 
     type(sys) :: system
 
@@ -146,6 +149,11 @@ module data_structures
     if (present(efermi)) system%e_fermi = efermi
     if (present(deg_thr)) system%deg_thr = deg_thr
     if (present(deg_offset)) system%deg_offset = deg_offset
+    !==FLOQUET==!
+    if (present(floq_Nt)) system%Nt = floq_Nt
+    if (present(floq_Ns)) system%Ns = floq_Ns
+    if (present(floq_diag)) system%diag = floq_diag
+    !===========!
 
     filename = trim(path_to_tb_file)//trim(name)//"_tb.dat"
     filename = trim(filename)
