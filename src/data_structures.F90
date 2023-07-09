@@ -8,6 +8,8 @@ module data_structures
     character(len=120)            :: name
     integer                       :: num_bands                                !Number of bands.
     real(kind=dp)                 :: direct_lattice_basis(3, 3)               !Direct lattice basis vectors in A. 1st index is vector label, 2nd index is vector component.
+    real(kind=dp)                 :: metric_tensor(3, 3)                      !Metric tensor of the direct lattice basis.
+    real(kind=dp)                 :: cell_volume                              !Cell volume.
     integer                       :: num_R_points                             !Number of R points given in the *_tb.dat file.
     integer, allocatable          :: R_point(:, :)                            !Memory layout id of the R-point (1st index) and R-vector coords. relative to the direct lattice basis vectors (2nd index).
     integer, allocatable          :: deg_R_point(:)                           !Degeneracy of the R-point specified by its memory layout id.
@@ -20,6 +22,9 @@ module data_structures
     real(kind=dp)                 :: Nt = 65 !2^6 + 1 Discretization points of each period.
     real(kind=dp)                 :: Ns = 10 !Considered Harmonics.
     logical                       :: diag = .false. !If we only consider diagonal terms of the pos. operator.
+    !Optical stuff.
+    logical                       :: adpt_smearing = .true.
+    real(kind=dp)                 :: smearing
   end type sys
 
   type local_k_data
@@ -84,12 +89,14 @@ module data_structures
   contains
 
   function sys_constructor(name, path_to_tb_file, efermi, deg_thr, deg_offset, &
-                           floq_Nt, floq_Ns, floq_diag) result(system)
+                           floq_Nt, floq_Ns, floq_diag, &
+                           optical_smearing) result(system)
 
     character(len=*),        intent(in) :: name
     character(len=*),        intent(in) :: path_to_tb_file
     real(kind=dp), optional, intent(in) :: efermi, &
-                                           deg_thr, deg_offset
+                                           deg_thr, deg_offset, &
+                                           optical_smearing
     integer, optional, intent(in) :: floq_Nt, floq_NS
     logical, optional, intent(in) :: floq_diag
 
@@ -112,7 +119,11 @@ module data_structures
     if (present(floq_Nt)) system%Nt = floq_Nt
     if (present(floq_Ns)) system%Ns = floq_Ns
     if (present(floq_diag)) system%diag = floq_diag
-    !===========!
+    !==OPTICAL==!
+    if (present(optical_smearing)) then
+      system%adpt_smearing = .false.
+      system%smearing = optical_smearing
+    endif
 
     filename = trim(path_to_tb_file)//trim(name)//"_tb.dat"
     filename = trim(filename)
@@ -124,6 +135,19 @@ module data_structures
     do i = 1, 3
       read(unit=113, fmt = *) (system%direct_lattice_basis(i, j), j = 1, 3)
     enddo
+
+    do i = 1, 3
+      do j = 1, 3
+        system%metric_tensor(i, j) = dot_product(system%direct_lattice_basis(i, :), system%direct_lattice_basis(j, :))
+      enddo
+    enddo
+    system%cell_volume = sqrt(system%metric_tensor(1, 1)*system%metric_tensor(2, 2)*system%metric_tensor(3, 3) + &
+                              system%metric_tensor(2, 1)*system%metric_tensor(3, 2)*system%metric_tensor(1, 3) + &
+                              system%metric_tensor(1, 2)*system%metric_tensor(2, 3)*system%metric_tensor(3, 1) - &
+                              system%metric_tensor(3, 1)*system%metric_tensor(2, 2)*system%metric_tensor(1, 3) - &
+                              system%metric_tensor(2, 1)*system%metric_tensor(1, 2)*system%metric_tensor(3, 3) - &
+                              system%metric_tensor(3, 2)*system%metric_tensor(2, 3)*system%metric_tensor(1, 1))
+
     read(unit=113, fmt = *) num_bands
     system%num_bands = num_bands
     read(unit=113, fmt = *) nrpts
