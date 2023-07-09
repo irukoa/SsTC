@@ -42,8 +42,8 @@ program floquet_tight_binding
   !call OMP_SET_NUM_THREADS(1) !SERIAL.
   call OMP_SET_MAX_ACTIVE_LEVELS(2)
 
-  !a = sys_constructor("GaAs", "./")
-  a = sys_constructor("HM", "./")
+  a = sys_constructor("GaAs", "./")
+  !a = sys_constructor("HM", "./")
 
   path = bands_kpath_task_constructor(system = a, &
                                       Nvec = 4, &
@@ -96,13 +96,13 @@ call print_task_result(task = test2, &
                                             vec_coord = kvecs(3:4, :), &
                                             nkpts = (/1/), &
                                             Nharm = 1, &
-                                            axstart = (/1.0E4_dp/), axend = (/1.0E5_dp/), axsteps = (/100/), &
+                                            axstart = (/1.0E4_dp/), axend = (/1.0E5_dp/), axsteps = (/1/), &
                                             pxstart = (/0.0_dp/), pxend = (/0.0_dp/), pxsteps = (/1/), &
                                             aystart = (/0.0_dp/), ayend = (/0.0_dp/), aysteps = (/1/), &
                                             pystart = (/0.0_dp/), pyend = (/0.0_dp/), pysteps = (/1/), &
                                             azstart = (/0.0_dp/), azend = (/0.0_dp/), azsteps = (/1/), &
                                             pzstart = (/0.0_dp/), pzend = (/0.0_dp/), pzsteps = (/1/), &
-                                            omegastart = 3.0_dp, omegaend = 3.0_dp, omegasteps = 1, &
+                                            omegastart = 0.5_dp, omegaend = 5.0_dp, omegasteps = 100, &
                                             t0start = 0.0_dp, t0end = 0.0_dp, t0steps = 1)
 
 call kpath_sampler(path, a)

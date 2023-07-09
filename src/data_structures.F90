@@ -79,52 +79,9 @@ module data_structures
   public :: integer_memory_element_to_array_element
   public :: continuous_array_element_to_memory_element
   public :: continuous_memory_element_to_array_element
+  public :: construct_iterable
 
   contains
-
-  subroutine construct_iterable(global, vars)
-    class(global_k_data) :: global
-    integer, intent(in) :: vars(:)
-
-    integer :: i, j, n, counter, reduction
-
-    integer, allocatable :: temp_arr(:)
-
-
-    n = 1
-    do i = 1, size(vars)
-      n = n * size(global%ext_var_data(vars(i))%data)
-    enddo
-
-    allocate(global%iterables(n, size(global%continuous_indices)), &
-             temp_arr(size(global%ext_var_data)))
- 
-    global%iterables = 1
-    temp_arr = 0
-       
-    do i = 1, n
-
-      reduction = i
-      do counter = size(vars), 1, -1
-        if (counter == 1) then
-          temp_arr(vars(counter)) = reduction
-        else
-          temp_arr(vars(counter)) = modulo(reduction, size(global%ext_var_data(vars(counter))%data))
-          if (temp_arr(vars(counter)) == 0) temp_arr(vars(counter)) = size(global%ext_var_data(vars(counter))%data)
-          reduction = int((reduction - temp_arr(vars(counter)))/size(global%ext_var_data(vars(counter))%data)) + 1
-        endif
-      enddo
-
-      do j = 1, size(vars)
-        global%iterables(i, vars(j)) = temp_arr(vars(j))
-      enddo
-
-    enddo
-
-    deallocate(temp_arr)
-    
-
-  end subroutine construct_iterable
 
   function sys_constructor(name, path_to_tb_file, efermi, deg_thr, deg_offset, &
                            floq_Nt, floq_Ns, floq_diag) result(system)
@@ -340,5 +297,59 @@ module data_structures
     enddo
 
   end function continuous_memory_element_to_array_element
+
+  subroutine construct_iterable(global, vars)
+    !Creates a dictionaty with all the possible permutations of the 
+    !considered variation of the continuous variables specified
+    !in the array elements of "vars".
+    !E.g., if global has N continuous variables with size s_i for
+    !i = [1, N] and vars is a 1d array of size j < N, 
+    !containing in each entry the label of the variable
+    !that will be permutated i_j, the iterable
+    !part of global will be set with a 2d dictionaty containing, in the 
+    !1st index the label of the permutation and in the 2nd index
+    !the particular permutation, of size(global%continuous_indices), 
+    !of the variables i_j for all j in size(vars).
+    class(global_k_data) :: global
+    integer, intent(in) :: vars(:)
+
+    integer :: i, j, n, counter, reduction
+
+    integer, allocatable :: temp_arr(:)
+
+    n = 1
+    do i = 1, size(vars)
+      n = n * size(global%ext_var_data(vars(i))%data)
+    enddo
+
+    allocate(global%iterables(n, size(global%continuous_indices)), &
+             temp_arr(size(global%ext_var_data)))
+ 
+    global%iterables = 1
+    temp_arr = 0
+       
+    do i = 1, n
+
+      reduction = i
+      do counter = size(vars), 1, -1
+        if (counter == 1) then
+          temp_arr(vars(counter)) = reduction
+        else
+          temp_arr(vars(counter)) = modulo(reduction, size(global%ext_var_data(vars(counter))%data))
+          if (temp_arr(vars(counter)) == 0) temp_arr(vars(counter)) = size(global%ext_var_data(vars(counter))%data)
+          reduction = int((reduction - temp_arr(vars(counter)))/size(global%ext_var_data(vars(counter))%data)) + 1
+        endif
+      enddo
+
+      do j = 1, size(vars)
+        global%iterables(i, vars(j)) = temp_arr(vars(j))
+      enddo
+
+    enddo
+
+    deallocate(temp_arr)
+    
+
+  end subroutine construct_iterable
 
 end module data_structures
