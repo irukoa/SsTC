@@ -163,20 +163,21 @@ module integrator
           write(unit=112, fmt = "(A, I6, A)") "Running on ", OMP_GET_NUM_THREADS(), " threads."
         ENDIF
 
-        !$OMP DO
+        !$OMP DO COLLAPSE(3)
         do ik1=1, task%samples(1)
-          if (task%samples(1) == 1) then
-            k(1) = 0.0_dp
-          else
-            k(1) = -0.5_dp + real(ik1 - 1,dp)/real(task%samples(1) - 1,dp)
-          endif
           do ik2 = 1, task%samples(2)
-            if (task%samples(2) == 1) then
-              k(2) = 0.0_dp
-            else
-              k(2) = -0.5_dp + real(ik2 - 1,dp)/real(task%samples(2) - 1,dp)
-            endif
             do ik3 = 1, task%samples(3)
+
+              if (task%samples(1) == 1) then
+                k(1) = 0.0_dp
+              else
+                k(1) = -0.5_dp + real(ik1 - 1,dp)/real(task%samples(1) - 1,dp)
+              endif
+              if (task%samples(2) == 1) then
+                k(2) = 0.0_dp
+              else
+                k(2) = -0.5_dp + real(ik2 - 1,dp)/real(task%samples(2) - 1,dp)
+              endif
               if (task%samples(3) == 1) then
                 k(3) = 0.0_dp
               else
@@ -239,20 +240,21 @@ module integrator
         write(unit=112, fmt="(A, I6, A)") "Running on ", OMP_GET_NUM_THREADS(), " threads."
       ENDIF
 
-      !$OMP DO !!Only outer loop is parallelized. Use collapse for the others and make different instances for each samples(i)== case.
+      !$OMP DO COLLAPSE(3)
       do ik1 = 1, task%samples(1)
-        if (task%samples(1) == 1) then
-          k(1) = 0.0_dp
-        else
-          k(1) = -0.5_dp + real(ik1 - 1,dp)/real(task%samples(1) - 1,dp)
-        endif
         do ik2 = 1, task%samples(2)
-          if (task%samples(2) == 1) then
-            k(2) = 0.0_dp
-          else
-            k(2) = -0.5_dp + real(ik2 - 1,dp)/real(task%samples(2) - 1,dp)
-          endif
           do ik3 = 1, task%samples(3)
+
+            if (task%samples(1) == 1) then
+              k(1) = 0.0_dp
+            else
+              k(1) = -0.5_dp + real(ik1 - 1,dp)/real(task%samples(1) - 1,dp)
+            endif
+            if (task%samples(2) == 1) then
+              k(2) = 0.0_dp
+            else
+              k(2) = -0.5_dp + real(ik2 - 1,dp)/real(task%samples(2) - 1,dp)
+            endif
             if (task%samples(3) == 1) then
               k(3) = 0.0_dp
             else

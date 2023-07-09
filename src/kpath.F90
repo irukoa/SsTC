@@ -120,12 +120,12 @@ module kpath
     allocate(temp_res(product(task%integer_indices), product(task%continuous_indices), sum(task%number_of_pts)))
 
     write(unit=112, fmt = "(A)") "Starting kpath sampling subroutine."
-    write(unit=112, fmt = "(A)") "Integrating task: "//trim(task%name)//" in the BZ for the system "//trim(system%name)//"."
+    write(unit=112, fmt = "(A)") "Sampling task: "//trim(task%name)//" for the system "//trim(system%name)//"."
 
     !Sampling.
-    !$OMP PARALLEL SHARED(temp_res) PRIVATE(ivec, isampling, k) 
-    !$OMP DO COLLAPSE(2)
     do ivec = 1, size(task%vectors(:, 1)) - 1 !For each considered vector except the last one.
+      !$OMP PARALLEL SHARED(temp_res) PRIVATE(isampling, k) 
+      !$OMP DO 
       do isampling = 1, task%number_of_pts(ivec)
         !Define a local vector from ivec-th vector to ivec+1-th vector discretized in task%number_of_pts(ivec) steps.
 
@@ -149,9 +149,9 @@ module kpath
         endif
 
       enddo
+      !$OMP END DO
+      !$OMP END PARALLEL
     enddo
-    !$OMP END DO
-    !$OMP END PARALLEL
 
     write(unit=112, fmt = "(A)") "Sampling done."
     write(unit=112, fmt="(A)") ""
