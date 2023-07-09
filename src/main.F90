@@ -13,6 +13,7 @@ program floquet_tight_binding
   use calculator_test
   use calculators_general
   use calculators_floquet
+  use calculators_optical
 
   use local_k_quantities!TEST
 
