@@ -10,10 +10,11 @@ module calculator_test
 
   contains
 
-  function calculator_test_C1M3(task, system, k) result(u)
+  function calculator_test_C1M3(task, system, k, error) result(u)
     class(global_k_data), intent(in) :: task
     type(sys),              intent(in) :: system
     real(kind=dp),          intent(in) :: k(3)
+    logical, intent(inout) :: error
 
     complex(kind=dp)                   :: u(product(task%integer_indices), product(task%continuous_indices))
     integer                            :: r, r_arr(size(task%continuous_indices)), i, i_arr(size(task%integer_indices))

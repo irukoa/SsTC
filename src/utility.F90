@@ -122,7 +122,7 @@ module utility
   !===============WRAPPERS FOR SOME LAPACK ROUTINES===============!
 
   !===========================================================!
-  subroutine utility_diagonalize(mat, dim, eig, rot, error, errormsg)
+  subroutine utility_diagonalize(mat, dim, eig, rot, error)
     !==================================================================!
     !                                                                  !
     !!Given a hermitian dim x dim matrix mat, computes its             !
@@ -131,8 +131,7 @@ module utility
     !                                                                  !
     !==================================================================!
 
-    logical,              intent(inout)            :: error
-    character(len=120),   intent(inout)            :: errormsg
+    logical,              intent(out)            :: error
 
     integer,              intent(in)               :: dim
     complex*16,           intent(in)               :: mat(dim,dim)
@@ -163,13 +162,13 @@ module utility
     !Check convergence.
     if (info < 0) then
       error = .True.
-      write (errormsg, '(a,i3,a)') 'Error in utility_diagonalize: THE ', -info, &
+      write (unit=113, fmt='(a, i3, a)') 'Error in utility_diagonalize: THE ', -info, &
         ' ARGUMENT OF ZHEEV HAD AN ILLEGAL VALUE'
       return
     endif
     if (info > 0) then
       error = .True.
-      write (errormsg, '(i3,a)') 'Error in utility_diagonalize: ', info, &
+      write (unit=113, fmt='(a, i3, a)') 'Error in utility_diagonalize: ', info, &
         ' EIGENVECTORS FAILED TO CONVERGE'
       return
     endif
@@ -177,7 +176,7 @@ module utility
   end subroutine utility_diagonalize
 
   !===========================================================!
-  subroutine utility_schur(mat, dim, T, Z, error, errormsg, S)
+  subroutine utility_schur(mat, dim, T, Z, error, S)
     !==================================================================!
     !                                                                  !
     !!Given a dim x dim matrix mat, computes its Schur decomposition   !
@@ -187,8 +186,7 @@ module utility
     !                                                                  !
     !==================================================================!
 
-    logical,              intent(inout)            :: error
-    character(len=120),   intent(inout)            :: errormsg
+    logical,              intent(out)            :: error
 
     integer,              intent(in)               :: dim
     complex*16,           intent(in)               :: mat(dim,dim)
@@ -223,13 +221,13 @@ module utility
     !Check convergence.
     if (info < 0) then
       error = .True.
-      write (errormsg, '(a,i3,a)') 'Error in utility_schur: THE ', -info, &
+      write (unit=113, fmt='(a, i3, a)') 'Error in utility_schur: THE ', -info, &
         ' ARGUMENT OF ZGEES HAD AN ILLEGAL VALUE'
       return
     endif
     if (info > 0) then
       error = .True.
-      write (errormsg, '(i3,a)') 'Error in utility_schur: ', info, &
+      write (unit=113, fmt='(a, i3,a)') 'Error in utility_schur: ', info, &
         ' EIGENVECTORS FAILED TO CONVERGE'
       return
     endif
@@ -238,7 +236,7 @@ module utility
 
   !========HERMITIAN MATRIX EXPONENTIAL AND UNITARY MATRIX LOGARITHM========!
 
-  function utility_exphs(mat, dim, skew, error, errormsg) result(exphs)
+  function utility_exphs(mat, dim, skew, error) result(exphs)
     !==================================================================!
     !                                                                  !
     !Given a Hermitian/Skew-Hermitian dim x dim matrix mat, the routine!
@@ -249,7 +247,6 @@ module utility
     !==================================================================!
 
     logical,              intent(inout)            :: error
-    character(len=120),   intent(inout)            :: errormsg
 
     integer,              intent(in)               :: dim
     complex(kind=dp),     intent(in)               :: mat(dim, dim)
@@ -266,8 +263,11 @@ module utility
       !Skew-Hermitian matrix.
       exphs = cmplx_i*mat !Now exphs is Hermitian.
 
-      call utility_diagonalize(exphs, dim, eig, rot, error, errormsg)
-      if (error .eqv. .True.) return
+      call utility_diagonalize(exphs, dim, eig, rot, error)
+      if (error) then
+        write(unit=113, fmt="(a)") "Error in utility_exphs."
+        return
+      endif
       exphs = cmplx_0
 
       do i = 1, dim
@@ -279,8 +279,11 @@ module utility
     else
       !Hermitian matrix.
 
-      call utility_diagonalize(mat, dim, eig, rot, error, errormsg)
-      if (error .eqv. .True.) return
+      call utility_diagonalize(mat, dim, eig, rot, error)
+      if (error) then
+        write(unit=113, fmt="(a)") "Error in utility_exphs."
+        return
+      endif
 
       do i = 1, dim
         exphs(i,i) = exp(eig(i))
@@ -292,7 +295,7 @@ module utility
 
   end function utility_exphs
 
-  function utility_logu(mat, dim, error, errormsg) result(logu)
+  function utility_logu(mat, dim, error) result(logu)
     !==================================================================!
     !                                                                  !
     !Given an Unitary dim x dim matrix mat, computes the Skew-Hermitian!
@@ -301,7 +304,6 @@ module utility
     !==================================================================! 
 
     logical,              intent(inout)            :: error
-    character(len=120),   intent(inout)            :: errormsg
 
     integer,              intent(in)               :: dim
     complex(kind=dp),     intent(in)               :: mat(dim, dim)
@@ -312,8 +314,11 @@ module utility
 
     logu = 0.d0
 
-    call utility_schur(mat, dim, eig, rot, error, errormsg)
-    if (error .eqv. .True.) return
+    call utility_schur(mat, dim, eig, rot, error)
+    if (error) then
+      write(unit=113, fmt="(a)") "Error in utility_logu."
+      return
+    endif
 
     do i = 1, dim
       logu(i,i) = log(eig(i))

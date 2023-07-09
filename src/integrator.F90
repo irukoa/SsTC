@@ -140,9 +140,12 @@ module integrator
 
     integer :: TID
 
+    logical :: error
+    error = .false.
+
     if (task%method == "extrapolation") then !Extraplation case. Requires large RAM.
 
-      write(unit=112, fmt = "(A)") "Starting BZ sampling and integration subroutine C1M3 with extrapolation method."
+      write(unit=112, fmt = "(A)") "Starting BZ sampling and integration subroutine with extrapolation method."
       write(unit=112, fmt = "(A)") "Integrating task: "//trim(task%name)//" in the BZ for the system "//trim(system%name)//"."
       write(unit=112, fmt = "(A)") "The required memory for the integration process is approximately,"
       write(unit=112, fmt = "(F15.3, A)") 16.0_dp*real(product(task%samples)*product(task%integer_indices)*product(task%continuous_indices),dp)/1024.0_dp**2, "MB."
@@ -182,9 +185,15 @@ module integrator
 
               !Gather data.
               if (associated(task%local_calculator)) then
-                data_k(ik1, ik2, ik3, :, 1) = task%local_calculator(task, system, k)
+                data_k(ik1, ik2, ik3, :, 1) = task%local_calculator(task, system, k, error)
               elseif (associated(task%global_calculator)) then 
-                data_k(ik1, ik2, ik3, :, :) = task%global_calculator(task, system, k)
+                data_k(ik1, ik2, ik3, :, :) = task%global_calculator(task, system, k, error)
+              endif
+
+              if (error) then
+                write(unit=113, fmt="(a, 3E18.8E3)") "Error when sampling k-point", k
+                write(unit=113, fmt="(a)") "Stopping..."
+                stop
               endif
               
             enddo
@@ -209,12 +218,13 @@ module integrator
       else
         write(unit=112, fmt="(A)") "Integral done. Extrapolation fail and return rectangle approximation."
       endif
+      write(unit=112, fmt="(A)") ""
 
       deallocate(data_k, sdata_k)
 
     elseif (task%method == "rectangle") then !Rectangle method approximation case.
 
-      write(unit=112, fmt = "(A)") "Starting BZ sampling and integration subroutine C1M3 with rectangle method."
+      write(unit=112, fmt = "(A)") "Starting BZ sampling and integration subroutine with rectangle method."
       write(unit=112, fmt = "(A)") "Integrating task: "//trim(task%name)//" in the BZ for the system "//trim(system%name)//"."
       write(unit=112, fmt = "(A)") "The required memory for the integration process is approximately,"
       write(unit=112, fmt = "(F15.3, A)") 16.0_dp*real(product(task%integer_indices)*product(task%continuous_indices),dp)/1024.0_dp**2, "MB."
@@ -251,9 +261,15 @@ module integrator
 
             !Gather data.
             if (associated(task%local_calculator)) then
-              temp_res(:, 1) = temp_res(:, 1) + task%local_calculator(task, system, k)
+              temp_res(:, 1) = temp_res(:, 1) + task%local_calculator(task, system, k, error)
             elseif (associated(task%global_calculator)) then 
-              temp_res = temp_res + task%global_calculator(task, system, k)
+              temp_res = temp_res + task%global_calculator(task, system, k, error)
+            endif
+
+            if (error) then
+              write(unit=113, fmt="(a, 3E18.8E3)") "Error when sampling k-point", k
+              write(unit=113, fmt="(a)") "Stopping..."
+              stop
             endif
             
           enddo
@@ -266,7 +282,7 @@ module integrator
 
     deallocate(temp_res)
 
-    write(unit=112, fmt="(A)") "Sampling done. Starting integration with rectangle method."
+    write(unit=112, fmt="(A)") ""
     endif
 
   end subroutine sample_and_integrate_in_BZ

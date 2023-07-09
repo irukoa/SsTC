@@ -21,10 +21,11 @@ module calculators_general
   !====DEFAULT CALCULATORS====!
 
   !====BANDS CALCULATOR AND CONSTRUCTOR====!
-  function bands(k_data, system, k) result(u)
+  function bands(k_data, system, k, error) result(u)
     class(local_k_data), intent(in) :: k_data
     type(sys),           intent(in) :: system
     real(kind=dp),       intent(in) :: k(3)
+    logical, intent(inout) :: error
 
     complex(kind=dp)                :: u(k_data%integer_indices(1))
 
@@ -32,11 +33,12 @@ module calculators_general
                         rot(system%num_bands, system%num_bands)
     real(kind=dp) :: eig(system%num_bands)
 
-    logical :: error
-    character(len=120) :: errormsg
-
     hamiltonian = wannier_hamiltonian(system, k)
-    call utility_diagonalize(hamiltonian, system%num_bands, eig, rot, error, errormsg)
+    call utility_diagonalize(hamiltonian, system%num_bands, eig, rot, error)
+    if (error) then
+      write(unit=113, fmt="(a, i3, a)") "Error in function bands when computing the eigenvalues of the Hamiltonian."
+      return
+    endif
     u = eig
   end function bands
   !==========DEFAULT BANDS KPATH TASK==========!

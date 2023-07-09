@@ -114,7 +114,13 @@ module kpath
 
     complex(kind=dp), allocatable :: temp_res(:, :, :)
 
+    logical :: error
+    error = .false.
+
     allocate(temp_res(product(task%integer_indices), product(task%continuous_indices), sum(task%number_of_pts)))
+
+    write(unit=112, fmt = "(A)") "Starting kpath sampling subroutine."
+    write(unit=112, fmt = "(A)") "Integrating task: "//trim(task%name)//" in the BZ for the system "//trim(system%name)//"."
 
     !Sampling.
     !$OMP PARALLEL SHARED(temp_res) PRIVATE(ivec, isampling, k) 
@@ -122,21 +128,33 @@ module kpath
     do ivec = 1, size(task%vectors(:, 1)) - 1 !For each considered vector except the last one.
       do isampling = 1, task%number_of_pts(ivec)
         !Define a local vector from ivec-th vector to ivec+1-th vector discretized in task%number_of_pts(ivec) steps.
+
         if (task%number_of_pts(ivec)==1) then
           k = task%vectors(ivec, :)
         else
           k = task%vectors(ivec, :) + (task%vectors(ivec + 1, :) - task%vectors(ivec, :))*real(isampling - 1, dp)/real(task%number_of_pts(ivec) - 1, dp)
         endif
+
         !Gather data.
         if (associated(task%local_calculator)) then
-          temp_res(:, 1, sum(task%number_of_pts(1:ivec-1)) + isampling) = task%local_calculator(task, system, k)
+          temp_res(:, 1, sum(task%number_of_pts(1:ivec-1)) + isampling) = task%local_calculator(task, system, k, error)
         elseif (associated(task%global_calculator)) then 
-          temp_res(:, :, sum(task%number_of_pts(1:ivec-1)) + isampling) = task%global_calculator(task, system, k)
+          temp_res(:, :, sum(task%number_of_pts(1:ivec-1)) + isampling) = task%global_calculator(task, system, k, error)
         endif
+
+        if (error) then
+          write(unit=113, fmt="(a, 3E18.8E3)") "Error when sampling k-point", k
+          write(unit=113, fmt="(a)") "Stopping..."
+          stop
+        endif
+
       enddo
     enddo
     !$OMP END DO
     !$OMP END PARALLEL
+
+    write(unit=112, fmt = "(A)") "Sampling done."
+    write(unit=112, fmt="(A)") ""
 
     task%kpath_data = temp_res
 

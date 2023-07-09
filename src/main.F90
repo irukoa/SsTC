@@ -37,6 +37,7 @@ program floquet_tight_binding
   !kvecs(4, :) = (/0.00000,      0.50000,      0.50000/)!X
 
   open(unit=112, action="write", file="exec.out")
+  open(unit=113, action="write", file="exec.err")
 
   !call OMP_SET_NUM_THREADS(1) !SERIAL.
   call OMP_SET_MAX_ACTIVE_LEVELS(2)
@@ -108,5 +109,6 @@ call kpath_sampler(path, a)
 call print_kpath(path, a)
 
   close(unit=112)
+  close(unit=113)
 
 end program floquet_tight_binding

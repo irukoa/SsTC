@@ -43,22 +43,24 @@ module data_structures
 
   !Interfaces for the generic functions returning k dependent quantities.
   abstract interface
-    function global_calculator(task, system, k) result(u)
+    function global_calculator(task, system, k, error) result(u)
       import :: global_k_data, sys, external_vars, dp
       class(global_k_data), intent(in) :: task
       type(sys),              intent(in) :: system
       real(kind=dp),          intent(in) :: k(3)
+      logical, intent(inout) :: error
 
       complex(kind=dp)                   :: u(product(task%integer_indices), product(task%continuous_indices))
     end function global_calculator
   end interface
 
   abstract interface
-    function local_calculator(k_data, system, k) result(u)
+    function local_calculator(k_data, system, k, error) result(u)
       import :: local_k_data, sys, external_vars, dp
       class(local_k_data), intent(in) :: k_data
       type(sys),          intent(in)  :: system
       real(kind=dp),      intent(in)  :: k(3)
+      logical, intent(inout) :: error
 
       complex(kind=dp)                :: u(product(k_data%integer_indices))
     end function local_calculator

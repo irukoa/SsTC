@@ -176,10 +176,11 @@ module calculators_floquet
                                                  ext_vars_steps = steps)
   end function quasienergy_kpath_task_constructor
 
-  function quasienergy(floquet_task, system, k) result(u)
+  function quasienergy(floquet_task, system, k, error) result(u)
     class(global_k_data), intent(in) :: floquet_task
     type(sys), intent(in) :: system
     real(kind=dp),          intent(in) :: k(3)
+    logical, intent(inout) :: error
 
     complex(kind=dp) :: u(product(floquet_task%integer_indices), product(floquet_task%continuous_indices))
 
@@ -197,9 +198,6 @@ module calculators_floquet
                         tev(system%num_bands, system%num_bands), &
                         hf(system%num_bands, system%num_bands), &
                         rot(system%num_bands, system%num_bands)
-
-    logical            :: error
-    character(len=120) :: errormsg
 
     Nharm = (size(floquet_task%continuous_indices)-2)/6
     allocate(amplitudes(Nharm, 3), phases(Nharm, 3))
@@ -238,12 +236,29 @@ module calculators_floquet
         tper = t0 + dt*real(it-1, dp) !In eV^-1.
         q = int_driving_field(amplitudes, phases, omega, tper) !In A^-1
         H_TK = wannier_tdep_hamiltonian(system, q, k, system%diag) !In eV.
-        !print*, it, H_TK(1, 1), H_TK(1, 2)
-        expH_TK = utility_exphs(-cmplx_i*dt*H_TK, system%num_bands, .true., error, errormsg)
+
+        expH_TK = utility_exphs(-cmplx_i*dt*H_TK, system%num_bands, .true., error)
+        if (error) then
+          write(unit=113, fmt="(a, i3, a)") "Error in function quasienergy at t-step, ", it, &
+          "when computing matrix exponential for modulation vector q = "
+          write(unit=113, fmt="(3E18.8E3, a)") q, "A^-1."
+          return
+        endif
+
         tev = matmul(tev, expH_TK)
+
       enddo
-      hf = cmplx_i*omega*utility_logu(tev, system%num_bands, error, errormsg)/(2*pi)
-      call utility_diagonalize(hf, system%num_bands, quasi, rot, error, errormsg)
+      hf = cmplx_i*omega*utility_logu(tev, system%num_bands, error)/(2*pi)
+      if (error) then
+        write(unit=113, fmt="(a, i3, a)") "Error in function quasienergy when computing matrix log of the one-petiod time evolution operator."
+        return
+      endif
+
+      call utility_diagonalize(hf, system%num_bands, quasi, rot, error)
+      if (error) then
+        write(unit=113, fmt="(a, i3, a)") "Error in function quasienergy when computing the quasienergy spectrum."
+        return
+      endif
       do i_mem = 1, product(floquet_task%integer_indices)
         u(i_mem, r_mem) = quasi(i_mem)
       enddo
