@@ -10,12 +10,9 @@ module calculators_optical
 
   contains
 
-  function default_optical_conductivity_constructor(system, &
-                                                    method, samples, &
+  function default_optical_conductivity_constructor(method, samples, &
                                                     omegastart, omegaend, omegasteps, &
                                                     particular_integer_component) result(optical_cond)
-
-    type(sys), intent(in) :: system
 
     character(len=*), optional, intent(in) :: method
     integer,          optional, intent(in) :: samples(3)
@@ -115,7 +112,7 @@ module calculators_optical
             if (abs(arg) > 10.0_dp) cycle
             delta = utility_delta(arg)/smearing
 
-            u(i_mem, r_mem) = -pi*bpart*delta
+            u(i_mem, r_mem) = u(i_mem, r_mem) -pi*bpart*delta
 
           enddo!omega
 
