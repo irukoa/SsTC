@@ -24,7 +24,7 @@ module data_structures
     logical                       :: diag = .false. !If we only consider diagonal terms of the pos. operator.
     !Optical stuff.
     logical                       :: adpt_smearing = .true.
-    real(kind=dp)                 :: smearing
+    real(kind=dp)                 :: smearing = 1.0_dp
   end type sys
 
   type local_k_data

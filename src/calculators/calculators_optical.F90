@@ -45,7 +45,7 @@ module calculators_optical
                r_mem
     integer :: i, j, n, m
 
-    real(kind=dp) :: omega, eig(system%num_bands), smearing, arg, delta, bpart
+    real(kind=dp) :: omega, eig(system%num_bands), smearing, arg, delta, bpart, spacing, dk
     complex(kind=dp), dimension(system%num_bands, system%num_bands) :: &
     w_hamiltonian, &
     rho, &
@@ -53,7 +53,7 @@ module calculators_optical
     complex(kind=dp), dimension(system%num_bands, system%num_bands, 3) :: &
     w_dk_hamiltonian, &
     w_connection, connection, &
-    na_d
+    na_d, vels
 
     u = cmplx(0.0_dp, 0.0_dp)
 
@@ -80,6 +80,23 @@ module calculators_optical
                             cmplx_i*na_d(:, :, i)
     enddo
 
+    !Set default smearing and dk.
+    smearing = system%smearing
+    dk = 0.0_dp
+
+    !In the case of adaptive smearing and an integral task, get velocities and typical spacing.
+    if (system%adpt_smearing) then
+      select type(task)
+        type is (BZ_integral_task)
+          vels = velocities(system, w_dk_hamiltonian, eig, rot, error)
+          if (error) then
+            write(unit=113, fmt="(a)") "Error in function optical_conductivity when computing the velocities."
+            return
+          endif
+          dk = (1.0_dp/(system%cell_volume*product(task%samples)))**(1.0_dp/3.0_dp) !Typical spacing = (inverse cell volume/samples)^(1/3).
+      end select
+    endif
+
     do i_mem = 1, product(task%integer_indices)
 
       if ((task%particular_integer_component.ne.0).and.(i_mem.ne.task%particular_integer_component)) cycle
@@ -94,15 +111,12 @@ module calculators_optical
           if (n==m) cycle
           if (eig(m) > maxval(task%ext_var_data(1)%data(:)) .or. eig(n) > maxval(task%ext_var_data(1)%data(:))) cycle
 
-          bpart = (eig(n) - eig(m))*(rho(n, n) - rho(m, m))*&
+          bpart = (rho(n, n) - rho(m, m))*(eig(n) - eig(m))*& !TODO: CHECK THIS FORMULA.
                   connection(m, n, i)*connection(n, m, j)
 
           if (system%adpt_smearing) then
-            !TODO: MAKE FOR ADAPTIVE BROADENING.
-            !Adpt for delta funct.
-            smearing = system%smearing
-          else
-            smearing = system%smearing
+            spacing = sqrt(2.0_dp)*sqrt(sum(real(vels(n, n, :) - vels(m, m, :), dp)*real(vels(n, n, :) - vels(m, m, :), dp)))*dk
+            smearing = min(spacing, system%smearing)
           endif
 
           do r_mem = 1, product(task%continuous_indices)

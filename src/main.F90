@@ -44,8 +44,8 @@ program floquet_tight_binding
   !call OMP_SET_NUM_THREADS(1) !SERIAL.
   call OMP_SET_MAX_ACTIVE_LEVELS(1) !Only paralleize kpts, warning parallelizing also local-k quantities can create overhead. Only change to LEVELS>1 in very large clusters.
 
-  a = sys_constructor("GaAs", "./", efermi = 7.7414_dp, optical_smearing = 0.1_dp)
-  !a = sys_constructor("HM", "./", floq_diag = .true., optical_smearing = 0.1_dp)
+  a = sys_constructor("GaAs", "./", efermi = 7.7414_dp)
+  !a = sys_constructor("HM", "./", floq_diag = .true.)
 
   path = bands_kpath_task_constructor(system = a, &
                                       Nvec = 4, &
@@ -67,13 +67,13 @@ program floquet_tight_binding
                           method         = "extrapolation", & !Required memory: 16*product(samples)*product(int_ind_range)*product(ext_vars_steps)
                           samples        = (/65, 65, 65/))
 
-  a%name = "C1M3"
+  !a%name = "C1M3"
 
-  call sample_and_integrate_in_BZ(task = test, &
-                                  system = a)                    
+  !call sample_and_integrate_in_BZ(task = test, &
+  !                                system = a)                    
 
-  call print_task_result(task = test, &
-                         system = a)
+  !call print_task_result(task = test, &
+  !                       system = a)
 
   test2 = task_constructor(name           = "rec_ben", &
                            g_calculator   = calculator_test_C1M3, &
@@ -110,7 +110,7 @@ program floquet_tight_binding
   !call kpath_sampler(path, a)
   !call print_kpath(path, a)
 
-  optcond = default_optical_conductivity_constructor(method = "extrapolation", samples = (/17, 17, 17/), &
+  optcond = default_optical_conductivity_constructor(method = "extrapolation", samples = (/65, 65, 65/), &
                                                      omegastart = 0.0_dp, omegaend = 10.0_dp, omegasteps = 100)
 
   call sample_and_integrate_in_BZ(task = optcond, &
