@@ -207,4 +207,55 @@ module calculators_general
     enddo
   end function non_abelian_d
 
+  function velocities(system, HW_a, eig, rot, error) result(v)
+    type(sys),          intent(in) :: system
+    real(kind=dp),      intent(in) :: eig(system%num_bands)
+    complex(kind=dp),   intent(in) :: rot(system%num_bands, system%num_bands)
+    complex(kind=dp),   intent(in) :: HW_a(system%num_bands, system%num_bands, 3)
+
+    logical, intent(inout) :: error
+
+    complex(kind=dp) :: v(system%num_bands, system%num_bands, 3)
+
+    integer :: i, n, deg(system%num_bands)
+    complex(kind=dp), allocatable :: dummy_rot(:, :)
+    real(kind=dp) :: degen_vels(system%num_bands)
+
+    !Get degeneracies.
+    deg = utility_get_degen(eig, system%deg_thr)
+
+    !Get velocity matrix as in the case of nondegenerate kpt.
+    do i = 1, 3
+      v(:, :, i) = matmul(matmul(transpose(conjg(rot)), HW_a(:, :, i)), rot)
+    enddo
+
+    !In the case of degenerate bands,
+    if (maxval(deg) > 1) then
+      !for each coordinate,
+      do i = 1, 3
+        !initialize degen_vels,
+        forall (n=1:system%num_bands) degen_vels(n) = v(n, n, i)
+        !and for each eigenvalue,
+        do n = 1, system%num_bands
+          !check degeneracy.
+          if (deg(n) > 1) then
+            !In the case of a deg(n) dimensional degenerate subspace,
+            allocate (dummy_rot(deg(n), deg(n)))
+            !diagonalize the subspace and overwrite to degen_vels.
+            call utility_diagonalize(v(n:n + deg(n) - 1, n:n + deg(n) - 1, i), &
+                                     deg(n), degen_vels(n:n + deg(n) - 1), dummy_rot, error)
+            if (error) then
+              write(unit=113, fmt="(a)") "Error in function velocities when computing the eigenvalues of the degenerate subspace."
+              return
+            endif
+            deallocate(dummy_rot)
+          endif
+        enddo
+        !Overwrite to v.
+        forall (n=1:system%num_bands) v(n, n, i) = degen_vels(n)
+      enddo
+    endif
+
+  end function velocities
+
 end module calculators_general
