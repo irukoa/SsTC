@@ -3,7 +3,6 @@ module calculators_optical
   use utility
   use data_structures
   use local_k_quantities
-  use calculators_general
   use integrator
 
   implicit none
