@@ -114,7 +114,7 @@ module calculators_general
 
   function wannier_dhamiltonian_dk(system, k) result(DHW)
     !Output: 1st k-derivative of the Wannier Hamiltonian.
-    !1st and 2nd indexes: bands, 3rd index: cartesian comp.
+    !1st and 2nd indexes: bands, 3rd index: derivative comp.
     type(sys),          intent(in)  :: system
     real(kind=dp),      intent(in)  :: k(3)
 
@@ -139,7 +139,8 @@ module calculators_general
 
   function wannier_d2hamiltonian_dk2(system, k) result(DDHW)
     !Output: 2nd k-derivative of the Wannier Hamiltonian.
-    !1st and 2nd indexes: bands, 3rd and 4th indexes: cartesian comp.
+    !1st and 2nd indexes: bands, 3rd index: cartesian comp.
+    !4th index : derivative direction
     type(sys),          intent(in)  :: system
     real(kind=dp),      intent(in)  :: k(3)
 
@@ -161,6 +162,32 @@ module calculators_general
     deallocate(H_get, i_arr)
 
   end function wannier_d2hamiltonian_dk2
+
+  function wannier_dberry_connection_dk(system, k) result(DAW)
+    !Output: 1st k-derivative of the Wannier Berry connection.
+    !1st and 2nd indexes: bands, 3rd index: cartesian comp.
+    !4th index : derivative direction
+    type(sys),          intent(in)  :: system
+    real(kind=dp),      intent(in)  :: k(3)
+
+    complex(kind=dp) :: DAW(system%num_bands, system%num_bands, 3, 3)
+
+    type(local_k_data), allocatable :: A_get(:)
+    integer, allocatable :: i_arr(:)
+    integer :: i_mem
+
+    !Get Hamiltonian in memory layout.
+    call get_position(system, k, A_get, Nder_i = 1)
+
+    allocate(i_arr(size(A_get(1)%integer_indices)))
+    do i_mem = 1, product(A_get(1)%integer_indices)
+      !Pass to array layout.
+      i_arr = integer_memory_element_to_array_element(A_get(1), i_mem)
+      DAW(i_arr(1), i_arr(2), i_arr(3), i_arr(4)) = A_get(1)%k_data(i_mem)
+    enddo
+    deallocate(A_get, i_arr)
+
+  end function wannier_dberry_connection_dk
 
   function hamiltonian_occ_matrix(system, eig) result(rho)
     !Output: Fermi occupation matrix in the Hamiltonian basis.
@@ -333,5 +360,97 @@ module calculators_general
     endif
 
   end function inverse_effective_mass
+
+  function cov_deriv_of_dipole(system, HW_a_b, HW_a, AW_a, AW_a_b, eig, rot, error) result(cov_r)
+    type(sys),          intent(in) :: system
+    real(kind=dp),      intent(in) :: eig(system%num_bands)
+    complex(kind=dp),   intent(in) :: rot(system%num_bands, system%num_bands)
+    complex(kind=dp),   intent(in) :: HW_a_b(system%num_bands, system%num_bands, 3, 3)
+    complex(kind=dp),   intent(in) :: HW_a(system%num_bands, system%num_bands, 3)
+    complex(kind=dp),   intent(in) :: AW_a(system%num_bands, system%num_bands, 3)
+    complex(kind=dp),   intent(in) :: AW_a_b(system%num_bands, system%num_bands, 3, 3)
+
+    logical, intent(inout) :: error
+
+    complex(kind=dp) :: cov_r(system%num_bands, system%num_bands, 3, 3), &
+
+                        rot_H_a(system%num_bands, system%num_bands, 3), &
+                        vels(system%num_bands, system%num_bands, 3), &
+
+                        D_a(system%num_bands, system%num_bands, 3), &
+
+                        rot_H_a_b(system%num_bands, system%num_bands, 3, 3), &
+                        rot_A_a_b(system%num_bands, system%num_bands, 3, 3), &
+
+                        rot_A_a(system%num_bands, system%num_bands, 3), &
+
+                        sum_AD(system%num_bands, system%num_bands, 3, 3), &
+                        sum_HD(system%num_bands, system%num_bands, 3, 3), &
+                        r(system%num_bands, system%num_bands, 3)
+
+    integer :: i, j, n, m, p
+
+    !Get non-abelian D matrix.
+    D_a = non_abelian_d(system, eig, rot, HW_a)
+
+    !Get rotated quantities and dipole.
+    do i = 1, 3
+      rot_H_a(:, :, i) = matmul(matmul(transpose(conjg(rot)), HW_a(:, :, i)), rot)
+      rot_A_a(:, :, i) = matmul(matmul(transpose(conjg(rot)), AW_a(:, :, i)), rot)
+      r(:, :, i) = rot_A_a(:, :, i) + cmplx_i*D_a(:, :, i)
+      do j = 1, 3
+        rot_H_a_b(:, :, i, j) = matmul(matmul(transpose(conjg(rot)), HW_a_b(:, :, i, j)), rot)
+        rot_A_a_b(:, :, i, j) = matmul(matmul(transpose(conjg(rot)), AW_a_b(:, :, i, j)), rot)
+      enddo
+    enddo
+
+    !Get velocities.
+    vels = velocities(system, HW_a, eig, rot, error)
+
+    sum_AD = cmplx_0
+    sum_HD = cmplx_0
+    cov_r = cmplx_0
+
+    do n = 1, system%num_bands
+      do m = 1, system%num_bands
+        do i = 1, 3
+
+          do j = 1, 3
+            sum_AD(n, m, j, i) = (sum(rot_A_a(n, :, j)*D_a(:, m, i)) - rot_A_a(n, n, j)*D_a(n, m, i)) &
+                               - (sum(D_a(n, :, i)*rot_A_a(:, m, j)) - D_a(n, m, i)*rot_A_a(m, m, j))
+            sum_HD(n, m, j, i) = (sum(rot_H_a(n, :, j)*D_a(:, m, i)) - rot_H_a(n, n, j)*D_a(n, m, i)) &
+                               - (sum(D_a(n, :, i)*rot_H_a(:, m, j)) - D_a(n, m, i)*rot_H_a(m, m, j))
+          enddo!j
+
+          cov_r(n, m, i, :) = (rot_A_a_b(n, m, :, i) &
+                              + ((rot_A_a(n, n, :) - rot_A_a(m, m, :))*D_a(n, m, i) + &
+                                 (rot_A_a(n, n, i) - rot_A_a(m, m, i))*D_a(n, m, :)) &
+                              - cmplx_i*rot_A_a(n, m, :)*(rot_A_a(n, n, i) - rot_A_a(m, m, i)) &
+                              + sum_AD(n, m, :, i) &
+                              + cmplx_i*(rot_H_a_b(n, m, :, i) &
+                                        + sum_HD(n, m, :, i) &
+                                        + (D_a(n, m, :)*(vels(n, n, i) - vels(m, m, i)) + &
+                                           D_a(n, m, i)*(vels(n, n, :) - vels(n, n, :)))) &
+                              /(eig(m) - eig(n)))
+
+          do p = 1, system%num_bands
+            if (p == n .or. p == m) cycle
+            cov_r(n, m, i, :) = cov_r(n, m, i, :) &
+                          - system%deg_offset**2/((eig(p) - eig(m))**2 &
+                                                  + system%deg_offset**2)/(eig(n) - eig(m)) &
+                          *(rot_A_a(n, p, :)*rot_H_a(p, m, i) &
+                            - (rot_H_a(n, p, :) + cmplx_i*(eig(n) &
+                                                              - eig(p))*rot_A_a(n, p, :))*rot_A_a(p, m, i)) &
+                          + system%deg_offset**2/((eig(n) - eig(p))**2 &
+                                                  + system%deg_offset**2)/(eig(n) - eig(m)) &
+                          *(rot_H_a(n, p, i)*rot_A_a(p, m, :) &
+                            - rot_A_a(n, p, i)*(rot_H_a(p, m, :) + cmplx_i*(eig(p) - eig(m))*rot_A_a(p, m, :)))
+          enddo!p
+          
+        enddo!i
+      enddo!m
+    enddo!n
+
+  end function cov_deriv_of_dipole
 
 end module calculators_general
