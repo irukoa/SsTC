@@ -258,4 +258,80 @@ module calculators_general
 
   end function velocities
 
+  function inverse_effective_mass(system, HW_a_b, HW_a, eig, rot, error) result(mu)
+    type(sys),          intent(in) :: system
+    real(kind=dp),      intent(in) :: eig(system%num_bands)
+    complex(kind=dp),   intent(in) :: rot(system%num_bands, system%num_bands)
+    complex(kind=dp),   intent(in) :: HW_a_b(system%num_bands, system%num_bands, 3, 3)
+    complex(kind=dp),   intent(in) :: HW_a(system%num_bands, system%num_bands, 3)
+
+    logical, intent(inout) :: error
+
+    complex(kind=dp) :: mu(system%num_bands, system%num_bands, 3, 3), &
+                        rot_H_a(system%num_bands, system%num_bands, 3), &
+                        D_a(system%num_bands, system%num_bands, 3), &
+                        rot_H_a_b(system%num_bands, system%num_bands, 3, 3)
+
+    integer :: i, j, ij, n, deg(system%num_bands)
+    complex(kind=dp), allocatable :: dummy_rot(:, :)
+    real(kind=dp) :: degen_mass(system%num_bands)
+
+    !Get degeneracies.
+    deg = utility_get_degen(eig, system%deg_thr)
+
+    !Get non-abelian D matrix.
+    D_a = non_abelian_d(system, eig, rot, HW_a)
+
+    !Get rotated quantities.
+    do i = 1, 3
+      rot_H_a(:, :, i) = matmul(matmul(transpose(conjg(rot)), HW_a(:, :, i)), rot)
+      do j = 1, 3
+        rot_H_a_b(:, :, i, j) = matmul(matmul(transpose(conjg(rot)), HW_a_b(:, :, i, j)), rot)
+      enddo
+    enddo
+
+    !Get inverse effective mass matrix as in the case of nondegenerate kpt.
+    do ij = 1, 6
+      i = alpha_S(ij)
+      j = beta_S(ij)
+      !Eq. 28 of 10.1103/PhysRevB.75.195121
+      mu(:, :, i, j) = matmul(rot_H_a(:, :, i), D_a(:, :, j))
+      mu(:, :, i, j) = rot_H_a_b(:, :, i, j) + mu(:, :, i, j) + transpose(conjg(mu(:, :, i, j)))
+      !Symmetrization.
+      mu(:, :, j, i) = mu(:, :, i, j)
+    enddo
+
+    !In the case of degenerate bands,
+    if (maxval(deg) > 1) then
+      !for each coordinate,
+      do ij = 1, 6
+        i = alpha_S(ij)
+        j = beta_S(ij)
+        !initialize degen_mass,
+        forall (n=1:system%num_bands) degen_mass(n) = mu(n, n, i, j)
+        !and for each eigenvalue,
+        do n = 1, system%num_bands
+          !check degeneracy.
+          if (deg(n) > 1) then
+            !In the case of a deg(n) dimensional degenerate subspace,
+            allocate (dummy_rot(deg(n), deg(n)))
+            !diagonalize the subspace and overwrite to degen_mass.
+            call utility_diagonalize(mu(n:n + deg(n) - 1, n:n + deg(n) - 1, i, j), &
+                                     deg(n), degen_mass(n:n + deg(n) - 1), dummy_rot, error)
+            if (error) then
+              write(unit=113, fmt="(a)") "Error in function inverse_effective_mass when computing the eigenvalues of the degenerate subspace."
+              return
+            endif
+            deallocate(dummy_rot)
+          endif
+        enddo
+        !Overwrite to mu.
+        forall (n=1:system%num_bands) mu(n, n, i, j) = degen_mass(n)
+        !Symmetrization.
+        mu(:, :, j, i) = mu(:, :, i, j)
+      enddo
+    endif
+
+  end function inverse_effective_mass
+
 end module calculators_general

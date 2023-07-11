@@ -19,7 +19,13 @@ module utility
                                       eps0        = 8.854187817e-12_dp, &
                                       c_light     = 299792458.0_dp,     &
                                       hbar_over_e = 6.582119e-16_dp
+
+  !Symmetrization and antisymmetrization.
+  integer, dimension(6), parameter :: alpha_S = (/1, 2, 3, 1, 1, 2/)
+  integer, dimension(6), parameter :: beta_S = (/1, 2, 3, 2, 3, 3/)
   
+  integer, dimension(3), parameter :: alpha_A = (/2, 3, 1/)
+  integer, dimension(3), parameter :: beta_A = (/3, 1, 2/)
   
   public :: utility_delta
   public :: utility_delta_vec
