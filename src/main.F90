@@ -21,8 +21,8 @@ program floquet_tight_binding
 
   type(sys) :: a
 
-  type(BZ_integral_task) :: test, test2, test3, &
-                            optcond
+  type(BZ_integral_task) :: test, test2, test3
+  type(optical_BZ_integral_task) :: optcond
 
   type(k_path_task) :: path
   type(floq_k_path_task) :: floq_path
@@ -53,11 +53,11 @@ program floquet_tight_binding
                                       vec_coord = kvecs, &
                                       nkpts = (/100, 100, 100/))
 
-  call kpath_sampler(path, a)
-  call print_kpath(path, a)
+  !call kpath_sampler(path, a)
+  !call print_kpath(path, a)
 
   !EXAMPLE OF USAGE.
-  test = task_constructor(name           = "ext_ben", &
+  call task_constructor(task = test, name           = "ext_ben", &
                           g_calculator   = calculator_test_C1M3, &
                           N_int_ind      = 2, &
                           int_ind_range  = (/3, 3/), &
@@ -68,15 +68,15 @@ program floquet_tight_binding
                           method         = "extrapolation", & !Required memory: 16*product(samples)*product(int_ind_range)*product(ext_vars_steps)
                           samples        = (/65, 65, 65/))
 
-  !a%name = "C1M3"
+  a%name = "C1M3"
 
-  !call sample_and_integrate_in_BZ(task = test, &
-  !                                system = a)                    
+  call sample_and_integrate_in_BZ(task = test, &
+                                  system = a)                    
 
-  !call print_task_result(task = test, &
-  !                       system = a)
+  call print_task_result(task = test, &
+                         system = a)
 
-  test2 = task_constructor(name           = "rec_ben", &
+  call task_constructor(task = test2, name           = "rec_ben", &
                            g_calculator   = calculator_test_C1M3, &
                            N_int_ind      = 2, &
                            int_ind_range  = (/3, 3/), &
@@ -88,11 +88,11 @@ program floquet_tight_binding
                            samples        = (/400000, 1, 1/), &
                            part_int_comp  = (/2, 1/))
 
-  !call sample_and_integrate_in_BZ(task = test2, &
-  !                                system = a)
+  call sample_and_integrate_in_BZ(task = test2, &
+                                  system = a)
 
-  !call print_task_result(task = test2, &
-  !                       system = a)
+  call print_task_result(task = test2, &
+                         system = a)
 
   call quasienergy_kpath_task_constructor(floq_task = floq_path, system = a, &
                                             Nvec = 2, &
@@ -108,17 +108,17 @@ program floquet_tight_binding
                                             omegastart = 3.0_dp, omegaend = 30.0_dp, omegasteps = 100, &
                                             t0start = 0.0_dp, t0end = 0.0_dp, t0steps = 1)
 
-  call kpath_sampler(floq_path, a)
-  call print_kpath(floq_path, a)
+  !call kpath_sampler(floq_path, a)
+  !call print_kpath(floq_path, a)
 
-  optcond = default_optical_conductivity_constructor(method = "extrapolation", samples = (/65, 65, 65/), &
+  call default_optical_conductivity_constructor(optical_task = optcond, method = "extrapolation", samples = (/17, 17, 17/), &
                                                      omegastart = 0.0_dp, omegaend = 10.0_dp, omegasteps = 100)
 
-  !call sample_and_integrate_in_BZ(task = optcond, &
-  !                                system = a)
+  call sample_and_integrate_in_BZ(task = optcond, &
+                                  system = a)
 
-  !call print_task_result(task = optcond, &
-  !                       system = a)
+  call print_task_result(task = optcond, &
+                         system = a)
 
   close(unit=112)
   close(unit=113)

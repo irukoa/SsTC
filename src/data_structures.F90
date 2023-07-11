@@ -18,9 +18,6 @@ module data_structures
     real(kind=dp)                 :: e_fermi = 0.0_dp                         !Fermi energy.
     real(kind=dp)                 :: deg_thr = 1.0E-4_dp                      !Degeneracy threshold in eV.
     real(kind=dp)                 :: deg_offset = 0.04_dp                     !Offset for regularization in case of deeneracies in eV.
-    !Optical stuff.
-    logical                       :: adpt_smearing = .true.
-    real(kind=dp)                 :: smearing = 1.0_dp
   end type sys
 
   type local_k_data
@@ -84,14 +81,13 @@ module data_structures
 
   contains
 
-  function sys_constructor(name, path_to_tb_file, efermi, deg_thr, deg_offset, &
-                           optical_smearing) result(system)
+  function sys_constructor(name, path_to_tb_file, efermi, deg_thr, deg_offset &
+                           ) result(system)
 
     character(len=*),        intent(in) :: name
     character(len=*),        intent(in) :: path_to_tb_file
     real(kind=dp), optional, intent(in) :: efermi, &
-                                           deg_thr, deg_offset, &
-                                           optical_smearing
+                                           deg_thr, deg_offset
 
     type(sys) :: system
 
@@ -108,11 +104,6 @@ module data_structures
     if (present(efermi)) system%e_fermi = efermi
     if (present(deg_thr)) system%deg_thr = deg_thr
     if (present(deg_offset)) system%deg_offset = deg_offset
-    !==OPTICAL==!
-    if (present(optical_smearing)) then
-      system%adpt_smearing = .false.
-      system%smearing = optical_smearing
-    endif
 
     filename = trim(path_to_tb_file)//trim(name)//"_tb.dat"
     filename = trim(filename)

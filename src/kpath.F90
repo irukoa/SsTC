@@ -47,7 +47,7 @@ module kpath
 
     integer, optional,  intent(in) :: part_int_comp(:)
 
-    class(k_path_task), intent(inout) :: task
+    class(k_path_task), intent(out) :: task
 
     integer :: i
 

@@ -24,12 +24,12 @@ module integrator
 
   contains
 
-  function task_constructor(name, &
+  subroutine task_constructor(task, name, &
                             l_calculator, g_calculator, &
                             method, samples, &
                             N_int_ind, int_ind_range, &
                             N_ext_vars, ext_vars_start, ext_vars_end, ext_vars_steps, &
-                            part_int_comp) result(task)
+                            part_int_comp)
 
     character(len=*) :: name
 
@@ -49,7 +49,7 @@ module integrator
 
     integer, optional,  intent(in) :: part_int_comp(:)
 
-    type(BZ_integral_task) :: task
+    class(BZ_integral_task), intent(out) :: task
 
     integer :: i
 
@@ -121,13 +121,13 @@ module integrator
       task%samples = (/10, 10, 10/)
     endif
 
-  end function task_constructor
+  end subroutine task_constructor
 
   !Sub to integrate calculators which return a complex array with integer and continuous indices.
   !The interface for the generic calculator function is given in data_structures module.
   subroutine sample_and_integrate_in_BZ(task, system)
 
-    type(BZ_integral_task), intent(inout) :: task
+    class(BZ_integral_task), intent(inout) :: task
     type(sys),              intent(in)    :: system
 
     complex(kind=dp), allocatable :: data_k(: , :, :, :, :), &
@@ -293,7 +293,7 @@ module integrator
 
   subroutine print_task_result(task, system)
     !Subroutine to format and output files related to the result of the task "task".
-    type(BZ_integral_task), intent(in) :: task
+    class(BZ_integral_task), intent(in) :: task
     type(sys),              intent(in) :: system
     
     character(len=400) :: filename, fmtf
