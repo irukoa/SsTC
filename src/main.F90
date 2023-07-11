@@ -22,7 +22,7 @@ program floquet_tight_binding
   type(sys) :: a
 
   type(BZ_integral_task) :: test, test2, test3
-  type(optical_BZ_integral_task) :: optcond
+  type(optical_BZ_integral_task) :: optcond, jdost
 
   type(k_path_task) :: path
   type(floq_k_path_task) :: floq_path
@@ -53,8 +53,8 @@ program floquet_tight_binding
                                       vec_coord = kvecs, &
                                       nkpts = (/100, 100, 100/))
 
-  !call kpath_sampler(path, a)
-  !call print_kpath(path, a)
+  call kpath_sampler(path, a)
+  call print_kpath(path, a)
 
   !EXAMPLE OF USAGE.
   call task_constructor(task = test, name           = "ext_ben", &
@@ -108,8 +108,8 @@ program floquet_tight_binding
                                             omegastart = 3.0_dp, omegaend = 30.0_dp, omegasteps = 100, &
                                             t0start = 0.0_dp, t0end = 0.0_dp, t0steps = 1)
 
-  !call kpath_sampler(floq_path, a)
-  !call print_kpath(floq_path, a)
+  call kpath_sampler(floq_path, a)
+  call print_kpath(floq_path, a)
 
   call default_optical_conductivity_constructor(optical_task = optcond, method = "extrapolation", samples = (/17, 17, 17/), &
                                                      omegastart = 0.0_dp, omegaend = 10.0_dp, omegasteps = 100)
@@ -119,6 +119,16 @@ program floquet_tight_binding
 
   call print_task_result(task = optcond, &
                          system = a)
+
+
+  call default_jdos_constructor(optical_task = jdost, method = "extrapolation", samples = (/17, 17, 17/), &
+  omegastart = 0.0_dp, omegaend = 10.0_dp, omegasteps = 100)
+
+  call sample_and_integrate_in_BZ(task = jdost, &
+        system = a)
+
+  call print_task_result(task = jdost, &
+  system = a)
 
   close(unit=112)
   close(unit=113)
