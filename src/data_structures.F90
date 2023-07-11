@@ -18,10 +18,6 @@ module data_structures
     real(kind=dp)                 :: e_fermi = 0.0_dp                         !Fermi energy.
     real(kind=dp)                 :: deg_thr = 1.0E-4_dp                      !Degeneracy threshold in eV.
     real(kind=dp)                 :: deg_offset = 0.04_dp                     !Offset for regularization in case of deeneracies in eV.
-    !Below: Floquet stuff.
-    real(kind=dp)                 :: Nt = 65 !2^6 + 1 Discretization points of each period.
-    real(kind=dp)                 :: Ns = 10 !Considered Harmonics.
-    logical                       :: diag = .false. !If we only consider diagonal terms of the pos. operator.
     !Optical stuff.
     logical                       :: adpt_smearing = .true.
     real(kind=dp)                 :: smearing = 1.0_dp
@@ -89,7 +85,6 @@ module data_structures
   contains
 
   function sys_constructor(name, path_to_tb_file, efermi, deg_thr, deg_offset, &
-                           floq_Nt, floq_Ns, floq_diag, &
                            optical_smearing) result(system)
 
     character(len=*),        intent(in) :: name
@@ -97,8 +92,6 @@ module data_structures
     real(kind=dp), optional, intent(in) :: efermi, &
                                            deg_thr, deg_offset, &
                                            optical_smearing
-    integer, optional, intent(in) :: floq_Nt, floq_NS
-    logical, optional, intent(in) :: floq_diag
 
     type(sys) :: system
 
@@ -115,10 +108,6 @@ module data_structures
     if (present(efermi)) system%e_fermi = efermi
     if (present(deg_thr)) system%deg_thr = deg_thr
     if (present(deg_offset)) system%deg_offset = deg_offset
-    !==FLOQUET==!
-    if (present(floq_Nt)) system%Nt = floq_Nt
-    if (present(floq_Ns)) system%Ns = floq_Ns
-    if (present(floq_diag)) system%diag = floq_diag
     !==OPTICAL==!
     if (present(optical_smearing)) then
       system%adpt_smearing = .false.

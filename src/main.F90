@@ -25,6 +25,7 @@ program floquet_tight_binding
                             optcond
 
   type(k_path_task) :: path
+  type(floq_k_path_task) :: floq_path
 
   real(kind=dp) :: kvecs(4, 3)
   integer :: i
@@ -47,7 +48,7 @@ program floquet_tight_binding
   a = sys_constructor("GaAs", "./", efermi = 7.7414_dp)
   !a = sys_constructor("HM", "./", floq_diag = .true.)
 
-  path = bands_kpath_task_constructor(system = a, &
+  call bands_kpath_task_constructor(task = path, system = a, &
                                       Nvec = 4, &
                                       vec_coord = kvecs, &
                                       nkpts = (/100, 100, 100/))
@@ -93,7 +94,7 @@ program floquet_tight_binding
   !call print_task_result(task = test2, &
   !                       system = a)
 
-  path = quasienergy_kpath_task_constructor(system = a, &
+  call quasienergy_kpath_task_constructor(floq_task = floq_path, system = a, &
                                             Nvec = 2, &
                                             vec_coord = kvecs(3:4, :), &
                                             nkpts = (/1/), &
@@ -107,17 +108,17 @@ program floquet_tight_binding
                                             omegastart = 3.0_dp, omegaend = 30.0_dp, omegasteps = 100, &
                                             t0start = 0.0_dp, t0end = 0.0_dp, t0steps = 1)
 
-  !call kpath_sampler(path, a)
-  !call print_kpath(path, a)
+  call kpath_sampler(floq_path, a)
+  call print_kpath(floq_path, a)
 
   optcond = default_optical_conductivity_constructor(method = "extrapolation", samples = (/65, 65, 65/), &
                                                      omegastart = 0.0_dp, omegaend = 10.0_dp, omegasteps = 100)
 
-  call sample_and_integrate_in_BZ(task = optcond, &
-                                  system = a)
+  !call sample_and_integrate_in_BZ(task = optcond, &
+  !                                system = a)
 
-  call print_task_result(task = optcond, &
-                         system = a)
+  !call print_task_result(task = optcond, &
+  !                       system = a)
 
   close(unit=112)
   close(unit=113)

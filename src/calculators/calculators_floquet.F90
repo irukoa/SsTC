@@ -9,6 +9,12 @@ module calculators_floquet
 
   !TODO: ORGANIZE, RUNGE-KUTTA4 FOT TIME EVOL.?
 
+  type, extends(k_path_task) :: floq_k_path_task
+    real(kind=dp)                 :: Nt = 65 !2^6 + 1 Discretization points of each period.
+    real(kind=dp)                 :: Ns = 10 !Considered Harmonics.
+    logical                       :: diag = .false. !If we only consider diagonal terms of the pos. operator.
+  end type
+
   contains
 
   function wannier_tdep_hamiltonian(system, q, k, diag) result(H_TK)
@@ -97,7 +103,7 @@ module calculators_floquet
 
   end function wannier_tdep_hamiltonian
 
-  function quasienergy_kpath_task_constructor(system, Nvec, vec_coord, nkpts, &
+  subroutine quasienergy_kpath_task_constructor(floq_task, system, Nvec, vec_coord, nkpts, &
                                               Nharm, &
                                               axstart, axend, axsteps, &
                                               pxstart, pxend, pxsteps, &
@@ -106,7 +112,8 @@ module calculators_floquet
                                               azstart, azend, azsteps, &
                                               pzstart, pzend, pzsteps, &
                                               omegastart, omegaend, omegasteps, &
-                                              t0start, t0end, t0steps) result(default_quasienergy_kpath_task)
+                                              t0start, t0end, t0steps, &
+                                              floq_Nt, floq_NS, floq_diag)
 
     type(sys), intent(in)  :: system
     integer, intent(in) :: Nvec
@@ -132,7 +139,10 @@ module calculators_floquet
     integer, dimension(6*Nharm + 2) :: steps
     integer :: iharm
 
-    type(k_path_task) :: default_quasienergy_kpath_task
+    integer, optional, intent(in) :: floq_Nt, floq_NS
+    logical, optional, intent(in) :: floq_diag
+
+    type(floq_k_path_task), intent(out) :: floq_task
 
     do iharm = 1, Nharm
       start(6*(iharm - 1) + 1) = axstart(iharm)
@@ -168,7 +178,7 @@ module calculators_floquet
     end(6*Nharm + 2) = omegaend
     steps(6*Nharm + 2) = omegasteps
 
-    default_quasienergy_kpath_task = kpath_constructor(name = "quasienergy", &
+    call kpath_constructor(task = floq_task, name = "quasienergy", &
                                                  g_calculator = quasienergy, &
                                                  Nvec = Nvec, vec_coord = vec_coord, nkpts = nkpts, &
                                                  N_int_ind = 1, int_ind_range = (/system%num_bands/), &
@@ -176,7 +186,12 @@ module calculators_floquet
                                                  ext_vars_start = start, &
                                                  ext_vars_end   = end, &
                                                  ext_vars_steps = steps)
-  end function quasienergy_kpath_task_constructor
+
+    if (present(floq_Nt)) floq_task%Nt = floq_Nt
+    if (present(floq_Ns)) floq_task%Ns = floq_Ns
+    if (present(floq_diag)) floq_task%diag = floq_diag
+
+  end subroutine quasienergy_kpath_task_constructor
 
   function quasienergy(floquet_task, system, k, error) result(u)
     class(global_k_data), intent(in) :: floquet_task
@@ -201,72 +216,77 @@ module calculators_floquet
                         hf(system%num_bands, system%num_bands), &
                         rot(system%num_bands, system%num_bands)
 
-    Nharm = (size(floquet_task%continuous_indices)-2)/6
-    allocate(amplitudes(Nharm, 3), phases(Nharm, 3))
+    select type(floquet_task)
+      type is (floq_k_path_task)
 
-    u = cmplx_0
+        Nharm = (size(floquet_task%continuous_indices)-2)/6
+        allocate(amplitudes(Nharm, 3), phases(Nharm, 3))
 
-    do r_mem = 1, product(floquet_task%continuous_indices)
+        u = cmplx_0
 
-      r_arr = continuous_memory_element_to_array_element(floquet_task, r_mem)
+        do r_mem = 1, product(floquet_task%continuous_indices)
 
-      omega = floquet_task%ext_var_data(size(floquet_task%continuous_indices))&
-      %data(r_arr(size(floquet_task%continuous_indices)))
+          r_arr = continuous_memory_element_to_array_element(floquet_task, r_mem)
 
-      t0 = floquet_task%ext_var_data(size(floquet_task%continuous_indices)-1)&
-      %data(r_arr(size(floquet_task%continuous_indices)-1))
+          omega = floquet_task%ext_var_data(size(floquet_task%continuous_indices))&
+          %data(r_arr(size(floquet_task%continuous_indices)))
 
-      do iharm = 1, Nharm
-        amplitudes(iharm, 1) = floquet_task%ext_var_data(6*(iharm - 1) + 1)&
-        %data(r_arr(6*(iharm - 1) + 1))
-        phases(iharm, 1) = floquet_task%ext_var_data(6*(iharm - 1) + 2)&
-        %data(r_arr(6*(iharm - 1) + 2))
-        amplitudes(iharm, 2) = floquet_task%ext_var_data(6*(iharm - 1) + 3)&
-        %data(r_arr(6*(iharm - 1) + 3))
-        phases(iharm, 2) = floquet_task%ext_var_data(6*(iharm - 1) + 4)&
-        %data(r_arr(6*(iharm - 1) + 4))
-        amplitudes(iharm, 3) = floquet_task%ext_var_data(6*(iharm - 1) + 5)&
-        %data(r_arr(6*(iharm - 1) + 5))
-        phases(iharm, 3) = floquet_task%ext_var_data(6*(iharm - 1) + 6)&
-        %data(r_arr(6*(iharm - 1) + 6))
-      enddo
+          t0 = floquet_task%ext_var_data(size(floquet_task%continuous_indices)-1)&
+          %data(r_arr(size(floquet_task%continuous_indices)-1))
 
-      dt = (2*pi/omega)/real(system%Nt-1, dp)
-      tev = cmplx_0
-      forall (i = 1:system%num_bands) tev(i, i) = cmplx(1.0_dp, 0.0_dp)
-      do it = 1, system%Nt
-        tper = t0 + dt*real(it-1, dp) !In eV^-1.
-        q = int_driving_field(amplitudes, phases, omega, tper) !In A^-1
-        H_TK = wannier_tdep_hamiltonian(system, q, k, system%diag) !In eV.
+          do iharm = 1, Nharm
+            amplitudes(iharm, 1) = floquet_task%ext_var_data(6*(iharm - 1) + 1)&
+            %data(r_arr(6*(iharm - 1) + 1))
+            phases(iharm, 1) = floquet_task%ext_var_data(6*(iharm - 1) + 2)&
+            %data(r_arr(6*(iharm - 1) + 2))
+            amplitudes(iharm, 2) = floquet_task%ext_var_data(6*(iharm - 1) + 3)&
+            %data(r_arr(6*(iharm - 1) + 3))
+            phases(iharm, 2) = floquet_task%ext_var_data(6*(iharm - 1) + 4)&
+            %data(r_arr(6*(iharm - 1) + 4))
+            amplitudes(iharm, 3) = floquet_task%ext_var_data(6*(iharm - 1) + 5)&
+            %data(r_arr(6*(iharm - 1) + 5))
+            phases(iharm, 3) = floquet_task%ext_var_data(6*(iharm - 1) + 6)&
+            %data(r_arr(6*(iharm - 1) + 6))
+          enddo
 
-        expH_TK = utility_exphs(-cmplx_i*dt*H_TK, system%num_bands, .true., error)
-        if (error) then
-          write(unit=113, fmt="(a, i3, a)") "Error in function quasienergy at t-step, ", it, &
-          "when computing matrix exponential for modulation vector q = "
-          write(unit=113, fmt="(3E18.8E3, a)") q, "A^-1."
-          return
-        endif
+          dt = (2*pi/omega)/real(floquet_task%Nt-1, dp)
+          tev = cmplx_0
+          forall (i = 1:system%num_bands) tev(i, i) = cmplx(1.0_dp, 0.0_dp)
+          do it = 1, floquet_task%Nt
+            tper = t0 + dt*real(it-1, dp) !In eV^-1.
+            q = int_driving_field(amplitudes, phases, omega, tper) !In A^-1
+            H_TK = wannier_tdep_hamiltonian(system, q, k, floquet_task%diag) !In eV.
 
-        tev = matmul(tev, expH_TK)
+            expH_TK = utility_exphs(-cmplx_i*dt*H_TK, system%num_bands, .true., error)
+            if (error) then
+              write(unit=113, fmt="(a, i3, a)") "Error in function quasienergy at t-step, ", it, &
+              "when computing matrix exponential for modulation vector q = "
+              write(unit=113, fmt="(3E18.8E3, a)") q, "A^-1."
+              return
+            endif
 
-      enddo
-      hf = cmplx_i*omega*utility_logu(tev, system%num_bands, error)/(2*pi)
-      if (error) then
-        write(unit=113, fmt="(a, i3, a)") "Error in function quasienergy when computing matrix log of the one-petiod time evolution operator."
-        return
-      endif
+            tev = matmul(tev, expH_TK)
 
-      call utility_diagonalize(hf, system%num_bands, quasi, rot, error)
-      if (error) then
-        write(unit=113, fmt="(a, i3, a)") "Error in function quasienergy when computing the quasienergy spectrum."
-        return
-      endif
-      do i_mem = 1, product(floquet_task%integer_indices)
-        u(i_mem, r_mem) = quasi(i_mem)
-      enddo
-    enddo
+          enddo
+          hf = cmplx_i*omega*utility_logu(tev, system%num_bands, error)/(2*pi)
+          if (error) then
+            write(unit=113, fmt="(a, i3, a)") "Error in function quasienergy when computing matrix log of the one-petiod time evolution operator."
+            return
+          endif
 
-    deallocate(amplitudes, phases)
+          call utility_diagonalize(hf, system%num_bands, quasi, rot, error)
+          if (error) then
+            write(unit=113, fmt="(a, i3, a)") "Error in function quasienergy when computing the quasienergy spectrum."
+            return
+          endif
+          do i_mem = 1, product(floquet_task%integer_indices)
+            u(i_mem, r_mem) = quasi(i_mem)
+          enddo
+        enddo
+
+        deallocate(amplitudes, phases)
+
+    end select
 
   end function quasienergy
 

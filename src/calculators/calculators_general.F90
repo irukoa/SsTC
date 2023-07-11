@@ -36,21 +36,21 @@ module calculators_general
     u = eig
   end function bands
   !==========DEFAULT BANDS KPATH TASK==========!
-  function bands_kpath_task_constructor(system, Nvec, vec_coord, nkpts) result(default_bands_kpath_task)
+  subroutine bands_kpath_task_constructor(task, system, Nvec, vec_coord, nkpts)
 
     type(sys), intent(in)  :: system
     integer, intent(in) :: Nvec
     real(kind=dp), intent(in) :: vec_coord(Nvec, 3)
     integer, intent(in) :: nkpts(Nvec - 1)
 
-    type(k_path_task) :: default_bands_kpath_task
+    type(k_path_task), intent(out) :: task
 
-    default_bands_kpath_task = kpath_constructor(name = "def_bands", &
+    call kpath_constructor(task = task, name = "def_bands", &
                                                  l_calculator = bands, &
                                                  Nvec = Nvec, vec_coord = vec_coord, nkpts = nkpts, &
                                                  N_int_ind = 1, int_ind_range = (/system%num_bands/), &
                                                  N_ext_vars = 1)
-  end function bands_kpath_task_constructor
+  end subroutine bands_kpath_task_constructor
   !====END BANDS CALCULATOR AND CONSTRUCTOR====!
 
 end module calculators_general

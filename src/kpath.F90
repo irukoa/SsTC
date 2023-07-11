@@ -22,13 +22,13 @@ module kpath
 
   contains
 
-  function kpath_constructor(name, &
+  subroutine kpath_constructor(task, &
+                               name, &
                              l_calculator, g_calculator, &
                              Nvec, vec_coord, nkpts, &
                              N_int_ind, int_ind_range, &
                              N_ext_vars, ext_vars_start, ext_vars_end, ext_vars_steps, &
-                             part_int_comp) result(task)
-
+                             part_int_comp)
     character(len=*) :: name
 
     procedure (local_calculator),  optional :: l_calculator
@@ -47,7 +47,7 @@ module kpath
 
     integer, optional,  intent(in) :: part_int_comp(:)
 
-    type(k_path_task) :: task
+    class(k_path_task), intent(inout) :: task
 
     integer :: i
 
@@ -102,11 +102,11 @@ module kpath
     !Set calculation of a particular integer component.
     if (present(part_int_comp)) task%particular_integer_component = integer_array_element_to_memory_element(task, part_int_comp)
 
-  end function kpath_constructor
+  end subroutine kpath_constructor
 
   subroutine kpath_sampler(task, system)
 
-    type(k_path_task), intent(inout) :: task
+    class(k_path_task), intent(inout) :: task
     type(sys),         intent(in)    :: system
 
     integer       :: ivec, isampling
@@ -164,7 +164,7 @@ module kpath
 
   subroutine print_kpath(task, system)
     !Subroutine to format and output files related to the result of the task "task".
-    type(k_path_task), intent(in) :: task
+    class(k_path_task), intent(in) :: task
     type(sys), intent(in) :: system
 
     character(len=400) :: filename, fmtf
