@@ -22,7 +22,7 @@ program floquet_tight_binding
   type(sys) :: a
 
   type(BZ_integral_task) :: test, test2, test3
-  type(optical_BZ_integral_task) :: optcond, jdost
+  type(optical_BZ_integral_task) :: optcond, jdost, shift
 
   type(k_path_task) :: path
   type(floq_k_path_task) :: floq_path
@@ -46,88 +46,97 @@ program floquet_tight_binding
   call OMP_SET_MAX_ACTIVE_LEVELS(1) !Only paralleize kpts, warning parallelizing also local-k quantities can create overhead. Only change to LEVELS>1 in very large clusters.
 
   a = sys_constructor("GaAs", "./", efermi = 7.7414_dp)
-  !a = sys_constructor("HM", "./", floq_diag = .true.)
+  !a = sys_constructor("HM", "./")
 
-  call bands_kpath_task_constructor(task = path, system = a, &
-                                      Nvec = 4, &
-                                      vec_coord = kvecs, &
-                                      nkpts = (/100, 100, 100/))
+!  call bands_kpath_task_constructor(task = path, system = a, &
+!                                      Nvec = 4, &
+!                                      vec_coord = kvecs, &
+!                                      nkpts = (/100, 100, 100/))
+!
+!  call kpath_sampler(path, a)
+!  call print_kpath(path, a)
+!
+!  !EXAMPLE OF USAGE.
+!  call task_constructor(task = test, name           = "ext_ben", &
+!                          g_calculator   = calculator_test_C1M3, &
+!                          N_int_ind      = 2, &
+!                          int_ind_range  = (/3, 3/), &
+!                          N_ext_vars     = 1, &
+!                          ext_vars_start = (/0.0_dp/), &
+!                          ext_vars_end   = (/10.0_dp/), &
+!                          ext_vars_steps = (/11/), &
+!                          method         = "extrapolation", & !Required memory: 16*product(samples)*product(int_ind_range)*product(ext_vars_steps)
+!                          samples        = (/65, 65, 65/))
+!
+!  a%name = "C1M3"
+!
+!  call sample_and_integrate_in_BZ(task = test, &
+!                                  system = a)                    
+!
+!  call print_task_result(task = test, &
+!                         system = a)
+!
+!  call task_constructor(task = test2, name           = "rec_ben", &
+!                           g_calculator   = calculator_test_C1M3, &
+!                           N_int_ind      = 2, &
+!                           int_ind_range  = (/3, 3/), &
+!                           N_ext_vars     = 1, &
+!                           ext_vars_start = (/0.0_dp/), &
+!                           ext_vars_end   = (/10.0_dp/), &
+!                           ext_vars_steps = (/11/), &
+!                           method         = "rectangle", & !Required memory: 16*product(int_ind_range)*product(ext_vars_steps)
+!                           samples        = (/400000, 1, 1/), &
+!                           part_int_comp  = (/2, 1/))
+!
+!  call sample_and_integrate_in_BZ(task = test2, &
+!                                  system = a)
+!
+!  call print_task_result(task = test2, &
+!                         system = a)
+!IN THE CASE OF HM DONT FORGET TO SET DIAG = TRUE.
+!  call quasienergy_kpath_task_constructor(floq_task = floq_path, system = a, &
+!                                            Nvec = 2, &
+!                                            vec_coord = kvecs(3:4, :), &
+!                                            nkpts = (/1/), &
+!                                            Nharm = 1, &
+!                                            axstart = (/1.0E4_dp/), axend = (/1.0E5_dp/), axsteps = (/1/), &
+!                                            pxstart = (/0.0_dp/), pxend = (/0.0_dp/), pxsteps = (/1/), &
+!                                            aystart = (/0.0_dp/), ayend = (/0.0_dp/), aysteps = (/1/), &
+!                                            pystart = (/0.0_dp/), pyend = (/0.0_dp/), pysteps = (/1/), &
+!                                            azstart = (/0.0_dp/), azend = (/0.0_dp/), azsteps = (/1/), &
+!                                            pzstart = (/0.0_dp/), pzend = (/0.0_dp/), pzsteps = (/1/), &
+!                                            omegastart = 3.0_dp, omegaend = 30.0_dp, omegasteps = 100, &
+!                                            t0start = 0.0_dp, t0end = 0.0_dp, t0steps = 1)
+!
+!  call kpath_sampler(floq_path, a)
+!  call print_kpath(floq_path, a)
+!
+!  call default_optical_conductivity_constructor(optical_task = optcond, method = "extrapolation", samples = (/17, 17, 17/), &
+!                                                     omegastart = 0.0_dp, omegaend = 10.0_dp, omegasteps = 100)
+!
+!  call sample_and_integrate_in_BZ(task = optcond, &
+!                                  system = a)
+!
+!  call print_task_result(task = optcond, &
+!                         system = a)
+!
+!
+!  call default_jdos_constructor(optical_task = jdost, method = "extrapolation", samples = (/17, 17, 17/), &
+!  omegastart = 0.0_dp, omegaend = 10.0_dp, omegasteps = 100)
+!
+!  !call sample_and_integrate_in_BZ(task = jdost, &
+!  !      system = a)
+!
+!  !call print_task_result(task = jdost, &
+!  !system = a)
 
-  call kpath_sampler(path, a)
-  call print_kpath(path, a)
+  call default_shift_current_constructor(optical_task = shift, method = "rectangle", samples = (/30, 30, 30/), &
+  omegastart = 0.0_dp, omegaend = 10.0_dp, omegasteps = 100, optical_smearing = 0.1_dp)
 
-  !EXAMPLE OF USAGE.
-  call task_constructor(task = test, name           = "ext_ben", &
-                          g_calculator   = calculator_test_C1M3, &
-                          N_int_ind      = 2, &
-                          int_ind_range  = (/3, 3/), &
-                          N_ext_vars     = 1, &
-                          ext_vars_start = (/0.0_dp/), &
-                          ext_vars_end   = (/10.0_dp/), &
-                          ext_vars_steps = (/11/), &
-                          method         = "extrapolation", & !Required memory: 16*product(samples)*product(int_ind_range)*product(ext_vars_steps)
-                          samples        = (/65, 65, 65/))
-
-  a%name = "C1M3"
-
-  call sample_and_integrate_in_BZ(task = test, &
-                                  system = a)                    
-
-  call print_task_result(task = test, &
-                         system = a)
-
-  call task_constructor(task = test2, name           = "rec_ben", &
-                           g_calculator   = calculator_test_C1M3, &
-                           N_int_ind      = 2, &
-                           int_ind_range  = (/3, 3/), &
-                           N_ext_vars     = 1, &
-                           ext_vars_start = (/0.0_dp/), &
-                           ext_vars_end   = (/10.0_dp/), &
-                           ext_vars_steps = (/11/), &
-                           method         = "rectangle", & !Required memory: 16*product(int_ind_range)*product(ext_vars_steps)
-                           samples        = (/400000, 1, 1/), &
-                           part_int_comp  = (/2, 1/))
-
-  call sample_and_integrate_in_BZ(task = test2, &
-                                  system = a)
-
-  call print_task_result(task = test2, &
-                         system = a)
-
-  call quasienergy_kpath_task_constructor(floq_task = floq_path, system = a, &
-                                            Nvec = 2, &
-                                            vec_coord = kvecs(3:4, :), &
-                                            nkpts = (/1/), &
-                                            Nharm = 1, &
-                                            axstart = (/1.0E4_dp/), axend = (/1.0E5_dp/), axsteps = (/1/), &
-                                            pxstart = (/0.0_dp/), pxend = (/0.0_dp/), pxsteps = (/1/), &
-                                            aystart = (/0.0_dp/), ayend = (/0.0_dp/), aysteps = (/1/), &
-                                            pystart = (/0.0_dp/), pyend = (/0.0_dp/), pysteps = (/1/), &
-                                            azstart = (/0.0_dp/), azend = (/0.0_dp/), azsteps = (/1/), &
-                                            pzstart = (/0.0_dp/), pzend = (/0.0_dp/), pzsteps = (/1/), &
-                                            omegastart = 3.0_dp, omegaend = 30.0_dp, omegasteps = 100, &
-                                            t0start = 0.0_dp, t0end = 0.0_dp, t0steps = 1)
-
-  call kpath_sampler(floq_path, a)
-  call print_kpath(floq_path, a)
-
-  call default_optical_conductivity_constructor(optical_task = optcond, method = "extrapolation", samples = (/17, 17, 17/), &
-                                                     omegastart = 0.0_dp, omegaend = 10.0_dp, omegasteps = 100)
-
-  call sample_and_integrate_in_BZ(task = optcond, &
-                                  system = a)
-
-  call print_task_result(task = optcond, &
-                         system = a)
-
-
-  call default_jdos_constructor(optical_task = jdost, method = "extrapolation", samples = (/17, 17, 17/), &
-  omegastart = 0.0_dp, omegaend = 10.0_dp, omegasteps = 100)
-
-  call sample_and_integrate_in_BZ(task = jdost, &
+  call sample_and_integrate_in_BZ(task = shift, &
         system = a)
 
-  call print_task_result(task = jdost, &
+  call print_task_result(task = shift, &
   system = a)
 
   close(unit=112)
