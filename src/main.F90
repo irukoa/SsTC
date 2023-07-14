@@ -2,8 +2,6 @@ program floquet_tight_binding
 
   USE OMP_LIB
 
-  use, intrinsic :: iso_c_binding
-
   use utility
   use data_structures
   use integrator
@@ -17,18 +15,16 @@ program floquet_tight_binding
 
   use local_k_quantities!TEST
 
-  include 'fftw3.f03'
-
   type(sys) :: a
 
-  type(BZ_integral_task) :: test, test2, test3
-  type(optical_BZ_integral_task) :: optcond, jdost, shift
+  type(BZ_integral_task) :: test!, test2, test3
+  !type(optical_BZ_integral_task) :: optcond, jdost, shift
 
   type(k_path_task) :: path
   type(floq_k_path_task) :: floq_path
 
   real(kind=dp) :: kvecs(4, 3)
-  integer :: i
+  !integer :: i
 
   kvecs(1, :) = (/0.0_dp, 0.0_dp, 0.0_dp/)
   kvecs(2, :) = (/0.5_dp, 0.0_dp, 0.0_dp/)
@@ -42,7 +38,7 @@ program floquet_tight_binding
   open (unit=112, action="write", file="exec.out")
   open (unit=113, action="write", file="exec.err")
 
-  call OMP_SET_NUM_THREADS(1) !SERIAL.
+  !call OMP_SET_NUM_THREADS(1) !SERIAL.
   call OMP_SET_MAX_ACTIVE_LEVELS(1) !Only paralleize kpts, warning parallelizing also local-k quantities can create overhead. Only change to LEVELS>1 in very large clusters.
 
   !KNOWN ERROR: W_HAMILTONIAN AND W90'S HH ARE NOT THE SAME, EVEN THOUGH THEIR EIGENVALUES ARE.
@@ -66,24 +62,25 @@ program floquet_tight_binding
   call print_kpath(path, a)
 !
 !  !EXAMPLE OF USAGE.
-!  call task_constructor(task = test, name           = "ext_ben", &
-!                          g_calculator   = calculator_test_C1M3, &
-!                          N_int_ind      = 2, &
-!                          int_ind_range  = (/3, 3/), &
-!                          N_ext_vars     = 1, &
-!                          ext_vars_start = (/0.0_dp/), &
-!                          ext_vars_end   = (/10.0_dp/), &
-!                          ext_vars_steps = (/11/), &
-!                          method         = "extrapolation", & !Required memory: 16*product(samples)*product(int_ind_range)*product(ext_vars_steps)
-!                          samples        = (/65, 65, 65/))
-!
+  call task_constructor(task=test, &
+                        name="ext_ben", &
+                        g_calculator=calculator_test_C1M3, &
+                        N_int_ind=2, &
+                        int_ind_range=(/3, 3/), &
+                        N_ext_vars=1, &
+                        ext_vars_start=(/0.0_dp/), &
+                        ext_vars_end=(/10.0_dp/), &
+                        ext_vars_steps=(/11/), &
+                        method="extrapolation", & !Required memory: 16*product(samples)*product(int_ind_range)*product(ext_vars_steps)
+                        samples=(/65, 65, 65/))
+
 !  a%name = "C1M3"
 !
-!  call sample_and_integrate_in_BZ(task = test, &
-!                                  system = a)
-!
-!  call print_task_result(task = test, &
-!                         system = a)
+  call sample_and_integrate_in_BZ(task=test, &
+                                  system=a)
+
+  call print_task_result(task=test, &
+                         system=a)
 !
 !  call task_constructor(task = test2, name           = "rec_ben", &
 !                           g_calculator   = calculator_test_C1M3, &
@@ -106,7 +103,7 @@ program floquet_tight_binding
   call quasienergy_kpath_task_constructor(floq_task=floq_path, system=a, &
                                           Nvec=2, &
                                           vec_coord=kvecs(3:4, :), &
-                                          nkpts=(/1/), &
+                                          nkpts=(/10/), &
                                           Nharm=1, &
                                           axstart=(/1.0E4_dp/), axend=(/1.0E5_dp/), axsteps=(/1/), &
                                           pxstart=(/0.0_dp/), pxend=(/0.0_dp/), pxsteps=(/1/), &

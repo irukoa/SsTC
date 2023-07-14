@@ -1,7 +1,7 @@
 default: main
 
 F90 = ifort
-F90FLAGS = -g -warn all -check bounds -O2 -qopenmp -llapack -lblas -lfftw3
+F90FLAGS = -g -warn all -check bounds -O2 -qopenmp -lmkl_gf_lp64 -lmkl_core -lmkl_gnu_thread
 
 SRC = ./src
 OBJ = ./src/obj
@@ -46,7 +46,7 @@ calculators_optical.o: $(CALC)/calculators_optical.F90 utility.o integrator.o da
 
 main: $(SRC)/main.F90 utility.o extrapolation_integration.o integrator.o data_structures.o calculator_test.o calculators_floquet.o calculators_general.o kpath.o kslice.o calculators_optical.o
 			$(F90) $(F90FLAGS) $(SRC)/*.F90 $(CALC)/*.F90 -o "$(BIN)/tb.x"
-			rm *.mod
+			rm -rf *.mod
 
 .PHONY: clean
 clean:

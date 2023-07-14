@@ -17,9 +17,12 @@ contains
     logical, intent(inout) :: error
 
     complex(kind=dp)                   :: u(product(task%integer_indices), product(task%continuous_indices))
-    integer                            :: r, r_arr(size(task%continuous_indices)), i, i_arr(size(task%integer_indices))
+    integer                            :: r, r_arr(size(task%continuous_indices)), i, i_arr(size(task%integer_indices)), &
+                                          bnds
 
     real(kind=dp)                      :: part
+
+    bnds = system%num_bands !Avoid warnings.
 
     u = 0.0_dp
     part = ((k(1) + 0.5_dp)**2)*exp(sin(10*(k(1) + 0.5_dp)))
@@ -31,6 +34,8 @@ contains
         u(i, r) = part*task%ext_var_data(1)%data(r_arr(1))*i_arr(1)
       enddo
     enddo
+
+    error = .false. !Avoid warnings.
 
   end function calculator_test_C1M3
 
