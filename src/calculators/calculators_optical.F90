@@ -30,12 +30,15 @@ contains
 
     type(optical_BZ_integral_task), intent(out) :: optical_task
 
-    call task_constructor(task=optical_task, name="opt_cond", &
-                          g_calculator=optical_conductivity, &
-                          method=method, samples=samples, &
-                          N_int_ind=2, int_ind_range=(/3, 3/), &
-                          N_ext_vars=1, ext_vars_start=(/omegastart/), ext_vars_end=(/omegaend/), ext_vars_steps=(/omegasteps/), &
-                          part_int_comp=particular_integer_component)
+    call BZ_integral_task_constructor(task=optical_task, name="opt_cond", &
+                                      g_calculator=optical_conductivity, &
+                                      method=method, samples=samples, &
+                                      N_int_ind=2, int_ind_range=(/3, 3/), &
+                                      N_ext_vars=1, &
+                                      ext_vars_start=(/omegastart/), &
+                                      ext_vars_end=(/omegaend/), &
+                                      ext_vars_steps=(/omegasteps/), &
+                                      part_int_comp=particular_integer_component)
 
     if (present(optical_smearing)) then
       optical_task%adpt_smearing = .false.
@@ -168,11 +171,14 @@ contains
 
     type(optical_BZ_integral_task), intent(out) :: optical_task
 
-    call task_constructor(task=optical_task, name="jdos", &
-                          g_calculator=jdos, &
-                          method=method, samples=samples, &
-                          N_int_ind=1, int_ind_range=(/1/), &
-                          N_ext_vars=1, ext_vars_start=(/omegastart/), ext_vars_end=(/omegaend/), ext_vars_steps=(/omegasteps/))
+    call BZ_integral_task_constructor(task=optical_task, name="jdos", &
+                                      g_calculator=jdos, &
+                                      method=method, samples=samples, &
+                                      N_int_ind=1, int_ind_range=(/1/), &
+                                      N_ext_vars=1, &
+                                      ext_vars_start=(/omegastart/), &
+                                      ext_vars_end=(/omegaend/), &
+                                      ext_vars_steps=(/omegasteps/))
 
     if (present(optical_smearing)) then
       optical_task%adpt_smearing = .false.
@@ -279,12 +285,15 @@ contains
 
     type(optical_BZ_integral_task), intent(out) :: optical_task
 
-    call task_constructor(task=optical_task, name="sc", &
-                          g_calculator=shift_current, &
-                          method=method, samples=samples, &
-                          N_int_ind=3, int_ind_range=(/3, 3, 3/), &
-                          N_ext_vars=1, ext_vars_start=(/omegastart/), ext_vars_end=(/omegaend/), ext_vars_steps=(/omegasteps/), &
-                          part_int_comp=particular_integer_component)
+    call BZ_integral_task_constructor(task=optical_task, name="sc", &
+                                      g_calculator=shift_current, &
+                                      method=method, samples=samples, &
+                                      N_int_ind=3, int_ind_range=(/3, 3, 3/), &
+                                      N_ext_vars=1, &
+                                      ext_vars_start=(/omegastart/), &
+                                      ext_vars_end=(/omegaend/), &
+                                      ext_vars_steps=(/omegasteps/), &
+                                      part_int_comp=particular_integer_component)
 
     if (present(optical_smearing)) then
       optical_task%adpt_smearing = .false.

@@ -18,18 +18,18 @@ module integrator
     complex(kind=dp), allocatable                  :: result(:, :)
   end type BZ_integral_task
 
-  public :: task_constructor
-  public :: sample_and_integrate_in_BZ
-  public :: print_task_result
+  public :: BZ_integral_task_constructor
+  public :: sample_and_integrate_BZ_integral_task
+  public :: print_BZ_integral_task
 
 contains
 
-  subroutine task_constructor(task, name, &
-                              l_calculator, g_calculator, &
-                              method, samples, &
-                              N_int_ind, int_ind_range, &
-                              N_ext_vars, ext_vars_start, ext_vars_end, ext_vars_steps, &
-                              part_int_comp)
+  subroutine BZ_integral_task_constructor(task, name, &
+                                          l_calculator, g_calculator, &
+                                          method, samples, &
+                                          N_int_ind, int_ind_range, &
+                                          N_ext_vars, ext_vars_start, ext_vars_end, ext_vars_steps, &
+                                          part_int_comp)
 
     character(len=*) :: name
 
@@ -122,11 +122,11 @@ contains
       task%samples = (/10, 10, 10/)
     endif
 
-  end subroutine task_constructor
+  end subroutine BZ_integral_task_constructor
 
   !Sub to integrate calculators which return a complex array with integer and continuous indices.
   !The interface for the generic calculator function is given in data_structures module.
-  subroutine sample_and_integrate_in_BZ(task, system)
+  subroutine sample_and_integrate_BZ_integral_task(task, system)
 
     class(BZ_integral_task), intent(inout) :: task
     type(sys), intent(in)    :: system
@@ -295,9 +295,9 @@ contains
       write (unit=112, fmt="(A)") ""
     endif
 
-  end subroutine sample_and_integrate_in_BZ
+  end subroutine sample_and_integrate_BZ_integral_task
 
-  subroutine print_task_result(task, system)
+  subroutine print_BZ_integral_task(task, system)
     !Subroutine to format and output files related to the result of the task "task".
     class(BZ_integral_task), intent(in) :: task
     type(sys), intent(in) :: system
@@ -359,6 +359,6 @@ contains
 
     endif
 
-  end subroutine print_task_result
+  end subroutine print_BZ_integral_task
 
 end module integrator

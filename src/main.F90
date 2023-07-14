@@ -62,27 +62,27 @@ program floquet_tight_binding
   call print_kpath(path, a)
 !
 !  !EXAMPLE OF USAGE.
-  call task_constructor(task=test, &
-                        name="ext_ben", &
-                        g_calculator=calculator_test_C1M3, &
-                        N_int_ind=2, &
-                        int_ind_range=(/3, 3/), &
-                        N_ext_vars=1, &
-                        ext_vars_start=(/0.0_dp/), &
-                        ext_vars_end=(/10.0_dp/), &
-                        ext_vars_steps=(/11/), &
-                        method="extrapolation", & !Required memory: 16*product(samples)*product(int_ind_range)*product(ext_vars_steps)
-                        samples=(/65, 65, 65/))
+  call BZ_integral_task_constructor(task=test, &
+                                    name="ext_ben", &
+                                    g_calculator=calculator_test_C1M3, &
+                                    N_int_ind=2, &
+                                    int_ind_range=(/3, 3/), &
+                                    N_ext_vars=1, &
+                                    ext_vars_start=(/0.0_dp/), &
+                                    ext_vars_end=(/10.0_dp/), &
+                                    ext_vars_steps=(/11/), &
+                                    method="extrapolation", & !Required memory: 16*product(samples)*product(int_ind_range)*product(ext_vars_steps)
+                                    samples=(/65, 65, 65/))
 
 !  a%name = "C1M3"
 !
-  call sample_and_integrate_in_BZ(task=test, &
-                                  system=a)
+  call sample_and_integrate_BZ_integral_task(task=test, &
+                                             system=a)
 
-  call print_task_result(task=test, &
-                         system=a)
+  call print_BZ_integral_task(task=test, &
+                              system=a)
 !
-!  call task_constructor(task = test2, name           = "rec_ben", &
+!  call BZ_integral_task_constructor(task = test2, name           = "rec_ben", &
 !                           g_calculator   = calculator_test_C1M3, &
 !                           N_int_ind      = 2, &
 !                           int_ind_range  = (/3, 3/), &
@@ -94,10 +94,10 @@ program floquet_tight_binding
 !                           samples        = (/400000, 1, 1/), &
 !                           part_int_comp  = (/2, 1/))
 !
-!  call sample_and_integrate_in_BZ(task = test2, &
+!  call sample_and_integrate_BZ_integral_task(task = test2, &
 !                                  system = a)
 !
-!  call print_task_result(task = test2, &
+!  call print_BZ_integral_task(task = test2, &
 !                         system = a)
 
   call quasienergy_kpath_task_constructor(floq_task=floq_path, system=a, &
@@ -121,29 +121,29 @@ program floquet_tight_binding
 !  call default_optical_conductivity_constructor(optical_task = optcond, method = "extrapolation", samples = (/17, 17, 17/), &
 !                                                     omegastart = 0.0_dp, omegaend = 10.0_dp, omegasteps = 100)
 !
-!  call sample_and_integrate_in_BZ(task = optcond, &
+!  call sample_and_integrate_BZ_integral_task(task = optcond, &
 !                                  system = a)
 !
-!  call print_task_result(task = optcond, &
+!  call print_BZ_integral_task(task = optcond, &
 !                         system = a)
 !
 !
 !  call default_jdos_constructor(optical_task = jdost, method = "extrapolation", samples = (/17, 17, 17/), &
 !  omegastart = 0.0_dp, omegaend = 10.0_dp, omegasteps = 100)
 !
-!  call sample_and_integrate_in_BZ(task = jdost, &
+!  call sample_and_integrate_BZ_integral_task(task = jdost, &
 !        system = a)
 !
-!  call print_task_result(task = jdost, &
+!  call print_BZ_integral_task(task = jdost, &
 !  system = a)
 !
 !  call default_shift_current_constructor(optical_task = shift, method = "rectangle", samples = (/100, 100, 100/), &
 !  omegastart = 0.0_dp, omegaend = 10.0_dp, omegasteps = 100, optical_smearing = 0.1_dp)
 !
-!  call sample_and_integrate_in_BZ(task = shift, &
+!  call sample_and_integrate_BZ_integral_task(task = shift, &
 !        system = a)
 !
-!  call print_task_result(task = shift, &
+!  call print_BZ_integral_task(task = shift, &
 !  system = a)
 
   close (unit=112)
