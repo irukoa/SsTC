@@ -1,7 +1,7 @@
 default: main
 
 F90 = ifort
-F90FLAGS = -g -warn all -check bounds -O2 -qopenmp -lmkl_gf_lp64 -lmkl_core -lmkl_gnu_thread
+F90FLAGS = -g -warn all -check bounds -O2 -qopenmp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread
 
 SRC = ./src
 OBJ = ./src/obj
