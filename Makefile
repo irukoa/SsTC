@@ -49,9 +49,9 @@ main: $(SRC)/main.F90 utility.o extrapolation_integration.o integrator.o data_st
 			rm *.mod
 
 .PHONY: clean
-clean: 
+clean:
 	rm -rf $(OBJ)/*.o *.mod
 
 .PHONY: uninstall
-uninstall: 
+uninstall:
 	rm -rf $(OBJ)/*.o *.mod $(BIN)/*.x

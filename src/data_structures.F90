@@ -24,14 +24,14 @@ module data_structures
     character(len=120)                            :: name
     integer, allocatable                          :: integer_indices(:)               !Each entry contains the range of each of the integer indices.
     complex(kind=dp), allocatable                 :: k_data(:)                        !Data local for each k with integer index in memory array,
-    procedure (local_calculator), pointer, nopass :: local_calculator                 !Pointer to the local calculator.
+    procedure(local_calculator), pointer, nopass :: local_calculator                 !Pointer to the local calculator.
     integer                                       :: particular_integer_component = 0 !Specification of some integer component.
   end type local_k_data
 
   type, extends(local_k_data) :: global_k_data
-    integer,          allocatable                  :: continuous_indices(:) !Each entry contains the range of each continuous indices.
+    integer, allocatable                  :: continuous_indices(:) !Each entry contains the range of each continuous indices.
     type(external_vars), allocatable               :: ext_var_data(:)       !External variable data.
-    procedure (global_calculator), pointer, nopass :: global_calculator     !Pointer to the global calculator.
+    procedure(global_calculator), pointer, nopass :: global_calculator     !Pointer to the global calculator.
     integer, allocatable                           :: iterables(:, :)
   end type global_k_data
 
@@ -44,8 +44,8 @@ module data_structures
     function global_calculator(task, system, k, error) result(u)
       import :: global_k_data, sys, external_vars, dp
       class(global_k_data), intent(in) :: task
-      type(sys),              intent(in) :: system
-      real(kind=dp),          intent(in) :: k(3)
+      type(sys), intent(in) :: system
+      real(kind=dp), intent(in) :: k(3)
       logical, intent(inout) :: error
 
       complex(kind=dp)                   :: u(product(task%integer_indices), product(task%continuous_indices))
@@ -56,8 +56,8 @@ module data_structures
     function local_calculator(k_data, system, k, error) result(u)
       import :: local_k_data, sys, external_vars, dp
       class(local_k_data), intent(in) :: k_data
-      type(sys),          intent(in)  :: system
-      real(kind=dp),      intent(in)  :: k(3)
+      type(sys), intent(in)  :: system
+      real(kind=dp), intent(in)  :: k(3)
       logical, intent(inout) :: error
 
       complex(kind=dp)                :: u(product(k_data%integer_indices))
@@ -79,13 +79,13 @@ module data_structures
   public :: continuous_memory_element_to_array_element
   public :: construct_iterable
 
-  contains
+contains
 
   function sys_constructor(name, path_to_tb_file, efermi, deg_thr, deg_offset &
                            ) result(system)
 
-    character(len=*),        intent(in) :: name
-    character(len=*),        intent(in) :: path_to_tb_file
+    character(len=*), intent(in) :: name
+    character(len=*), intent(in) :: path_to_tb_file
     real(kind=dp), optional, intent(in) :: efermi, &
                                            deg_thr, deg_offset
 
@@ -108,12 +108,12 @@ module data_structures
     filename = trim(path_to_tb_file)//trim(name)//"_tb.dat"
     filename = trim(filename)
 
-    write(unit=112, fmt = "(A)") "Reading file"//filename//"."
+    write (unit=112, fmt="(A)") "Reading file"//filename//"."
 
-    open(unit=113, action="read", file = filename)
-    read(unit=113, fmt = *)
+    open (unit=113, action="read", file=filename)
+    read (unit=113, fmt=*)
     do i = 1, 3
-      read(unit=113, fmt = *) (system%direct_lattice_basis(i, j), j = 1, 3)
+      read (unit=113, fmt=*) (system%direct_lattice_basis(i, j), j=1, 3)
     enddo
 
     do i = 1, 3
@@ -128,96 +128,96 @@ module data_structures
                               system%metric_tensor(2, 1)*system%metric_tensor(1, 2)*system%metric_tensor(3, 3) - &
                               system%metric_tensor(3, 2)*system%metric_tensor(2, 3)*system%metric_tensor(1, 1))
 
-    read(unit=113, fmt = *) num_bands
+    read (unit=113, fmt=*) num_bands
     system%num_bands = num_bands
-    read(unit=113, fmt = *) nrpts
+    read (unit=113, fmt=*) nrpts
     system%num_R_points = nrpts
-    allocate(system%R_point(system%num_R_points, 3), &
-             system%deg_R_point(system%num_R_points), &
-             system%real_space_hamiltonian_elements(system%num_bands, system%num_bands, system%num_R_points), &
-             system%real_space_position_elements(system%num_bands, system%num_bands, 3, system%num_R_points))
+    allocate (system%R_point(system%num_R_points, 3), &
+              system%deg_R_point(system%num_R_points), &
+              system%real_space_hamiltonian_elements(system%num_bands, system%num_bands, system%num_R_points), &
+              system%real_space_position_elements(system%num_bands, system%num_bands, 3, system%num_R_points))
 
     division = nrpts/15
     remainder = modulo(nrpts, 15)
 
     if (remainder == 0) then
       do i = 1, division
-          read(unit=113, fmt = *) (system%deg_R_point(15*(i - 1) + j), j = 1, 15)
+        read (unit=113, fmt=*) (system%deg_R_point(15*(i - 1) + j), j=1, 15)
       enddo
     else
       do i = 1, division
-        read(unit=113, fmt = *) (system%deg_R_point(15*(i - 1) + j), j = 1, 15)
+        read (unit=113, fmt=*) (system%deg_R_point(15*(i - 1) + j), j=1, 15)
       enddo
-      read(unit=113, fmt = *) (system%deg_R_point(15*(i - 1) + j), j = 1, remainder)
+      read (unit=113, fmt=*) (system%deg_R_point(15*(i - 1) + j), j=1, remainder)
     endif
 
-    read(unit=113, fmt = *)
-    allocate(dummyR(2))
-    write(unit=112, fmt = "(A)") "Reading Hamiltonian."
+    read (unit=113, fmt=*)
+    allocate (dummyR(2))
+    write (unit=112, fmt="(A)") "Reading Hamiltonian."
 
     do irpts = 1, nrpts
-      read(unit=113, fmt = *) (system%R_point(irpts, i), i = 1, 3)
+      read (unit=113, fmt=*) (system%R_point(irpts, i), i=1, 3)
       do i = 1, num_bands
         do j = 1, num_bands
-          read(unit=113, fmt = *) dummy1, dummy2, dummyR(1), dummyR(2)
+          read (unit=113, fmt=*) dummy1, dummy2, dummyR(1), dummyR(2)
           system%real_space_hamiltonian_elements(i, j, irpts) = cmplx(dummyR(1), dummyR(2), dp)
         enddo
       enddo
-      read(unit=113, fmt = *)
+      read (unit=113, fmt=*)
     enddo
 
-    deallocate(dummyR)
-    write(unit=112, fmt = "(A)") "Done."
+    deallocate (dummyR)
+    write (unit=112, fmt="(A)") "Done."
 
-    allocate(dummyR(6))
-    write(unit=112, fmt = "(A)") "Reading Position Operator."
+    allocate (dummyR(6))
+    write (unit=112, fmt="(A)") "Reading Position Operator."
 
     do irpts = 1, nrpts - 1
-      read(unit=113, fmt = *) dummy1, dummy2, dummy3
+      read (unit=113, fmt=*) dummy1, dummy2, dummy3
       do i = 1, num_bands
         do j = 1, num_bands
-          read(unit=113, fmt = *) dummy1, dummy2, dummyR(1), dummyR(2), dummyR(3), dummyR(4), dummyR(5), dummyR(6)
+          read (unit=113, fmt=*) dummy1, dummy2, dummyR(1), dummyR(2), dummyR(3), dummyR(4), dummyR(5), dummyR(6)
           system%real_space_position_elements(i, j, 1, irpts) = cmplx(dummyR(1), dummyR(2), dp)
           system%real_space_position_elements(i, j, 2, irpts) = cmplx(dummyR(3), dummyR(4), dp)
           system%real_space_position_elements(i, j, 3, irpts) = cmplx(dummyR(5), dummyR(6), dp)
         enddo
       enddo
-      read(unit=113, fmt = *)
+      read (unit=113, fmt=*)
     enddo
 
-    read(unit=113, fmt = *) dummy1, dummy2, dummy3
+    read (unit=113, fmt=*) dummy1, dummy2, dummy3
     do i = 1, num_bands
       do j = 1, num_bands
-        read(unit=113, fmt = *) dummy1, dummy2, dummyR(1), dummyR(2), dummyR(3), dummyR(4), dummyR(5), dummyR(6)
+        read (unit=113, fmt=*) dummy1, dummy2, dummyR(1), dummyR(2), dummyR(3), dummyR(4), dummyR(5), dummyR(6)
         system%real_space_position_elements(i, j, 1, nrpts) = cmplx(dummyR(1), dummyR(2), dp)
         system%real_space_position_elements(i, j, 2, nrpts) = cmplx(dummyR(3), dummyR(4), dp)
         system%real_space_position_elements(i, j, 3, nrpts) = cmplx(dummyR(5), dummyR(6), dp)
       enddo
     enddo
 
-    deallocate(dummyR)
-    write(unit=112, fmt = "(A)") "Done."
+    deallocate (dummyR)
+    write (unit=112, fmt="(A)") "Done."
 
-    close(unit=113)
+    close (unit=113)
 
   end function sys_constructor
 
   function external_variable_constructor(start, end, steps) result(vars)
     !Function to set external variable data.
     real(kind=dp), intent(in) :: start, end
-    integer,       intent(in) :: steps
+    integer, intent(in) :: steps
 
-    type (external_vars) :: vars
+    type(external_vars) :: vars
 
     integer :: i
 
-    allocate(vars%data(steps))
+    allocate (vars%data(steps))
 
     if (steps == 1) then
       vars%data(1) = start
     else
       do i = 1, steps
-        vars%data(i) = start + (end - start)*real(i - 1,dp)/real(steps - 1,dp)
+        vars%data(i) = start + (end - start)*real(i - 1, dp)/real(steps - 1, dp)
       enddo
     endif
 
@@ -226,10 +226,10 @@ module data_structures
   !==UTILITY FUNCTIONS TO PASS "MEMORY LAYOUT" INDICES TO "ARRAY LAYOUT" AND VICE-VERSA==!
   !See discussion at https://eli.thegreenplace.net/2015/memory-layout-of-multi-dimensional-arrays
 
-  function integer_array_element_to_memory_element(data_k, i_arr) result (i_mem)
+  function integer_array_element_to_memory_element(data_k, i_arr) result(i_mem)
     !Get integer indices from array layout to memory layout.
     class(local_k_data), intent(in) :: data_k
-    integer,                intent(in) :: i_arr(size(data_k%integer_indices))
+    integer, intent(in) :: i_arr(size(data_k%integer_indices))
 
     integer :: i_mem
 
@@ -242,7 +242,7 @@ module data_structures
 
   end function integer_array_element_to_memory_element
 
-  function integer_memory_element_to_array_element(data_k, i_mem) result (i_arr)
+  function integer_memory_element_to_array_element(data_k, i_mem) result(i_arr)
     !Get integer indices from memory layout to array layout.
     class(local_k_data), intent(in) :: data_k
     integer, intent(in)                :: i_mem
@@ -264,10 +264,10 @@ module data_structures
 
   end function integer_memory_element_to_array_element
 
-  function continuous_array_element_to_memory_element(task, r_arr) result (r_mem)
+  function continuous_array_element_to_memory_element(task, r_arr) result(r_mem)
     !Get continuous indices from array layout to memory layout.
     class(global_k_data), intent(in) :: task
-    integer,                intent(in) :: r_arr(size(task%continuous_indices))
+    integer, intent(in) :: r_arr(size(task%continuous_indices))
 
     integer :: r_mem
 
@@ -280,10 +280,10 @@ module data_structures
 
   end function continuous_array_element_to_memory_element
 
-  function continuous_memory_element_to_array_element(task, r_mem) result (r_arr)
+  function continuous_memory_element_to_array_element(task, r_mem) result(r_arr)
     !Get continuous indices from memory layout to array layout.
     class(global_k_data), intent(in) :: task
-    integer,                intent(in) :: r_mem
+    integer, intent(in) :: r_mem
 
     integer :: r_arr(size(task%continuous_indices))
 
@@ -295,7 +295,7 @@ module data_structures
         r_arr(counter) = reduction
       else
         r_arr(counter) = modulo(reduction, task%continuous_indices(counter))
-        if (r_arr(counter)==0) r_arr(counter) = task%continuous_indices(counter)
+        if (r_arr(counter) == 0) r_arr(counter) = task%continuous_indices(counter)
         reduction = int((reduction - r_arr(counter))/task%continuous_indices(counter)) + 1
       endif
     enddo
@@ -303,16 +303,16 @@ module data_structures
   end function continuous_memory_element_to_array_element
 
   subroutine construct_iterable(global, vars)
-    !Creates a dictionaty with all the possible permutations of the 
+    !Creates a dictionaty with all the possible permutations of the
     !considered variation of the continuous variables specified
     !in the array elements of "vars".
     !E.g., if global has N continuous variables with size s_i for
-    !i = [1, N] and vars is a 1d array of size j < N, 
+    !i = [1, N] and vars is a 1d array of size j < N,
     !containing in each entry the label of the variable
     !that will be permutated i_j, the iterable
-    !part of global will be set with a 2d dictionaty containing, in the 
+    !part of global will be set with a 2d dictionaty containing, in the
     !1st index the label of the permutation and in the 2nd index
-    !the particular permutation, of size(global%continuous_indices), 
+    !the particular permutation, of size(global%continuous_indices),
     !of the variables i_j for all j in size(vars).
     class(global_k_data) :: global
     integer, intent(in) :: vars(:)
@@ -323,15 +323,15 @@ module data_structures
 
     n = 1
     do i = 1, size(vars)
-      n = n * size(global%ext_var_data(vars(i))%data)
+      n = n*size(global%ext_var_data(vars(i))%data)
     enddo
 
-    allocate(global%iterables(n, size(global%continuous_indices)), &
-             temp_arr(size(global%ext_var_data)))
- 
+    allocate (global%iterables(n, size(global%continuous_indices)), &
+              temp_arr(size(global%ext_var_data)))
+
     global%iterables = 1
     temp_arr = 0
-       
+
     do i = 1, n
 
       reduction = i
@@ -351,8 +351,7 @@ module data_structures
 
     enddo
 
-    deallocate(temp_arr)
-    
+    deallocate (temp_arr)
 
   end subroutine construct_iterable
 

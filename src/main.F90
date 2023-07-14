@@ -2,7 +2,7 @@ program floquet_tight_binding
 
   USE OMP_LIB
 
-  use, intrinsic :: iso_c_binding 
+  use, intrinsic :: iso_c_binding
 
   use utility
   use data_structures
@@ -39,8 +39,8 @@ program floquet_tight_binding
   !kvecs(3, :) = (/0.00000,      0.62500,      0.37500/)!K
   !kvecs(4, :) = (/0.00000,      0.50000,      0.50000/)!X
 
-  open(unit=112, action="write", file="exec.out")
-  open(unit=113, action="write", file="exec.err")
+  open (unit=112, action="write", file="exec.out")
+  open (unit=113, action="write", file="exec.err")
 
   call OMP_SET_NUM_THREADS(1) !SERIAL.
   call OMP_SET_MAX_ACTIVE_LEVELS(1) !Only paralleize kpts, warning parallelizing also local-k quantities can create overhead. Only change to LEVELS>1 in very large clusters.
@@ -57,10 +57,10 @@ program floquet_tight_binding
   !a = sys_constructor("GaAs", "./", efermi = 7.7414_dp)
   a = sys_constructor("HM", "./")
 
-  call bands_kpath_task_constructor(task = path, system = a, &
-                                      Nvec = 4, &
-                                      vec_coord = kvecs, &
-                                      nkpts = (/100, 100, 100/))
+  call bands_kpath_task_constructor(task=path, system=a, &
+                                    Nvec=4, &
+                                    vec_coord=kvecs, &
+                                    nkpts=(/100, 100, 100/))
 
   call kpath_sampler(path, a)
   call print_kpath(path, a)
@@ -80,7 +80,7 @@ program floquet_tight_binding
 !  a%name = "C1M3"
 !
 !  call sample_and_integrate_in_BZ(task = test, &
-!                                  system = a)                    
+!                                  system = a)
 !
 !  call print_task_result(task = test, &
 !                         system = a)
@@ -103,20 +103,20 @@ program floquet_tight_binding
 !  call print_task_result(task = test2, &
 !                         system = a)
 
-  call quasienergy_kpath_task_constructor(floq_task = floq_path, system = a, &
-                                            Nvec = 2, &
-                                            vec_coord = kvecs(3:4, :), &
-                                            nkpts = (/1/), &
-                                            Nharm = 1, &
-                                            axstart = (/1.0E4_dp/), axend = (/1.0E5_dp/), axsteps = (/1/), &
-                                            pxstart = (/0.0_dp/), pxend = (/0.0_dp/), pxsteps = (/1/), &
-                                            aystart = (/0.0_dp/), ayend = (/0.0_dp/), aysteps = (/1/), &
-                                            pystart = (/0.0_dp/), pyend = (/0.0_dp/), pysteps = (/1/), &
-                                            azstart = (/0.0_dp/), azend = (/0.0_dp/), azsteps = (/1/), &
-                                            pzstart = (/0.0_dp/), pzend = (/0.0_dp/), pzsteps = (/1/), &
-                                            omegastart = 3.0_dp, omegaend = 30.0_dp, omegasteps = 100, &
-                                            t0start = 0.0_dp, t0end = 0.0_dp, t0steps = 1, &
-                                            floq_diag = .true.)
+  call quasienergy_kpath_task_constructor(floq_task=floq_path, system=a, &
+                                          Nvec=2, &
+                                          vec_coord=kvecs(3:4, :), &
+                                          nkpts=(/1/), &
+                                          Nharm=1, &
+                                          axstart=(/1.0E4_dp/), axend=(/1.0E5_dp/), axsteps=(/1/), &
+                                          pxstart=(/0.0_dp/), pxend=(/0.0_dp/), pxsteps=(/1/), &
+                                          aystart=(/0.0_dp/), ayend=(/0.0_dp/), aysteps=(/1/), &
+                                          pystart=(/0.0_dp/), pyend=(/0.0_dp/), pysteps=(/1/), &
+                                          azstart=(/0.0_dp/), azend=(/0.0_dp/), azsteps=(/1/), &
+                                          pzstart=(/0.0_dp/), pzend=(/0.0_dp/), pzsteps=(/1/), &
+                                          omegastart=3.0_dp, omegaend=30.0_dp, omegasteps=100, &
+                                          t0start=0.0_dp, t0end=0.0_dp, t0steps=1, &
+                                          floq_diag=.true.)
 
   call kpath_sampler(floq_path, a)
   call print_kpath(floq_path, a)
@@ -149,7 +149,7 @@ program floquet_tight_binding
 !  call print_task_result(task = shift, &
 !  system = a)
 
-  close(unit=112)
-  close(unit=113)
+  close (unit=112)
+  close (unit=113)
 
 end program floquet_tight_binding

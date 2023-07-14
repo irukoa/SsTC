@@ -9,24 +9,23 @@ module utility
   complex(kind=dp), parameter, public :: cmplx_0 = cmplx(0.0_dp, 0.0_dp, dp), &
                                          cmplx_i = cmplx(0.0_dp, 1.0_dp, dp)
 
-
   !Physical constants.
-  real(kind=dp), parameter, public :: e_charge    = 1.602176565e-19_dp, &
-                                      e_mass      = 9.10938291e-31_dp,  &
-                                      hbar        = 1.054571726e-34_dp, &
-                                      k_B         = 1.3806488e-23_dp,   &
-                                      bohr_mag    = 927.400968e-26_dp,  &
-                                      eps0        = 8.854187817e-12_dp, &
-                                      c_light     = 299792458.0_dp,     &
+  real(kind=dp), parameter, public :: e_charge = 1.602176565e-19_dp, &
+                                      e_mass = 9.10938291e-31_dp, &
+                                      hbar = 1.054571726e-34_dp, &
+                                      k_B = 1.3806488e-23_dp, &
+                                      bohr_mag = 927.400968e-26_dp, &
+                                      eps0 = 8.854187817e-12_dp, &
+                                      c_light = 299792458.0_dp, &
                                       hbar_over_e = 6.582119e-16_dp
 
   !Symmetrization and antisymmetrization.
   integer, dimension(6), parameter :: alpha_S = (/1, 2, 3, 1, 1, 2/)
   integer, dimension(6), parameter :: beta_S = (/1, 2, 3, 2, 3, 3/)
-  
+
   integer, dimension(3), parameter :: alpha_A = (/2, 3, 1/)
   integer, dimension(3), parameter :: beta_A = (/3, 1, 2/)
-  
+
   public :: utility_delta
   public :: utility_delta_vec
   public :: utility_get_degen
@@ -35,10 +34,10 @@ module utility
   public :: utility_exphs
   public :: utility_logu
 
-  contains
+contains
 
   !=============================================================!
-  function utility_delta(x) result (res)
+  function utility_delta(x) result(res)
     !========================================================================!
     !Auxiliary routine to approximate the Dirac delta of x.                  !
     !========================================================================!
@@ -54,7 +53,7 @@ module utility
 
   end function utility_delta
 
-  function utility_delta_vec(x) result (res)
+  function utility_delta_vec(x) result(res)
     !========================================================================!
     !Auxiliary routine to approximate the Dirac delta of an array x.         !
     !For each x_i returns res_i = \delta(x_i).                               !
@@ -72,7 +71,7 @@ module utility
   end function utility_delta_vec
 
   !=============================================================!
-  function utility_get_degen(eig, degen_thr) result (deg)
+  function utility_get_degen(eig, degen_thr) result(deg)
     !========================================================================!
     !Auxiliary routine to get the degree of degeneracy for a given list eig. !
     !The list is supposed to have it's elements stored in ascending order:   !
@@ -137,15 +136,15 @@ module utility
     !                                                                  !
     !==================================================================!
 
-    logical,              intent(out)            :: error
+    logical, intent(out)            :: error
 
-    integer,              intent(in)               :: dim
-    complex*16,           intent(in)               :: mat(dim,dim)
-    real(8),              intent(out)              :: eig(dim)      !Eigenvalues.
-    complex*16,           intent(out)              :: rot(dim,dim)  !Eigenvectors.
+    integer, intent(in)               :: dim
+    complex*16, intent(in)               :: mat(dim, dim)
+    real(8), intent(out)              :: eig(dim)      !Eigenvalues.
+    complex*16, intent(out)              :: rot(dim, dim)  !Eigenvectors.
 
-    complex*16,                        allocatable :: work(:)
-    real(8)                                        :: rwork(3*dim-2)
+    complex*16, allocatable :: work(:)
+    real(8)                                        :: rwork(3*dim - 2)
     integer                                        :: info, lwork
 
     external                                       :: zheev
@@ -154,16 +153,16 @@ module utility
     rot = mat
 
     !Query optimal workspace.
-    lwork= -1
-    allocate(work(1))
-    call zheev('V','U',dim,rot,dim,eig,work,lwork,rwork,info)
-    lwork = nint(real(work(1),8))
-    deallocate(work)
+    lwork = -1
+    allocate (work(1))
+    call zheev('V', 'U', dim, rot, dim, eig, work, lwork, rwork, info)
+    lwork = nint(real(work(1), 8))
+    deallocate (work)
 
     !Calculation.
-    allocate(work(lwork))
-    call zheev('V','U',dim,rot,dim,eig,work,lwork,rwork,info)
-    deallocate(work)
+    allocate (work(lwork))
+    call zheev('V', 'U', dim, rot, dim, eig, work, lwork, rwork, info)
+    deallocate (work)
 
     !Check convergence.
     if (info < 0) then
@@ -192,16 +191,16 @@ module utility
     !                                                                  !
     !==================================================================!
 
-    logical,              intent(out)            :: error
+    logical, intent(out)            :: error
 
-    integer,              intent(in)               :: dim
-    complex*16,           intent(in)               :: mat(dim,dim)
-    complex*16,           intent(out)              :: T(dim)      !Eigenvalues (diagonal elements of B).
-    complex*16,           intent(out)              :: Z(dim,dim)  !Eigenvectors.
-    complex*16, optional, intent(out)              :: S(dim,dim)  !Schur Form.
+    integer, intent(in)               :: dim
+    complex*16, intent(in)               :: mat(dim, dim)
+    complex*16, intent(out)              :: T(dim)      !Eigenvalues (diagonal elements of B).
+    complex*16, intent(out)              :: Z(dim, dim)  !Eigenvectors.
+    complex*16, optional, intent(out)              :: S(dim, dim)  !Schur Form.
 
-    complex*16                                     :: B(dim,dim)
-    complex*16,                        allocatable :: work(:)
+    complex*16                                     :: B(dim, dim)
+    complex*16, allocatable :: work(:)
     real(8)                                        :: rwork(dim)
     integer                                        :: info, lwork, sdim
     logical                                        :: bwork(dim), select
@@ -212,17 +211,17 @@ module utility
     B = mat
 
     !Query optimal workspace.
-    lwork= -1
-    allocate(work(1))
-    call zgees('V','N',select,dim,B,dim,sdim,T,Z,dim,work,lwork,rwork,bwork,info)
-    lwork = nint(real(work(1),8))
-    deallocate(work)
+    lwork = -1
+    allocate (work(1))
+    call zgees('V', 'N', select, dim, B, dim, sdim, T, Z, dim, work, lwork, rwork, bwork, info)
+    lwork = nint(real(work(1), 8))
+    deallocate (work)
 
     !Calculation.
-    allocate(work(lwork))
-    call zgees('V','N',select,dim,B,dim,sdim,T,Z,dim,work,lwork,rwork,bwork,info)
+    allocate (work(lwork))
+    call zgees('V', 'N', select, dim, B, dim, sdim, T, Z, dim, work, lwork, rwork, bwork, info)
     if (present(S)) S = B
-    deallocate(work)
+    deallocate (work)
 
     !Check convergence.
     if (info < 0) then
@@ -252,11 +251,11 @@ module utility
     !                                                                  !
     !==================================================================!
 
-    logical,              intent(inout)            :: error
+    logical, intent(inout)            :: error
 
-    integer,              intent(in)               :: dim
-    complex(kind=dp),     intent(in)               :: mat(dim, dim)
-    logical,              intent(in)               :: skew
+    integer, intent(in)               :: dim
+    complex(kind=dp), intent(in)               :: mat(dim, dim)
+    logical, intent(in)               :: skew
 
     complex(kind=dp)                               :: exphs(dim, dim), &
                                                       rot(dim, dim)
@@ -271,13 +270,13 @@ module utility
 
       call utility_diagonalize(exphs, dim, eig, rot, error)
       if (error) then
-        write(unit=113, fmt="(a)") "Error in utility_exphs."
+        write (unit=113, fmt="(a)") "Error in utility_exphs."
         return
       endif
       exphs = cmplx_0
 
       do i = 1, dim
-        exphs(i,i) = exp(-cmplx_i*eig(i))
+        exphs(i, i) = exp(-cmplx_i*eig(i))
       enddo
 
       exphs = matmul(matmul(rot, exphs), conjg(transpose(rot)))
@@ -287,15 +286,15 @@ module utility
 
       call utility_diagonalize(mat, dim, eig, rot, error)
       if (error) then
-        write(unit=113, fmt="(a)") "Error in utility_exphs."
+        write (unit=113, fmt="(a)") "Error in utility_exphs."
         return
       endif
 
       do i = 1, dim
-        exphs(i,i) = exp(eig(i))
+        exphs(i, i) = exp(eig(i))
       enddo
 
-      exphs = matmul(matmul(rot, exphs),conjg(transpose(rot))) 
+      exphs = matmul(matmul(rot, exphs), conjg(transpose(rot)))
 
     endif
 
@@ -307,30 +306,30 @@ module utility
     !Given an Unitary dim x dim matrix mat, computes the Skew-Hermitian!
     !dim x dim matrix logu such that logu = log(mat).                  !
     !                                                                  !
-    !==================================================================! 
+    !==================================================================!
 
-    logical,              intent(inout)            :: error
+    logical, intent(inout)            :: error
 
-    integer,              intent(in)               :: dim
-    complex(kind=dp),     intent(in)               :: mat(dim, dim)
+    integer, intent(in)               :: dim
+    complex(kind=dp), intent(in)               :: mat(dim, dim)
 
-    complex(kind=dp)                               :: logu(dim,dim), &
-                                                      rot(dim,dim), eig(dim)
+    complex(kind=dp)                               :: logu(dim, dim), &
+                                                      rot(dim, dim), eig(dim)
     integer                                        :: i
 
     logu = 0.d0
 
     call utility_schur(mat, dim, eig, rot, error)
     if (error) then
-      write(unit=113, fmt="(a)") "Error in utility_logu."
+      write (unit=113, fmt="(a)") "Error in utility_logu."
       return
     endif
 
     do i = 1, dim
-      logu(i,i) = log(eig(i))
+      logu(i, i) = log(eig(i))
     enddo
 
-    logu = matmul(matmul(rot, logu),conjg(transpose(rot))) 
+    logu = matmul(matmul(rot, logu), conjg(transpose(rot)))
 
   end function utility_logu
 

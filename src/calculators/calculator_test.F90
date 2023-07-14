@@ -8,12 +8,12 @@ module calculator_test
 
   public :: calculator_test_C1M3
 
-  contains
+contains
 
   function calculator_test_C1M3(task, system, k, error) result(u)
     class(global_k_data), intent(in) :: task
-    type(sys),              intent(in) :: system
-    real(kind=dp),          intent(in) :: k(3)
+    type(sys), intent(in) :: system
+    real(kind=dp), intent(in) :: k(3)
     logical, intent(inout) :: error
 
     complex(kind=dp)                   :: u(product(task%integer_indices), product(task%continuous_indices))
@@ -22,9 +22,9 @@ module calculator_test
     real(kind=dp)                      :: part
 
     u = 0.0_dp
-    part = ((k(1)+0.5_dp)**2)*exp(sin(10*(k(1)+0.5_dp)))
+    part = ((k(1) + 0.5_dp)**2)*exp(sin(10*(k(1) + 0.5_dp)))
     do i = 1, product(task%integer_indices)
-      if ((task%particular_integer_component.ne.0).and.(i.ne.task%particular_integer_component)) cycle
+      if ((task%particular_integer_component .ne. 0) .and. (i .ne. task%particular_integer_component)) cycle
       i_arr = integer_memory_element_to_array_element(task, i)
       do r = 1, product(task%continuous_indices) !For each continuous index.
         r_arr = continuous_memory_element_to_array_element(task, r) !Pass to array layout.

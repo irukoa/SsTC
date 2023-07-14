@@ -19,15 +19,15 @@ module local_k_quantities
   public :: get_hamiltonian
   public :: get_position
 
-  contains
+contains
 
   !====AUXILIARY ROUTINES====!
 
   function wannier_hamiltonian(system, k) result(HW)
     !Output: Wannier basis Hamiltonian.
     !1st and 2nd indexes: bands.
-    type(sys),          intent(in)  :: system
-    real(kind=dp),      intent(in)  :: k(3)
+    type(sys), intent(in)  :: system
+    real(kind=dp), intent(in)  :: k(3)
 
     complex(kind=dp) :: HW(system%num_bands, system%num_bands)
 
@@ -38,21 +38,21 @@ module local_k_quantities
     !Get Hamiltonian in memory layout.
     call get_hamiltonian(system, k, H_get)
 
-    allocate(i_arr(size(H_get(1)%integer_indices)))
+    allocate (i_arr(size(H_get(1)%integer_indices)))
     do i_mem = 1, product(H_get(1)%integer_indices)
       !Pass to array layout.
       i_arr = integer_memory_element_to_array_element(H_get(1), i_mem)
       HW(i_arr(1), i_arr(2)) = H_get(1)%k_data(i_mem)
     enddo
-    deallocate(H_get, i_arr)
+    deallocate (H_get, i_arr)
 
   end function wannier_hamiltonian
 
   function wannier_berry_connection(system, k) result(AW)
     !Output: Wannier basis Berry connection.
     !1st and 2nd indexes: bands, 3rd index: cartesian comp.
-    type(sys),          intent(in)  :: system
-    real(kind=dp),      intent(in)  :: k(3)
+    type(sys), intent(in)  :: system
+    real(kind=dp), intent(in)  :: k(3)
 
     complex(kind=dp) :: AW(system%num_bands, system%num_bands, 3)
 
@@ -63,21 +63,21 @@ module local_k_quantities
     !Get Berry connection in memory layout.
     call get_position(system, k, A_get)
 
-    allocate(i_arr(size(A_get(1)%integer_indices)))
+    allocate (i_arr(size(A_get(1)%integer_indices)))
     do i_mem = 1, product(A_get(1)%integer_indices)
       !Pass to array layout.
       i_arr = integer_memory_element_to_array_element(A_get(1), i_mem)
       AW(i_arr(1), i_arr(2), i_arr(3)) = A_get(1)%k_data(i_mem)
     enddo
-    deallocate(A_get, i_arr)
+    deallocate (A_get, i_arr)
 
   end function wannier_berry_connection
 
   function wannier_dhamiltonian_dk(system, k) result(DHW)
     !Output: 1st k-derivative of the Wannier Hamiltonian.
     !1st and 2nd indexes: bands, 3rd index: derivative comp.
-    type(sys),          intent(in)  :: system
-    real(kind=dp),      intent(in)  :: k(3)
+    type(sys), intent(in)  :: system
+    real(kind=dp), intent(in)  :: k(3)
 
     complex(kind=dp) :: DHW(system%num_bands, system%num_bands, 3)
 
@@ -86,15 +86,15 @@ module local_k_quantities
     integer :: i_mem
 
     !Get Hamiltonian in memory layout.
-    call get_hamiltonian(system, k, H_get, Nder_i = 1)
+    call get_hamiltonian(system, k, H_get, Nder_i=1)
 
-    allocate(i_arr(size(H_get(1)%integer_indices)))
+    allocate (i_arr(size(H_get(1)%integer_indices)))
     do i_mem = 1, product(H_get(1)%integer_indices)
       !Pass to array layout.
       i_arr = integer_memory_element_to_array_element(H_get(1), i_mem)
       DHW(i_arr(1), i_arr(2), i_arr(3)) = H_get(1)%k_data(i_mem)
     enddo
-    deallocate(H_get, i_arr)
+    deallocate (H_get, i_arr)
 
   end function wannier_dhamiltonian_dk
 
@@ -102,8 +102,8 @@ module local_k_quantities
     !Output: 2nd k-derivative of the Wannier Hamiltonian.
     !1st and 2nd indexes: bands, 3rd index: cartesian comp.
     !4th index : derivative direction
-    type(sys),          intent(in)  :: system
-    real(kind=dp),      intent(in)  :: k(3)
+    type(sys), intent(in)  :: system
+    real(kind=dp), intent(in)  :: k(3)
 
     complex(kind=dp) :: DDHW(system%num_bands, system%num_bands, 3, 3)
 
@@ -112,15 +112,15 @@ module local_k_quantities
     integer :: i_mem
 
     !Get Hamiltonian in memory layout.
-    call get_hamiltonian(system, k, H_get, Nder_i = 2)
+    call get_hamiltonian(system, k, H_get, Nder_i=2)
 
-    allocate(i_arr(size(H_get(1)%integer_indices)))
+    allocate (i_arr(size(H_get(1)%integer_indices)))
     do i_mem = 1, product(H_get(1)%integer_indices)
       !Pass to array layout.
       i_arr = integer_memory_element_to_array_element(H_get(1), i_mem)
       DDHW(i_arr(1), i_arr(2), i_arr(3), i_arr(4)) = H_get(1)%k_data(i_mem)
     enddo
-    deallocate(H_get, i_arr)
+    deallocate (H_get, i_arr)
 
   end function wannier_d2hamiltonian_dk2
 
@@ -128,8 +128,8 @@ module local_k_quantities
     !Output: 1st k-derivative of the Wannier Berry connection.
     !1st and 2nd indexes: bands, 3rd index: cartesian comp.
     !4th index : derivative direction
-    type(sys),          intent(in)  :: system
-    real(kind=dp),      intent(in)  :: k(3)
+    type(sys), intent(in)  :: system
+    real(kind=dp), intent(in)  :: k(3)
 
     complex(kind=dp) :: DAW(system%num_bands, system%num_bands, 3, 3)
 
@@ -138,23 +138,23 @@ module local_k_quantities
     integer :: i_mem
 
     !Get Hamiltonian in memory layout.
-    call get_position(system, k, A_get, Nder_i = 1)
+    call get_position(system, k, A_get, Nder_i=1)
 
-    allocate(i_arr(size(A_get(1)%integer_indices)))
+    allocate (i_arr(size(A_get(1)%integer_indices)))
     do i_mem = 1, product(A_get(1)%integer_indices)
       !Pass to array layout.
       i_arr = integer_memory_element_to_array_element(A_get(1), i_mem)
       DAW(i_arr(1), i_arr(2), i_arr(3), i_arr(4)) = A_get(1)%k_data(i_mem)
     enddo
-    deallocate(A_get, i_arr)
+    deallocate (A_get, i_arr)
 
   end function wannier_dberry_connection_dk
 
   function hamiltonian_occ_matrix(system, eig) result(rho)
     !Output: Fermi occupation matrix in the Hamiltonian basis.
     !1st and 2nd indexes: bands.
-    type(sys),          intent(in)  :: system
-    real(kind=dp),      intent(in)  :: eig(system%num_bands)
+    type(sys), intent(in)  :: system
+    real(kind=dp), intent(in)  :: eig(system%num_bands)
 
     complex(kind=dp) :: rho(system%num_bands, system%num_bands)
 
@@ -169,13 +169,13 @@ module local_k_quantities
   end function hamiltonian_occ_matrix
 
   function non_abelian_d(system, eig, rot, HW_a) result(DH)
-    !Output: Vector valued matrix D in Eq. (32) in 
+    !Output: Vector valued matrix D in Eq. (32) in
     !10.1103/PhysRevB.75.195121 .
     !1st and 2nd indexes: bands, 3rd index: cartesian comp.
-    type(sys),          intent(in) :: system
-    real(kind=dp),      intent(in) :: eig(system%num_bands)
-    complex(kind=dp),   intent(in) :: rot(system%num_bands, system%num_bands)
-    complex(kind=dp),   intent(in) :: HW_a(system%num_bands, system%num_bands, 3)
+    type(sys), intent(in) :: system
+    real(kind=dp), intent(in) :: eig(system%num_bands)
+    complex(kind=dp), intent(in) :: rot(system%num_bands, system%num_bands)
+    complex(kind=dp), intent(in) :: HW_a(system%num_bands, system%num_bands, 3)
 
     complex(kind=dp) :: DH(system%num_bands, system%num_bands, 3)
 
@@ -185,7 +185,7 @@ module local_k_quantities
       DH(:, :, i) = matmul(matmul(transpose(conjg(rot)), HW_a(:, :, i)), rot)
       do n = 1, system%num_bands
         do m = 1, system%num_bands
-          if (abs(eig(n)-eig(m)) < system%deg_thr) then
+          if (abs(eig(n) - eig(m)) < system%deg_thr) then
             DH(n, m, i) = cmplx_0
           else
             DH(n, m, i) = DH(n, m, i)*((eig(m) - eig(n))/((eig(m) - eig(n))**2 + (system%deg_offset)**2))
@@ -196,10 +196,10 @@ module local_k_quantities
   end function non_abelian_d
 
   function velocities(system, HW_a, eig, rot, error) result(v)
-    type(sys),          intent(in) :: system
-    real(kind=dp),      intent(in) :: eig(system%num_bands)
-    complex(kind=dp),   intent(in) :: rot(system%num_bands, system%num_bands)
-    complex(kind=dp),   intent(in) :: HW_a(system%num_bands, system%num_bands, 3)
+    type(sys), intent(in) :: system
+    real(kind=dp), intent(in) :: eig(system%num_bands)
+    complex(kind=dp), intent(in) :: rot(system%num_bands, system%num_bands)
+    complex(kind=dp), intent(in) :: HW_a(system%num_bands, system%num_bands, 3)
 
     logical, intent(inout) :: error
 
@@ -233,10 +233,10 @@ module local_k_quantities
             call utility_diagonalize(v(n:n + deg(n) - 1, n:n + deg(n) - 1, i), &
                                      deg(n), degen_vels(n:n + deg(n) - 1), dummy_rot, error)
             if (error) then
-              write(unit=113, fmt="(a)") "Error in function velocities when computing the eigenvalues of the degenerate subspace."
+              write (unit=113, fmt="(a)") "Error in function velocities when computing the eigenvalues of the degenerate subspace."
               return
             endif
-            deallocate(dummy_rot)
+            deallocate (dummy_rot)
           endif
         enddo
         !Overwrite to v.
@@ -247,11 +247,11 @@ module local_k_quantities
   end function velocities
 
   function inverse_effective_mass(system, HW_a_b, HW_a, eig, rot, error) result(mu)
-    type(sys),          intent(in) :: system
-    real(kind=dp),      intent(in) :: eig(system%num_bands)
-    complex(kind=dp),   intent(in) :: rot(system%num_bands, system%num_bands)
-    complex(kind=dp),   intent(in) :: HW_a_b(system%num_bands, system%num_bands, 3, 3)
-    complex(kind=dp),   intent(in) :: HW_a(system%num_bands, system%num_bands, 3)
+    type(sys), intent(in) :: system
+    real(kind=dp), intent(in) :: eig(system%num_bands)
+    complex(kind=dp), intent(in) :: rot(system%num_bands, system%num_bands)
+    complex(kind=dp), intent(in) :: HW_a_b(system%num_bands, system%num_bands, 3, 3)
+    complex(kind=dp), intent(in) :: HW_a(system%num_bands, system%num_bands, 3)
 
     logical, intent(inout) :: error
 
@@ -307,10 +307,11 @@ module local_k_quantities
             call utility_diagonalize(mu(n:n + deg(n) - 1, n:n + deg(n) - 1, i, j), &
                                      deg(n), degen_mass(n:n + deg(n) - 1), dummy_rot, error)
             if (error) then
-              write(unit=113, fmt="(a)") "Error in function inverse_effective_mass when computing the eigenvalues of the degenerate subspace."
+              write (unit=113, fmt="(a)") "Error in function inverse_effective_mass&
+              & when computing the eigenvalues of the degenerate subspace."
               return
             endif
-            deallocate(dummy_rot)
+            deallocate (dummy_rot)
           endif
         enddo
         !Overwrite to mu.
@@ -323,28 +324,23 @@ module local_k_quantities
   end function inverse_effective_mass
 
   function cov_deriv_of_dipole(system, HW_a_b, HW_a, AW_a, AW_a_b, eig, rot, error) result(cov_r)
-    type(sys),          intent(in) :: system
-    real(kind=dp),      intent(in) :: eig(system%num_bands)
-    complex(kind=dp),   intent(in) :: rot(system%num_bands, system%num_bands)
-    complex(kind=dp),   intent(in) :: HW_a_b(system%num_bands, system%num_bands, 3, 3)
-    complex(kind=dp),   intent(in) :: HW_a(system%num_bands, system%num_bands, 3)
-    complex(kind=dp),   intent(in) :: AW_a(system%num_bands, system%num_bands, 3)
-    complex(kind=dp),   intent(in) :: AW_a_b(system%num_bands, system%num_bands, 3, 3)
+    type(sys), intent(in) :: system
+    real(kind=dp), intent(in) :: eig(system%num_bands)
+    complex(kind=dp), intent(in) :: rot(system%num_bands, system%num_bands)
+    complex(kind=dp), intent(in) :: HW_a_b(system%num_bands, system%num_bands, 3, 3)
+    complex(kind=dp), intent(in) :: HW_a(system%num_bands, system%num_bands, 3)
+    complex(kind=dp), intent(in) :: AW_a(system%num_bands, system%num_bands, 3)
+    complex(kind=dp), intent(in) :: AW_a_b(system%num_bands, system%num_bands, 3, 3)
 
     logical, intent(inout) :: error
 
     complex(kind=dp) :: cov_r(system%num_bands, system%num_bands, 3, 3), &
-
                         rot_H_a(system%num_bands, system%num_bands, 3), &
                         vels(system%num_bands, system%num_bands, 3), &
-
                         D_a(system%num_bands, system%num_bands, 3), &
-
                         rot_H_a_b(system%num_bands, system%num_bands, 3, 3), &
                         rot_A_a_b(system%num_bands, system%num_bands, 3, 3), &
-
                         rot_A_a(system%num_bands, system%num_bands, 3), &
-
                         sum_AD(system%num_bands, system%num_bands, 3, 3), &
                         sum_HD(system%num_bands, system%num_bands, 3, 3), &
                         r(system%num_bands, system%num_bands, 3)
@@ -368,7 +364,7 @@ module local_k_quantities
     !Get velocities.
     vels = velocities(system, HW_a, eig, rot, error)
     if (error) then
-      write(unit=113, fmt="(a)") "Error in function cov_deriv_of_dipole when computing the velocities."
+      write (unit=113, fmt="(a)") "Error in function cov_deriv_of_dipole when computing the velocities."
       return
     endif
 
@@ -382,36 +378,36 @@ module local_k_quantities
 
           do j = 1, 3
             sum_AD(n, m, j, i) = (sum(rot_A_a(n, :, j)*D_a(:, m, i)) - rot_A_a(n, n, j)*D_a(n, m, i)) &
-                               - (sum(D_a(n, :, i)*rot_A_a(:, m, j)) - D_a(n, m, i)*rot_A_a(m, m, j))
+                                 - (sum(D_a(n, :, i)*rot_A_a(:, m, j)) - D_a(n, m, i)*rot_A_a(m, m, j))
             sum_HD(n, m, j, i) = (sum(rot_H_a(n, :, j)*D_a(:, m, i)) - rot_H_a(n, n, j)*D_a(n, m, i)) &
-                               - (sum(D_a(n, :, i)*rot_H_a(:, m, j)) - D_a(n, m, i)*rot_H_a(m, m, j))
+                                 - (sum(D_a(n, :, i)*rot_H_a(:, m, j)) - D_a(n, m, i)*rot_H_a(m, m, j))
           enddo!j
 
           cov_r(n, m, i, :) = (rot_A_a_b(n, m, :, i) &
-                              + ((rot_A_a(n, n, :) - rot_A_a(m, m, :))*D_a(n, m, i) + &
-                                 (rot_A_a(n, n, i) - rot_A_a(m, m, i))*D_a(n, m, :)) &
-                              - cmplx_i*rot_A_a(n, m, :)*(rot_A_a(n, n, i) - rot_A_a(m, m, i)) &
-                              + sum_AD(n, m, :, i) &
-                              + cmplx_i*(rot_H_a_b(n, m, :, i) &
-                                        + sum_HD(n, m, :, i) &
-                                        + (D_a(n, m, :)*(vels(n, n, i) - vels(m, m, i)) + &
-                                           D_a(n, m, i)*(vels(n, n, :) - vels(n, n, :)))) &
-                              /(eig(m) - eig(n)))
+                               + ((rot_A_a(n, n, :) - rot_A_a(m, m, :))*D_a(n, m, i) + &
+                                  (rot_A_a(n, n, i) - rot_A_a(m, m, i))*D_a(n, m, :)) &
+                               - cmplx_i*rot_A_a(n, m, :)*(rot_A_a(n, n, i) - rot_A_a(m, m, i)) &
+                               + sum_AD(n, m, :, i) &
+                               + cmplx_i*(rot_H_a_b(n, m, :, i) &
+                                          + sum_HD(n, m, :, i) &
+                                          + (D_a(n, m, :)*(vels(n, n, i) - vels(m, m, i)) + &
+                                             D_a(n, m, i)*(vels(n, n, :) - vels(n, n, :)))) &
+                               /(eig(m) - eig(n)))
 
           do p = 1, system%num_bands
             if (p == n .or. p == m) cycle
             cov_r(n, m, i, :) = cov_r(n, m, i, :) &
-                          - system%deg_offset**2/((eig(p) - eig(m))**2 &
-                                                  + system%deg_offset**2)/(eig(n) - eig(m)) &
-                          *(rot_A_a(n, p, :)*rot_H_a(p, m, i) &
-                            - (rot_H_a(n, p, :) + cmplx_i*(eig(n) &
-                                                              - eig(p))*rot_A_a(n, p, :))*rot_A_a(p, m, i)) &
-                          + system%deg_offset**2/((eig(n) - eig(p))**2 &
-                                                  + system%deg_offset**2)/(eig(n) - eig(m)) &
-                          *(rot_H_a(n, p, i)*rot_A_a(p, m, :) &
-                            - rot_A_a(n, p, i)*(rot_H_a(p, m, :) + cmplx_i*(eig(p) - eig(m))*rot_A_a(p, m, :)))
+                                - system%deg_offset**2/((eig(p) - eig(m))**2 &
+                                                        + system%deg_offset**2)/(eig(n) - eig(m)) &
+                                *(rot_A_a(n, p, :)*rot_H_a(p, m, i) &
+                                  - (rot_H_a(n, p, :) + cmplx_i*(eig(n) &
+                                                                 - eig(p))*rot_A_a(n, p, :))*rot_A_a(p, m, i)) &
+                                + system%deg_offset**2/((eig(n) - eig(p))**2 &
+                                                        + system%deg_offset**2)/(eig(n) - eig(m)) &
+                                *(rot_H_a(n, p, i)*rot_A_a(p, m, :) &
+                                  - rot_A_a(n, p, i)*(rot_H_a(p, m, :) + cmplx_i*(eig(p) - eig(m))*rot_A_a(p, m, :)))
           enddo!p
-          
+
         enddo!i
       enddo!m
     enddo!n
@@ -424,7 +420,7 @@ module local_k_quantities
     type(sys), intent(in) :: system
     real(kind=dp), intent(in) :: k(3)
     integer, optional :: Nder_i !Order of the derivative. Nder = 0 means normal Hamiltonian, Nder = 1, \partial H/\partial k^i...
-    logical, optional :: only_i !Determine, in the case of Nder > 0, if all derivatives i with i < Nder are requested. 
+    logical, optional :: only_i !Determine, in the case of Nder > 0, if all derivatives i with i < Nder are requested.
 
     type(local_k_data), allocatable, intent(out) :: H(:)
 
@@ -438,37 +434,37 @@ module local_k_quantities
 
     complex(kind=dp) :: temp_res
 
-    if (.not.(present(Nder_i))) then
+    if (.not. (present(Nder_i))) then
       Nder = 0
     else
       Nder = Nder_i
     endif
 
-    if (.not.(present(only_i))) then
+    if (.not. (present(only_i))) then
       only = .true.
     else
       only = only_i
     endif
 
-    if ((only .EQV. .true.)) allocate(H(1)) !Only compute the Nth Hamiltonian derivative.
-    if ((only .EQV. .false.)) allocate(H(Nder + 1)) !Compute from the 0th to the Nth Hamiltonian derivative.
+    if ((only .EQV. .true.)) allocate (H(1)) !Only compute the Nth Hamiltonian derivative.
+    if ((only .EQV. .false.)) allocate (H(Nder + 1)) !Compute from the 0th to the Nth Hamiltonian derivative.
 
     if ((only .EQV. .false.)) then
       do i = 1, Nder + 1
-        allocate(H(i)%integer_indices(2 + i - 1)) !2 band indices and i - 1derivative indices.
+        allocate (H(i)%integer_indices(2 + i - 1)) !2 band indices and i - 1derivative indices.
         H(i)%integer_indices(1) = system%num_bands
         H(i)%integer_indices(2) = system%num_bands
-        if (i/=1) then
+        if (i /= 1) then
           do j = 1, i - 1
             H(i)%integer_indices(2 + j) = 3
           enddo
         endif
       enddo
     else
-      allocate(H(1)%integer_indices(2 + Nder)) !2 band indices and Nder derivative indices.
+      allocate (H(1)%integer_indices(2 + Nder)) !2 band indices and Nder derivative indices.
       H(1)%integer_indices(1) = system%num_bands
       H(1)%integer_indices(2) = system%num_bands
-      if (Nder/=0) then
+      if (Nder /= 0) then
         do i = 1, Nder
           H(1)%integer_indices(2 + i) = 3
         enddo
@@ -477,8 +473,8 @@ module local_k_quantities
 
     if ((only .EQV. .true.)) then !Case of only a requested derivative.
 
-      allocate(i_arr(size(H(1)%integer_indices))) !Array indices storage.
-      allocate(H(1)%k_data(product(H(1)%integer_indices))) !Data storage.
+      allocate (i_arr(size(H(1)%integer_indices))) !Array indices storage.
+      allocate (H(1)%k_data(product(H(1)%integer_indices))) !Data storage.
       H(1)%k_data = cmplx_0 !Initialize.
 
       do i_mem = 1, product(H(1)%integer_indices) !For each integer index.
@@ -486,8 +482,8 @@ module local_k_quantities
         i_arr = integer_memory_element_to_array_element(H(1), i_mem) !Get array index.
 
         temp_res = cmplx_0
-        !$OMP PARALLEL PRIVATE (kdotr, vec, prod_R) REDUCTION (+: temp_res)
-        !$OMP DO
+!$OMP         PARALLEL PRIVATE (kdotr, vec, prod_R) REDUCTION (+: temp_res)
+!$OMP         DO
         do irpts = 1, system%num_R_points !For each point in the Bravais lattice.
 
           !Compute factor appearing in the exponential (k is in coords relative to recip. lattice vectors).
@@ -501,68 +497,70 @@ module local_k_quantities
 
           !In the case of derivatives compute the prefactor involving a product of Bravais lattice vector components.
           prod_R = 1.0_dp
-          if (Nder/=0) then
+          if (Nder /= 0) then
             do j = 1, Nder
               prod_R = prod_R*vec(i_arr(j + 2))
             enddo
           endif
 
           temp_res = temp_res + & !Compute sum.
-          ((cmplx_i)**Nder)*(prod_R)*exp(cmplx_i*kdotr)*system%real_space_hamiltonian_elements(i_arr(1), i_arr(2), irpts) &
-          /real(system%deg_R_point(irpts), dp)
+                     ((cmplx_i)**Nder)*(prod_R)*exp(cmplx_i*kdotr)* &
+                     system%real_space_hamiltonian_elements(i_arr(1), i_arr(2), irpts) &
+                     /real(system%deg_R_point(irpts), dp)
           !TODO: Recheck if system%deg_R_point(irpts) appears dividing.
         enddo!irpts
-        !$OMP END DO
-        !$OMP END PARALLEL
+!$OMP         END DO
+!$OMP         END PARALLEL
         H(1)%k_data(i_mem) = temp_res
       enddo!i_mem
 
-      deallocate(i_arr)
+      deallocate (i_arr)
 
     else !Case of requestad all derivatives.
       do i = 1, Nder + 1
 
-        allocate(i_arr(size(H(i)%integer_indices))) !Array indices storage.
-        allocate(H(i)%k_data(product(H(i)%integer_indices))) !Data storage.
+        allocate (i_arr(size(H(i)%integer_indices))) !Array indices storage.
+        allocate (H(i)%k_data(product(H(i)%integer_indices))) !Data storage.
         H(i)%k_data = cmplx_0 !Initialize.
-  
+
         do i_mem = 1, product(H(i)%integer_indices) !For each integer index.
-  
+
           i_arr = integer_memory_element_to_array_element(H(i), i_mem) !Get array index.
-  
+
           temp_res = cmplx_0
-          !$OMP PARALLEL PRIVATE (kdotr, vec, prod_R) REDUCTION (+: temp_res)
-          !$OMP DO
+!$OMP           PARALLEL PRIVATE (kdotr, vec, prod_R) REDUCTION (+: temp_res)
+!$OMP           DO
           do irpts = 1, system%num_R_points !For each point in the Bravais lattice.
-  
+
             !Compute factor appearing in the exponential (k is in coords relative to recip. lattice vectors).
             kdotr = 2.0_dp*pi*dot_product(system%R_point(irpts, :), k)
-  
+
             !Compute Bravais lattice vector for label irpts.
             vec = 0.0_dp
             do ivec = 1, 3
               vec = vec + system%R_point(irpts, ivec)*system%direct_lattice_basis(ivec, :)
             enddo
-  
+
             !In the case of derivatives compute the prefactor involving a product of Bravais lattice vector components.
             prod_R = 1.0_dp
-            if (i/=1) then
+            if (i /= 1) then
               do j = 1, i - 1
                 prod_R = prod_R*vec(i_arr(j + 2))
               enddo
             endif
-  
+
             temp_res = temp_res + & !Compute sum.
-            ((cmplx_i)**(i - 1))*(prod_R)*exp(cmplx_i*kdotr)*system%real_space_hamiltonian_elements(i_arr(1), i_arr(2), irpts) &
-            /real(system%deg_R_point(irpts), dp)
+                       ((cmplx_i)**(i - 1))*(prod_R)* &
+                       exp(cmplx_i*kdotr)*system%real_space_hamiltonian_elements(i_arr(1), i_arr(2), irpts) &
+                       /real(system%deg_R_point(irpts), dp)
             !TODO: Recheck if system%deg_R_point(irpts) appears dividing.
           enddo!irpts
-          !$OMP END DO
-          !$OMP END PARALLEL
+!$OMP           END DO
+!$OMP           END PARALLEL
           H(i)%k_data(i_mem) = temp_res
         enddo!i_mem
-  
-        deallocate(i_arr)
+
+        deallocate (i_arr)
 
       enddo
     endif
@@ -573,7 +571,7 @@ module local_k_quantities
     type(sys), intent(in) :: system
     real(kind=dp), intent(in) :: k(3)
     integer, optional :: Nder_i !Order of the derivative. Nder = 0 means normal Berry connection, Nder = 1, \partial A^i/\partial k^j...
-    logical, optional :: only_i !Determine, in the case of Nder > 0, if all derivatives i with i < Nder are requested. 
+    logical, optional :: only_i !Determine, in the case of Nder > 0, if all derivatives i with i < Nder are requested.
 
     type(local_k_data), allocatable, intent(out) :: A(:)
 
@@ -587,39 +585,39 @@ module local_k_quantities
 
     complex(kind=dp) :: temp_res
 
-    if (.not.(present(Nder_i))) then
+    if (.not. (present(Nder_i))) then
       Nder = 0
     else
       Nder = Nder_i
     endif
 
-    if (.not.(present(only_i))) then
+    if (.not. (present(only_i))) then
       only = .true.
     else
       only = only_i
     endif
 
-    if ((only .EQV. .true.)) allocate(A(1)) !Only compute the Nth position operator's derivative.
-    if ((only .EQV. .false.)) allocate(A(Nder + 1)) !Compute from the 0th to the Nth position operator's derivative.
+    if ((only .EQV. .true.)) allocate (A(1)) !Only compute the Nth position operator's derivative.
+    if ((only .EQV. .false.)) allocate (A(Nder + 1)) !Compute from the 0th to the Nth position operator's derivative.
 
     if ((only .EQV. .false.)) then
       do i = 1, Nder + 1
-        allocate(A(i)%integer_indices(3 + i - 1)) !2 band indices, 1 component index and i - 1 derivative indices.
+        allocate (A(i)%integer_indices(3 + i - 1)) !2 band indices, 1 component index and i - 1 derivative indices.
         A(i)%integer_indices(1) = system%num_bands
         A(i)%integer_indices(2) = system%num_bands
         A(i)%integer_indices(3) = 3
-        if (i/=1) then
+        if (i /= 1) then
           do j = 1, i - 1
             A(i)%integer_indices(3 + j) = 3
           enddo
         endif
       enddo
     else
-      allocate(A(1)%integer_indices(3 + Nder)) !2 band indices, 1 component index and i - 1 derivative indices.
+      allocate (A(1)%integer_indices(3 + Nder)) !2 band indices, 1 component index and i - 1 derivative indices.
       A(1)%integer_indices(1) = system%num_bands
       A(1)%integer_indices(2) = system%num_bands
       A(1)%integer_indices(3) = 3
-      if (Nder/=0) then
+      if (Nder /= 0) then
         do i = 1, Nder
           A(1)%integer_indices(3 + i) = 3
         enddo
@@ -628,8 +626,8 @@ module local_k_quantities
 
     if ((only .EQV. .true.)) then !Case of only a requested derivative.
 
-      allocate(i_arr(size(A(1)%integer_indices))) !Array indices storage.
-      allocate(A(1)%k_data(product(A(1)%integer_indices))) !Data storage.
+      allocate (i_arr(size(A(1)%integer_indices))) !Array indices storage.
+      allocate (A(1)%k_data(product(A(1)%integer_indices))) !Data storage.
       A(1)%k_data = cmplx_0 !Initialize.
 
       do i_mem = 1, product(A(1)%integer_indices) !For each integer index.
@@ -637,8 +635,8 @@ module local_k_quantities
         i_arr = integer_memory_element_to_array_element(A(1), i_mem) !Get array index.
 
         temp_res = cmplx_0
-        !$OMP PARALLEL PRIVATE (kdotr, vec, prod_R) REDUCTION (+: temp_res)
-        !$OMP DO
+!$OMP         PARALLEL PRIVATE (kdotr, vec, prod_R) REDUCTION (+: temp_res)
+!$OMP         DO
         do irpts = 1, system%num_R_points !For each point in the Bravais lattice.
 
           !Compute factor appearing in the exponential (k is in coords relative to recip. lattice vectors).
@@ -652,68 +650,70 @@ module local_k_quantities
 
           !In the case of derivatives compute the prefactor involving a product of Bravais lattice vector components.
           prod_R = 1.0_dp
-          if (Nder/=0) then
+          if (Nder /= 0) then
             do j = 1, Nder
               prod_R = prod_R*vec(i_arr(j + 3))
             enddo
           endif
 
           temp_res = temp_res + & !Compute sum.
-          ((cmplx_i)**Nder)*(prod_R)*exp(cmplx_i*kdotr)*system%real_space_position_elements(i_arr(1), i_arr(2), i_arr(3), irpts) &
-          /real(system%deg_R_point(irpts), dp)
+                     ((cmplx_i)**Nder)*(prod_R)* &
+                     exp(cmplx_i*kdotr)*system%real_space_position_elements(i_arr(1), i_arr(2), i_arr(3), irpts) &
+                     /real(system%deg_R_point(irpts), dp)
           !TODO: Recheck if system%deg_R_point(irpts) appears dividing.
         enddo!irpts
-        !$OMP END DO
-        !$OMP END PARALLEL
+!$OMP         END DO
+!$OMP         END PARALLEL
         A(1)%k_data(i_mem) = temp_res
       enddo!i_mem
 
-      deallocate(i_arr)
+      deallocate (i_arr)
 
     else !Case of requestad all derivatives.
       do i = 1, Nder + 1
 
-        allocate(i_arr(size(A(i)%integer_indices))) !Array indices storage.
-        allocate(A(i)%k_data(product(A(i)%integer_indices))) !Data storage.
+        allocate (i_arr(size(A(i)%integer_indices))) !Array indices storage.
+        allocate (A(i)%k_data(product(A(i)%integer_indices))) !Data storage.
         A(i)%k_data = cmplx_0 !Initialize.
-  
+
         do i_mem = 1, product(A(i)%integer_indices) !For each integer index.
-  
+
           i_arr = integer_memory_element_to_array_element(A(i), i_mem) !Get array index.
-  
+
           temp_res = cmplx_0
-          !$OMP PARALLEL PRIVATE (kdotr, vec, prod_R) REDUCTION (+: temp_res)
-          !$OMP DO
+!$OMP           PARALLEL PRIVATE (kdotr, vec, prod_R) REDUCTION (+: temp_res)
+!$OMP           DO
           do irpts = 1, system%num_R_points !For each point in the Bravais lattice.
-  
+
             !Compute factor appearing in the exponential (k is in coords relative to recip. lattice vectors).
             kdotr = 2.0_dp*pi*dot_product(system%R_point(irpts, :), k)
-  
+
             !Compute Bravais lattice vector for label irpts.
             vec = 0.0_dp
             do ivec = 1, 3
               vec = vec + system%R_point(irpts, ivec)*system%direct_lattice_basis(ivec, :)
             enddo
-  
+
             !In the case of derivatives compute the prefactor involving a product of Bravais lattice vector components.
             prod_R = 1.0_dp
-            if (i/=1) then
+            if (i /= 1) then
               do j = 1, i - 1
                 prod_R = prod_R*vec(i_arr(j + 3))
               enddo
             endif
-  
+
             temp_res = temp_res + & !Compute sum.
-            ((cmplx_i)**(i - 1))*(prod_R)*exp(cmplx_i*kdotr)*system%real_space_position_elements(i_arr(1), i_arr(2), i_arr(3), irpts) &
-            /real(system%deg_R_point(irpts), dp)
+                       ((cmplx_i)**(i - 1))*(prod_R)* &
+                       exp(cmplx_i*kdotr)*system%real_space_position_elements(i_arr(1), i_arr(2), i_arr(3), irpts) &
+                       /real(system%deg_R_point(irpts), dp)
             !TODO: Recheck if system%deg_R_point(irpts) appears dividing.
           enddo!irpts
-          !$OMP END DO
-          !$OMP END PARALLEL
+!$OMP           END DO
+!$OMP           END PARALLEL
           A(i)%k_data(i_mem) = temp_res
         enddo!i_mem
-  
-        deallocate(i_arr)
+
+        deallocate (i_arr)
 
       enddo
     endif

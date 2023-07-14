@@ -8,44 +8,44 @@ module kpath
   implicit none
 
   type, extends(global_k_data) :: k_path_task
-    !1st index is the id of the vector in the path. 
+    !1st index is the id of the vector in the path.
     !2nd index corresponds to the component of the vector
     !in the path in coordinates relative to the reciprocal lattice.
-    real(kind=dp),    allocatable :: vectors(:, :)
+    real(kind=dp), allocatable :: vectors(:, :)
     !Its size is the number of vectors in the BZ - 1.
     !vector(i) contains the number of k-points between vector i and vector i+1.
-    integer,          allocatable :: number_of_pts(:)
-    !Array to store data with integer index, 
+    integer, allocatable :: number_of_pts(:)
+    !Array to store data with integer index,
     !continuous index and kpt index respectively.
     complex(kind=dp), allocatable :: kpath_data(:, :, :)
   end type k_path_task
 
-  contains
+contains
 
   subroutine kpath_constructor(task, &
                                name, &
-                             l_calculator, g_calculator, &
-                             Nvec, vec_coord, nkpts, &
-                             N_int_ind, int_ind_range, &
-                             N_ext_vars, ext_vars_start, ext_vars_end, ext_vars_steps, &
-                             part_int_comp)
+                               l_calculator, g_calculator, &
+                               Nvec, vec_coord, nkpts, &
+                               N_int_ind, int_ind_range, &
+                               N_ext_vars, ext_vars_start, ext_vars_end, ext_vars_steps, &
+                               part_int_comp)
     character(len=*) :: name
 
-    procedure (local_calculator),  optional :: l_calculator
-    procedure (global_calculator), optional :: g_calculator
+    procedure(local_calculator), optional :: l_calculator
+    procedure(global_calculator), optional :: g_calculator
 
-    integer,       intent(in) :: Nvec
+    integer, intent(in) :: Nvec
     real(kind=dp), intent(in) :: vec_coord(Nvec, 3)
-    integer,       intent(in) :: nkpts(Nvec - 1)
+    integer, intent(in) :: nkpts(Nvec - 1)
 
     integer, optional, intent(in) :: N_int_ind
     integer, optional, intent(in) :: int_ind_range(:)
 
-    integer,       optional, intent(in) :: N_ext_vars
+    integer, optional, intent(in) :: N_ext_vars
     real(kind=dp), optional, intent(in) :: ext_vars_start(:), ext_vars_end(:)
-    integer,       optional, intent(in) :: ext_vars_steps(:)
+    integer, optional, intent(in) :: ext_vars_steps(:)
 
-    integer, optional,  intent(in) :: part_int_comp(:)
+    integer, optional, intent(in) :: part_int_comp(:)
 
     class(k_path_task), intent(out) :: task
 
@@ -55,48 +55,48 @@ module kpath
     task%name = name
 
     !Set vector info
-    allocate(task%vectors(Nvec, 3), task%number_of_pts(Nvec-1))
+    allocate (task%vectors(Nvec, 3), task%number_of_pts(Nvec - 1))
     task%vectors = vec_coord
     task%number_of_pts = nkpts
 
     !Set integer index data.
-    if (((N_int_ind).ge.1).and.(present(int_ind_range))) then
-      allocate(task%integer_indices(N_int_ind))
+    if (((N_int_ind) .ge. 1) .and. (present(int_ind_range))) then
+      allocate (task%integer_indices(N_int_ind))
       do i = 1, N_int_ind
         task%integer_indices(i) = int_ind_range(i)
       enddo
     else
-      allocate(task%integer_indices(1))
+      allocate (task%integer_indices(1))
       task%integer_indices(1) = 1
     endif
 
     !Set external variable data.
-    if (((N_ext_vars).ge.1).and.(present(ext_vars_start)).and.(present(ext_vars_end)).and.(present(ext_vars_steps))) then
-      allocate(task%continuous_indices(N_ext_vars), task%ext_var_data(N_ext_vars))
+    if (((N_ext_vars) .ge. 1) .and. (present(ext_vars_start)) .and. (present(ext_vars_end)) .and. (present(ext_vars_steps))) then
+      allocate (task%continuous_indices(N_ext_vars), task%ext_var_data(N_ext_vars))
       do i = 1, N_ext_vars
         task%continuous_indices(i) = ext_vars_steps(i)
-        allocate(task%ext_var_data(i)%data(ext_vars_steps(i)))
+        allocate (task%ext_var_data(i)%data(ext_vars_steps(i)))
         task%ext_var_data(i) = external_variable_constructor(ext_vars_start(i), ext_vars_end(i), ext_vars_steps(i))
       enddo
     else
-      allocate(task%continuous_indices(1), task%ext_var_data(1))
+      allocate (task%continuous_indices(1), task%ext_var_data(1))
       task%continuous_indices(1) = 1.0_dp
-      allocate(task%ext_var_data(1)%data(1))
+      allocate (task%ext_var_data(1)%data(1))
       task%ext_var_data(1)%data = (/1.0_dp/)
     endif
 
-    if (present(g_calculator).and.(.not.present(l_calculator))) then
+    if (present(g_calculator) .and. (.not. present(l_calculator))) then
       !Set calculator pointer (function alias).
       task%global_calculator => g_calculator
-      nullify(task%local_calculator)
-    elseif (present(l_calculator).and.(.not.present(g_calculator))) then
+      nullify (task%local_calculator)
+    elseif (present(l_calculator) .and. (.not. present(g_calculator))) then
       !Set calculator pointer (function alias).
       task%local_calculator => l_calculator
-      nullify(task%global_calculator)
+      nullify (task%global_calculator)
     endif
 
     !Set kdata.
-    allocate(task%kpath_data(product(task%integer_indices), product(task%continuous_indices), sum(task%number_of_pts)))
+    allocate (task%kpath_data(product(task%integer_indices), product(task%continuous_indices), sum(task%number_of_pts)))
     task%kpath_data = cmplx_0
 
     !Set calculation of a particular integer component.
@@ -107,7 +107,7 @@ module kpath
   subroutine kpath_sampler(task, system)
 
     class(k_path_task), intent(inout) :: task
-    type(sys),         intent(in)    :: system
+    type(sys), intent(in)    :: system
 
     integer       :: ivec, isampling
     real(kind=dp) :: k(3)
@@ -117,48 +117,50 @@ module kpath
     logical :: error
     error = .false.
 
-    allocate(temp_res(product(task%integer_indices), product(task%continuous_indices), sum(task%number_of_pts)))
+    allocate (temp_res(product(task%integer_indices), product(task%continuous_indices), sum(task%number_of_pts)))
 
-    write(unit=112, fmt = "(A)") "Starting kpath sampling subroutine."
-    write(unit=112, fmt = "(A)") "Sampling task: "//trim(task%name)//" for the system "//trim(system%name)//"."
+    write (unit=112, fmt="(A)") "Starting kpath sampling subroutine."
+    write (unit=112, fmt="(A)") "Sampling task: "//trim(task%name)//" for the system "//trim(system%name)//"."
 
     !Sampling.
     do ivec = 1, size(task%vectors(:, 1)) - 1 !For each considered vector except the last one.
-      !$OMP PARALLEL SHARED(temp_res) PRIVATE(isampling, k) 
-      !$OMP DO 
+!$OMP       PARALLEL SHARED(temp_res) PRIVATE(isampling, k)
+!$OMP       DO
       do isampling = 1, task%number_of_pts(ivec)
         !Define a local vector from ivec-th vector to ivec+1-th vector discretized in task%number_of_pts(ivec) steps.
 
-        if (task%number_of_pts(ivec)==1) then
+        if (task%number_of_pts(ivec) == 1) then
           k = task%vectors(ivec, :)
         else
-          k = task%vectors(ivec, :) + (task%vectors(ivec + 1, :) - task%vectors(ivec, :))*real(isampling - 1, dp)/real(task%number_of_pts(ivec) - 1, dp)
+          k = task%vectors(ivec, :) + &
+              (task%vectors(ivec + 1, :) - task%vectors(ivec, :))*real(isampling - 1, dp) &
+              /real(task%number_of_pts(ivec) - 1, dp)
         endif
 
         !Gather data.
         if (associated(task%local_calculator)) then
-          temp_res(:, 1, sum(task%number_of_pts(1:ivec-1)) + isampling) = task%local_calculator(task, system, k, error)
-        elseif (associated(task%global_calculator)) then 
-          temp_res(:, :, sum(task%number_of_pts(1:ivec-1)) + isampling) = task%global_calculator(task, system, k, error)
+          temp_res(:, 1, sum(task%number_of_pts(1:ivec - 1)) + isampling) = task%local_calculator(task, system, k, error)
+        elseif (associated(task%global_calculator)) then
+          temp_res(:, :, sum(task%number_of_pts(1:ivec - 1)) + isampling) = task%global_calculator(task, system, k, error)
         endif
 
         if (error) then
-          write(unit=113, fmt="(a, 3E18.8E3)") "Error when sampling k-point", k
-          write(unit=113, fmt="(a)") "Stopping..."
+          write (unit=113, fmt="(a, 3E18.8E3)") "Error when sampling k-point", k
+          write (unit=113, fmt="(a)") "Stopping..."
           stop
         endif
 
       enddo
-      !$OMP END DO
-      !$OMP END PARALLEL
+!$OMP       END DO
+!$OMP       END PARALLEL
     enddo
 
-    write(unit=112, fmt = "(A)") "Sampling done."
-    write(unit=112, fmt="(A)") ""
+    write (unit=112, fmt="(A)") "Sampling done."
+    write (unit=112, fmt="(A)") ""
 
     task%kpath_data = temp_res
 
-    deallocate(temp_res)
+    deallocate (temp_res)
 
   end subroutine kpath_sampler
 
@@ -184,28 +186,31 @@ module kpath
         enddo
         filename = trim(filename)//'.dat'
 
-        open(unit=111, action="write", file=filename)
+        open (unit=111, action="write", file=filename)
 
         countk = 0
         do ivec = 1, size(task%vectors(:, 1)) - 1 !For each considered vector except the last one.
           do isampling = 1, task%number_of_pts(ivec)
             countk = countk + 1
             !Define a local vector from ivec-th vector to ivec+1-th vector discretized in task%number_of_pts(ivec) steps.
-            if (task%number_of_pts(ivec)==1) then
+            if (task%number_of_pts(ivec) == 1) then
               k = task%vectors(ivec, :)
             else
-              k = task%vectors(ivec, :) + (task%vectors(ivec + 1, :) - task%vectors(ivec, :))*real(isampling - 1, dp)/real(task%number_of_pts(ivec) - 1, dp)
+              k = task%vectors(ivec, :) + &
+                  (task%vectors(ivec + 1, :) - task%vectors(ivec, :))*real(isampling - 1, dp) &
+                  /real(task%number_of_pts(ivec) - 1, dp)
             endif
-            write(unit=111, fmt="(6E18.8E3)") real(countk, dp), k, real(task%kpath_data(i_mem, 1, countk), dp), aimag(task%kpath_data(i_mem, 1, countk))
+            write (unit=111, fmt="(6E18.8E3)") real(countk, dp), k, real(task%kpath_data(i_mem, 1, countk), dp), &
+              aimag(task%kpath_data(i_mem, 1, countk))
           enddo
         enddo
 
-        close(unit=111)
+        close (unit=111)
 
       enddo
     elseif (associated(task%global_calculator)) then
 
-      write(fmtf, "(I10)") size(task%continuous_indices) + 6
+      write (fmtf, "(I10)") size(task%continuous_indices) + 6
       fmtf = '('//trim(adjustl(trim(fmtf)))//'E18.8E3)'
 
       do i_mem = 1, product(task%integer_indices) !For each integer index.
@@ -218,7 +223,7 @@ module kpath
         enddo
         filename = trim(filename)//'.dat'
 
-        open(unit=111, action="write", file=filename)
+        open (unit=111, action="write", file=filename)
 
         do r_mem = 1, product(task%continuous_indices) !For each continuous index.
 
@@ -229,20 +234,23 @@ module kpath
             do isampling = 1, task%number_of_pts(ivec)
               countk = countk + 1
               !Define a local vector from ivec-th vector to ivec+1-th vector discretized in task%number_of_pts(ivec) steps.
-              if (task%number_of_pts(ivec)==1) then
+              if (task%number_of_pts(ivec) == 1) then
                 k = task%vectors(ivec, :)
               else
-                k = task%vectors(ivec, :) + (task%vectors(ivec + 1, :) - task%vectors(ivec, :))*real(isampling - 1, dp)/real(task%number_of_pts(ivec) - 1, dp)
+                k = task%vectors(ivec, :) + &
+                    (task%vectors(ivec + 1, :) - task%vectors(ivec, :))*real(isampling - 1, dp)/ &
+                    real(task%number_of_pts(ivec) - 1, dp)
               endif
 
-              write(unit=111, fmt=fmtf) real(countk, dp), k, (task%ext_var_data(count)%data(r_arr(count)), count = 1, size(task%continuous_indices)), &
-              real(task%kpath_data(i_mem, r_mem, countk), dp), aimag(task%kpath_data(i_mem, r_mem, countk))
+              write (unit=111, fmt=fmtf) real(countk, dp), k, &
+                (task%ext_var_data(count)%data(r_arr(count)), count=1, size(task%continuous_indices)), &
+                real(task%kpath_data(i_mem, r_mem, countk), dp), aimag(task%kpath_data(i_mem, r_mem, countk))
             enddo
           enddo
-  
+
         enddo
 
-        close(unit=111)
+        close (unit=111)
 
       enddo
     endif
