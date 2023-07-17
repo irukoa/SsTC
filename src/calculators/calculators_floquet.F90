@@ -10,14 +10,14 @@ module calculators_floquet
   implicit none
 
   type, extends(BZ_integral_task) :: floq_BZ_integral_task
-    real(kind=dp)                 :: Nt = 65 !2^6 + 1 Discretization points of each period.
-    real(kind=dp)                 :: Ns = 10 !Considered Harmonics.
+    integer              :: Nt = 65 !2^6 + 1 Discretization points of each period.
+    integer            :: Ns = 10 !Considered Harmonics.
     logical                       :: diag = .false. !If we only consider diagonal terms of the pos. operator.
   end type
 
   type, extends(k_path_task) :: floq_k_path_task
-    real(kind=dp)                 :: Nt = 65 !2^6 + 1 Discretization points of each period.
-    real(kind=dp)                 :: Ns = 10 !Considered Harmonics.
+    integer              :: Nt = 65 !2^6 + 1 Discretization points of each period.
+    integer              :: Ns = 10 !Considered Harmonics.
     logical                       :: diag = .false. !If we only consider diagonal terms of the pos. operator.
   end type
 
@@ -176,7 +176,7 @@ contains
         tev = cmplx_0
         forall (i=1:system%num_bands) tev(i, i) = cmplx(1.0_dp, 0.0_dp)
 
-        do it = 1, floquet_task%Nt
+        do it = 2, floquet_task%Nt
 
           tper = t0 + dt*real(it - 1, dp) !In eV^-1.
 
@@ -227,6 +227,348 @@ contains
 
   end function quasienergy
   !====END QUASIENERGY CALCULATOR AND CONSTRUCTOR====!
+
+  !====FLOQUET CURRENT CALCULATOR AND CONSTRUCTOR====!
+  subroutine floq_curr_BZ_integral_constructor(floq_task, method, samples, &
+                                               Nharm, &
+                                               axstart, axend, axsteps, &
+                                               pxstart, pxend, pxsteps, &
+                                               aystart, ayend, aysteps, &
+                                               pystart, pyend, pysteps, &
+                                               azstart, azend, azsteps, &
+                                               pzstart, pzend, pzsteps, &
+                                               omegastart, omegaend, omegasteps, &
+                                               t0start, t0end, t0steps, &
+                                               tstart, tend, tsteps, &
+                                               floq_Nt, floq_NS, floq_diag, &
+                                               particular_integer_component)
+
+    character(len=*), optional, intent(in) :: method
+    integer, optional, intent(in) :: samples(3)
+
+    integer, intent(in) :: Nharm
+    real(kind=dp), dimension(Nharm), intent(in) :: axstart, axend, &
+                                                   pxstart, pxend, &
+                                                   aystart, ayend, &
+                                                   pystart, pyend, &
+                                                   azstart, azend, &
+                                                   pzstart, pzend
+
+    integer, dimension(Nharm), intent(in) :: axsteps, pxsteps, aysteps, pysteps, azsteps, pzsteps
+
+    real(kind=dp), intent(in) :: omegastart, omegaend, &
+                                 t0start, t0end, &
+                                 tstart, tend
+
+    integer, intent(in) :: omegasteps, t0steps, tsteps
+
+    real(kind=dp), dimension(6*Nharm + 3) :: start, end
+    integer, dimension(6*Nharm + 3) :: steps
+    integer :: i, iharm, iterable_vars(6*Nharm)
+
+    integer, optional, intent(in) :: floq_Nt, floq_NS
+    logical, optional, intent(in) :: floq_diag
+
+    integer, optional, intent(in) :: particular_integer_component(:)
+
+    type(floq_BZ_integral_task), intent(out) :: floq_task
+
+    do iharm = 1, Nharm
+      start(6*(iharm - 1) + 1) = axstart(iharm)
+      end(6*(iharm - 1) + 1) = axend(iharm)
+      steps(6*(iharm - 1) + 1) = axsteps(iharm)
+
+      start(6*(iharm - 1) + 2) = pxstart(iharm)
+      end(6*(iharm - 1) + 2) = pxend(iharm)
+      steps(6*(iharm - 1) + 2) = pxsteps(iharm)
+
+      start(6*(iharm - 1) + 3) = aystart(iharm)
+      end(6*(iharm - 1) + 3) = ayend(iharm)
+      steps(6*(iharm - 1) + 3) = aysteps(iharm)
+
+      start(6*(iharm - 1) + 4) = pystart(iharm)
+      end(6*(iharm - 1) + 4) = pyend(iharm)
+      steps(6*(iharm - 1) + 4) = pysteps(iharm)
+
+      start(6*(iharm - 1) + 5) = azstart(iharm)
+      end(6*(iharm - 1) + 5) = azend(iharm)
+      steps(6*(iharm - 1) + 5) = azsteps(iharm)
+
+      start(6*(iharm - 1) + 6) = pzstart(iharm)
+      end(6*(iharm - 1) + 6) = pzend(iharm)
+      steps(6*(iharm - 1) + 6) = pzsteps(iharm)
+    enddo
+
+    start(6*Nharm + 1) = t0start
+    end(6*Nharm + 1) = t0end
+    steps(6*Nharm + 1) = t0steps
+
+    start(6*Nharm + 2) = omegastart
+    end(6*Nharm + 2) = omegaend
+    steps(6*Nharm + 2) = omegasteps
+
+    start(6*Nharm + 3) = tstart
+    end(6*Nharm + 3) = tend
+    steps(6*Nharm + 3) = tsteps
+
+    call BZ_integral_task_constructor(task=floq_task, name="floq_curr", &
+                                      g_calculator=floq_curr, &
+                                      method=method, samples=samples, &
+                                      N_int_ind=1, int_ind_range=(/3/), &
+                                      N_ext_vars=6*Nharm + 3, &
+                                      ext_vars_start=start, &
+                                      ext_vars_end=end, &
+                                      ext_vars_steps=steps, &
+                                      part_int_comp=particular_integer_component)
+
+    !Function floq_curr assumes that all the information on the driving field is stored in the iterable.
+    !Information on omega, t0 and t is passed via the last 3 indices of start(:), end(:) and steps(:) arrays.
+    forall (i=1:6*Nharm) iterable_vars(i) = i
+    call construct_iterable(floq_task, iterable_vars)
+
+    if (present(floq_Nt)) floq_task%Nt = floq_Nt
+    if (present(floq_Ns)) floq_task%Ns = floq_Ns
+    if (present(floq_diag)) floq_task%diag = floq_diag
+
+  end subroutine floq_curr_BZ_integral_constructor
+  !==========DEFAULT FLOQUET CURRENT INTEGRAL TASK==========!
+  function floq_curr(floquet_task, system, k, error) result(u)
+    class(global_k_data), intent(in) :: floquet_task
+    type(sys), intent(in) :: system
+    real(kind=dp), intent(in) :: k(3)
+    logical, intent(inout) :: error
+
+    complex(kind=dp) :: u(product(floquet_task%integer_indices), product(floquet_task%continuous_indices))
+
+    integer :: r_mem, r_arr(size(floquet_task%continuous_indices)), &
+               i_mem
+
+    real(kind=dp) :: omega, t0, q(3), dt, tper, t, quasi(system%num_bands), eig(system%num_bands)
+    real(kind=dp), allocatable :: amplitudes(:, :), &
+                                  phases(:, :)
+    integer :: Nharm, iharm, i, iterable, it0, iomega, it, itper, info, &
+               n, m, l, p, ir, is
+
+    complex(kind=dp) :: H_TK(system%num_bands, system%num_bands), &
+                        expH_TK(system%num_bands, system%num_bands), &
+                        hf(system%num_bands, system%num_bands), &
+                        rotWF(system%num_bands, system%num_bands), &
+                        w_hamiltonian(system%num_bands, system%num_bands), &
+                        rotWH(system%num_bands, system%num_bands), &
+                        rho(system%num_bands, system%num_bands), &
+                        vels(system%num_bands, system%num_bands, 3), &
+                        rhoF(system%num_bands, system%num_bands), &
+                        velsF(system%num_bands, system%num_bands, 3)
+
+    complex(kind=dp), allocatable :: tev(:, :, :), pt(:, :, :), shrinkqs(:), qs(:, :, :), integrand(:, :, :), shrink_integrand(:, :)
+
+    select type (floquet_task)
+    type is (floq_BZ_integral_task)
+
+      !Gather required quantities in the Wannier basis.
+      !Time-independent Hamiltonian.
+      w_hamiltonian = wannier_hamiltonian(system, k)
+      !Get eigenvalues and rotation from Wannier to Hamiltonian basis.
+      call utility_diagonalize(w_hamiltonian, system%num_bands, eig, rotWH, error)
+      if (error) then
+       write (unit=113, fmt="(a)") "Error in function floq_curr when computing the eigenvalues of the time-independent Hamiltonian."
+        return
+      endif
+      !Get occupations (a matrix in the Hamiltonian basis).
+      rho = hamiltonian_occ_matrix(system, eig)
+      !Rotate them back to the Wannier basis (notice W\rho W^\dagger instead of W^\dagger\rho W).
+      rho = matmul(matmul(rotWH, rho), transpose(conjg(rotWH)))
+      !Get velocities (Hamiltonian basis). TODO: CHECK IF WE ALSO NEED NONDIAGONAL ELEMENTS OR ONLY DIAGONAL ONES.
+      vels = velocities(system, wannier_dhamiltonian_dk(system, k), eig, rotWH, error)
+      if (error) then
+        write (unit=113, fmt="(a)") "Error in function floq_curr when computing the velocities in the degenerate subspace."
+        return
+      endif
+      !Rotate back to Wannier basis.
+      do i = 1, 3
+        vels(:, :, i) = matmul(matmul(rotWH, vels(:, :, i)), transpose(conjg(rotWH)))
+      enddo
+
+      Nharm = (size(floquet_task%continuous_indices) - 3)/6
+      allocate (amplitudes(Nharm, 3), phases(Nharm, 3))
+
+      u = cmplx_0
+
+      allocate (tev(floquet_task%Nt, system%num_bands, system%num_bands), &
+                pt(floquet_task%Nt, system%num_bands, system%num_bands), &
+                qs(-floquet_task%Ns:floquet_task%Ns, system%num_bands, system%num_bands), &
+                shrinkqs(system%num_bands*system%num_bands), &
+                integrand(floquet_task%Nt, system%num_bands, system%num_bands), &
+                shrink_integrand(floquet_task%Nt, system%num_bands*system%num_bands))
+
+      do iterable = 1, size(floquet_task%iterables(:, 1)) !Loop on: all ext. variables except t0, omega, t
+
+        r_arr = floquet_task%iterables(iterable, :) !This list contains the particular permutation involving variation of driving field params.
+        !The indices corresponding to t0, omega and t (the last 3) are all 1.
+
+        do iharm = 1, Nharm
+          amplitudes(iharm, 1) = floquet_task%ext_var_data(6*(iharm - 1) + 1) &
+                                 %data(r_arr(6*(iharm - 1) + 1))
+          phases(iharm, 1) = floquet_task%ext_var_data(6*(iharm - 1) + 2) &
+                             %data(r_arr(6*(iharm - 1) + 2))
+          amplitudes(iharm, 2) = floquet_task%ext_var_data(6*(iharm - 1) + 3) &
+                                 %data(r_arr(6*(iharm - 1) + 3))
+          phases(iharm, 2) = floquet_task%ext_var_data(6*(iharm - 1) + 4) &
+                             %data(r_arr(6*(iharm - 1) + 4))
+          amplitudes(iharm, 3) = floquet_task%ext_var_data(6*(iharm - 1) + 5) &
+                                 %data(r_arr(6*(iharm - 1) + 5))
+          phases(iharm, 3) = floquet_task%ext_var_data(6*(iharm - 1) + 6) &
+                             %data(r_arr(6*(iharm - 1) + 6))
+        enddo
+
+        do it0 = 1, floquet_task%continuous_indices(6*Nharm + 1) !t0
+
+          r_arr(6*Nharm + 1) = it0
+
+          t0 = floquet_task%ext_var_data(6*Nharm + 1) &
+               %data(it0)
+
+          do iomega = 1, floquet_task%continuous_indices(6*Nharm + 2) !w
+
+            r_arr(6*Nharm + 2) = iomega
+
+            omega = floquet_task%ext_var_data(6*Nharm + 2) &
+                    %data(iomega)
+
+            dt = (2*pi/omega)/real(floquet_task%Nt - 1, dp)
+
+            !This calculates the time-evolution operator in the Wannier basis for each time-instant within a period.
+
+            !Initialize array and 1st time instant.
+            tev = cmplx_0
+            forall (i=1:system%num_bands) tev(1, i, i) = cmplx(1.0_dp, 0.0_dp)
+
+            do itper = 2, floquet_task%Nt !For all remaining time instants.
+
+              tper = t0 + dt*real(itper - 1, dp) !In eV^-1.
+
+              q = int_driving_field(amplitudes, phases, omega, tper) !In A^-1
+
+              H_TK = wannier_tdep_hamiltonian(system, q, k, floquet_task%diag, error) !In eV.
+              if (error) then
+                write (unit=113, fmt="(a, i3, a)") "Error in function floq_curr at t-step, ", it, &
+                  "when computing time-dependent Hamiltonian for modulation vector q = "
+                write (unit=113, fmt="(3E18.8E3, a)") q, "A^-1."
+                return
+              endif
+
+              expH_TK = utility_exphs(-cmplx_i*dt*H_TK, system%num_bands, .true., error)
+              if (error) then
+                write (unit=113, fmt="(a, i3, a)") "Error in function floq_curr at t-step, ", it, &
+                  "when computing matrix exponential for modulation vector q = "
+                write (unit=113, fmt="(3E18.8E3, a)") q, "A^-1."
+                return
+              endif
+
+              tev(itper, :, :) = matmul(tev(itper - 1, :, :), expH_TK)
+
+            enddo !itper
+
+            !At this point, the time-evolution operator for each time-instant within a period has been calculated in the Wannier basis.
+
+            !Get effective Floquet Hamiltonian in the Wannier basis.
+            hf = cmplx_i*omega*utility_logu(tev(floquet_task%Nt, :, :), system%num_bands, error)/(2*pi)
+            if (error) then
+              write (unit=113, fmt="(a)") "Error in function floq_curr when computing &
+              & matrix log of the one-petiod time evolution operator."
+              return
+            endif
+
+            !Diagonalize it to obtain the quasienergy spectra and the rotation matrix passing from Wannier to Floquet basis.
+            call utility_diagonalize(hf, system%num_bands, quasi, rotWF, error)
+            if (error) then
+              write (unit=113, fmt="(a)") "Error in function floq_curr when computing the quasienergy spectrum."
+              return
+            endif
+
+            !Get Q_s operators in the Floquet basis.
+            !For each omega multiple,
+            do is = -floquet_task%Ns, floquet_task%Ns
+              !for each time instant within the period,
+              do itper = 1, floquet_task%Nt
+
+                tper = t0 + dt*real(itper - 1, dp) !In eV^-1.
+
+                !compute the contribution for each time-instant.
+                integrand(itper, :, :) = matmul(TEV(itper, :, :), utility_exphs(cmplx_i*hf*tper, system%num_bands, .true., error))*exp(-cmplx_i*is*omega*tper) &
+                                         /real(floquet_task%Nt - 1, dp)!Adimensional. Units are OK.
+
+                !Shrink band indices.
+                call shrink_array(integrand(itper, :, :), shrink_integrand(itper, :), info) !TODO: if info=...???
+
+              enddo
+
+              !Extrapolate.
+              call integral_extrapolation(shrink_integrand, (/floquet_task%Nt/), (/t0, t0 + 2*pi/omega/), shrinkqs, info) !TODO: if info=...???
+              !Expand to Q_s.
+              call expand_array(shrinkqs, qs(is, :, :), info) !TODO: if info=...???
+              !At this point, the Q_s are in the Wannier basis, we pass them to the Floquet basis.
+              qs(is, :, :) = matmul(matmul(transpose(conjg(rotWF)), qs(is, :, :)), rotWF)
+            enddo
+
+            !Right now, we have Q_s in the Floquet basis, the quasienergy spectra and the rotation matrix from Wannier to Floquet basis.
+            !We also have computed the occupation matrix and velocity matrix in the Wannier basis (rho and vels respectively).
+            !We create a local copy of both objects in the Floquet basis,
+            rhoF = matmul(matmul(transpose(conjg(rotWF)), rho), rotWF)
+            do i = 1, 3
+              velsF(:, :, i) = matmul(matmul(transpose(conjg(rotWF)), vels(:, :, i)), rotWF)
+            enddo
+            !so now everything is resolved in the Floquet basis.
+
+            !For each "external" time instant.
+            do it = 1, floquet_task%continuous_indices(6*Nharm + 3) !t
+
+              r_arr(6*Nharm + 3) = it
+
+              t = floquet_task%ext_var_data(6*Nharm + 3) &
+                  %data(it)!In s.
+              !We pass to eV^-1 by dividing by hbar_over_e
+              t = t/hbar_over_e
+
+              r_mem = continuous_array_element_to_memory_element(floquet_task, r_arr)
+
+              do i_mem = 1, product(floquet_task%integer_indices)
+
+                do n = 1, system%num_bands
+                do m = 1, system%num_bands
+                do l = 1, system%num_bands
+                do p = 1, system%num_bands
+                do ir = -floquet_task%Ns, floquet_task%Ns
+                do is = -floquet_task%Ns, floquet_task%Ns
+
+                  u(i_mem, r_mem) = u(i_mem, r_mem) + &
+                                    rhoF(n, m)*velsF(l, p, i_mem)*qs(ir, p, n)*conjg(qs(is, l, m))* &
+                                    exp(-cmplx_i*t*(quasi(n) - quasi(m) + real(ir - is, dp)*omega))!Units: eV*Angstrom.
+
+                enddo
+                enddo
+                enddo
+                enddo
+                enddo
+                enddo
+
+              enddo !i_mem
+
+            enddo !t
+          enddo !w
+        enddo !t0
+
+      enddo!iterable
+
+      deallocate (amplitudes, phases, tev, pt, qs, shrink_integrand, shrinkqs)
+    end select
+
+    u = u*1.0_dp !Factor in PostW90: fac = (1.0E20_dp*physics%elem_charge_SI**2)/(physics%hbar_SI*cell_volume)
+
+    stop !TODO: Testing purposes.
+
+  end function floq_curr
+  !====END FLOQUET CURRENT CALCULATOR AND CONSTRUCTOR====!
 
   !====CORE PROCEDURES====!
   function wannier_tdep_hamiltonian(system, q, k, diag, error) result(H_TK)

@@ -22,6 +22,7 @@ program floquet_tight_binding
 
   type(k_path_task) :: path
   type(floq_k_path_task) :: floq_path
+  type(floq_BZ_integral_task) ::floq_int
 
   real(kind=dp) :: kvecs(4, 3)
   !integer :: i
@@ -60,6 +61,22 @@ program floquet_tight_binding
 
   call kpath_sampler(path, a)
   call print_kpath(path, a)
+
+  call floq_curr_BZ_integral_constructor(floq_int, "extrapolation", (/1, 1, 1/), &
+                                         Nharm=1, &
+                                         axstart=(/1.0E4_dp/), axend=(/1.0E5_dp/), axsteps=(/1/), &
+                                         pxstart=(/0.0_dp/), pxend=(/0.0_dp/), pxsteps=(/1/), &
+                                         aystart=(/0.0_dp/), ayend=(/0.0_dp/), aysteps=(/1/), &
+                                         pystart=(/0.0_dp/), pyend=(/0.0_dp/), pysteps=(/1/), &
+                                         azstart=(/0.0_dp/), azend=(/0.0_dp/), azsteps=(/1/), &
+                                         pzstart=(/0.0_dp/), pzend=(/0.0_dp/), pzsteps=(/1/), &
+                                         omegastart=3.0_dp, omegaend=4.0_dp, omegasteps=1, &
+                                         t0start=0.0_dp, t0end=1.0_dp, t0steps=1, &
+                                         tstart=0.0_dp, tend=10.0_dp, tsteps=10, &
+                                         floq_diag=.true.)
+
+  call sample_and_integrate_BZ_integral_task(task=floq_int, &
+                                             system=a)
 !
 !  !EXAMPLE OF USAGE.
   call BZ_integral_task_constructor(task=test, &
