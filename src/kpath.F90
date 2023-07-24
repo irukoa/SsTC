@@ -20,6 +20,10 @@ module kpath
     complex(kind=dp), allocatable :: kpath_data(:, :, :)
   end type k_path_task
 
+  public :: kpath_constructor
+  public :: kpath_sampler
+  public :: print_kpath
+
 contains
 
   subroutine kpath_constructor(task, &
