@@ -1,7 +1,7 @@
 default: main
 
 F90 = ifort
-F90FLAGS = -g -warn all -check bounds -O2 -qopenmp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread
+F90FLAGS = -fPIE -g -warn all -check bounds -O2 -qopenmp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread
 
 SRC = ./src
 OBJ = ./src/obj
@@ -44,13 +44,12 @@ calculators_optical.o: $(CALC)/calculators_optical.F90 utility.o integrator.o da
 									 $(F90) $(F90FLAGS) -c $(CALC)/calculators_optical.F90 -o "$(OBJ)/calculators_optical.o"
 
 
-main: $(SRC)/main.F90 utility.o extrapolation_integration.o integrator.o data_structures.o calculator_test.o calculators_floquet.o calculators_general.o kpath.o kslice.o calculators_optical.o
-			$(F90) $(F90FLAGS) $(SRC)/*.F90 $(CALC)/*.F90 -o "$(BIN)/tb.x"
-			rm -rf *.mod
+SsTC.o: $(SRC)/SsTC.F90 utility.o data_structures.o extrapolation_integration.o local_k_quantities.o kpath.o kslice.o integrator.o calculator_test.o calculators_general.o calculators_floquet.o calculators_optical.o
+			$(F90) $(F90FLAGS) -c $(SRC)/SsTC.F90 -o "$(OBJ)/SsTC.o"
 
-.PHONY: clean
-clean:
-	rm -rf $(OBJ)/*.o *.mod
+main: SsTC.o
+			ar cr "$(BIN)/libSsTC.a" $(OBJ)/*.o
+			mv *.mod $(BIN)
 
 .PHONY: uninstall
 uninstall:
