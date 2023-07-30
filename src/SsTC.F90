@@ -9,7 +9,6 @@ module SsTC
   use kpath
   use kslice
   use integrator
-  use calculator_test
   use calculators_general
   use calculators_floquet
   use calculators_optical
