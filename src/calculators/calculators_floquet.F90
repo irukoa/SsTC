@@ -565,7 +565,7 @@ contains
 
     u = u*1.0_dp !Factor in PostW90: fac = (1.0E20_dp*physics%elem_charge_SI**2)/(physics%hbar_SI*cell_volume)
 
-    stop !TODO: Testing purposes.
+    !stop !TODO: Testing purposes.
 
   end function floq_curr
   !====END FLOQUET CURRENT CALCULATOR AND CONSTRUCTOR====!

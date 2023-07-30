@@ -21,18 +21,18 @@ module data_structures
   end type sys
 
   type local_k_data
-    character(len=120)                            :: name
-    integer, allocatable                          :: integer_indices(:)               !Each entry contains the range of each of the integer indices.
-    complex(kind=dp), allocatable                 :: k_data(:)                        !Data local for each k with integer index in memory array,
+    character(len=120)                           :: name
+    integer, allocatable                         :: integer_indices(:)              !Each entry contains the range of each of the integer indices.
+    complex(kind=dp), allocatable                :: k_data(:)                       !Data local for each k with integer index in memory array,
     procedure(local_calculator), pointer, nopass :: local_calculator                 !Pointer to the local calculator.
-    integer                                       :: particular_integer_component = 0 !Specification of some integer component.
+    integer                                      :: particular_integer_component = 0 !Specification of some integer component.
   end type local_k_data
 
   type, extends(local_k_data) :: global_k_data
-    integer, allocatable                  :: continuous_indices(:) !Each entry contains the range of each continuous indices.
-    type(external_vars), allocatable               :: ext_var_data(:)       !External variable data.
+    integer, allocatable                          :: continuous_indices(:) !Each entry contains the range of each continuous indices.
+    type(external_vars), allocatable              :: ext_var_data(:)       !External variable data.
     procedure(global_calculator), pointer, nopass :: global_calculator     !Pointer to the global calculator.
-    integer, allocatable                           :: iterables(:, :)
+    integer, allocatable                          :: iterables(:, :)       !Iterable dictionary.
   end type global_k_data
 
   type external_vars
@@ -43,22 +43,24 @@ module data_structures
   abstract interface
     function global_calculator(task, system, k, error) result(u)
       import :: global_k_data, sys, external_vars, dp
-      class(global_k_data), intent(in) :: task
-      type(sys), intent(in) :: system
-      real(kind=dp), intent(in) :: k(3)
-      logical, intent(inout) :: error
 
-      complex(kind=dp)                   :: u(product(task%integer_indices), product(task%continuous_indices))
+      class(global_k_data), intent(in) :: task
+      type(sys), intent(in)            :: system
+      real(kind=dp), intent(in)        :: k(3)
+      logical, intent(inout)           :: error
+
+      complex(kind=dp)                 :: u(product(task%integer_indices), product(task%continuous_indices))
     end function global_calculator
   end interface
 
   abstract interface
     function local_calculator(k_data, system, k, error) result(u)
       import :: local_k_data, sys, external_vars, dp
+
       class(local_k_data), intent(in) :: k_data
-      type(sys), intent(in)  :: system
-      real(kind=dp), intent(in)  :: k(3)
-      logical, intent(inout) :: error
+      type(sys), intent(in)           :: system
+      real(kind=dp), intent(in)       :: k(3)
+      logical, intent(inout)          :: error
 
       complex(kind=dp)                :: u(product(k_data%integer_indices))
     end function local_calculator
@@ -160,7 +162,9 @@ contains
       do i = 1, num_bands
         do j = 1, num_bands
           read (unit=113, fmt=*) dummy1, dummy2, dummyR(1), dummyR(2)
-          system%real_space_hamiltonian_elements(i, j, irpts) = cmplx(dummyR(1), dummyR(2), dp)
+          !As pointed out in the W90 source code v3.1.0, get_oper.F90, ln 147, addition is required instead of equality.
+          system%real_space_hamiltonian_elements(i, j, irpts) = &
+            system%real_space_hamiltonian_elements(i, j, irpts) + cmplx(dummyR(1), dummyR(2), dp)
         enddo
       enddo
       read (unit=113, fmt=*)
@@ -172,27 +176,22 @@ contains
     allocate (dummyR(6))
     write (unit=112, fmt="(A)") "Reading Position Operator."
 
-    do irpts = 1, nrpts - 1
+    do irpts = 1, nrpts
       read (unit=113, fmt=*) dummy1, dummy2, dummy3
       do i = 1, num_bands
         do j = 1, num_bands
           read (unit=113, fmt=*) dummy1, dummy2, dummyR(1), dummyR(2), dummyR(3), dummyR(4), dummyR(5), dummyR(6)
-          system%real_space_position_elements(i, j, 1, irpts) = cmplx(dummyR(1), dummyR(2), dp)
-          system%real_space_position_elements(i, j, 2, irpts) = cmplx(dummyR(3), dummyR(4), dp)
-          system%real_space_position_elements(i, j, 3, irpts) = cmplx(dummyR(5), dummyR(6), dp)
+          !As pointed out in the W90 source code v3.1.0, get_oper.F90, ln 147, addition is required instead of equality.
+          system%real_space_position_elements(i, j, 1, irpts) = &
+            system%real_space_position_elements(i, j, 1, irpts) + cmplx(dummyR(1), dummyR(2), dp)
+          system%real_space_position_elements(i, j, 2, irpts) = &
+            system%real_space_position_elements(i, j, 1, irpts) + cmplx(dummyR(3), dummyR(4), dp)
+          system%real_space_position_elements(i, j, 3, irpts) = &
+            system%real_space_position_elements(i, j, 1, irpts) + cmplx(dummyR(5), dummyR(6), dp)
         enddo
       enddo
+      if (irpts == nrpts) cycle
       read (unit=113, fmt=*)
-    enddo
-
-    read (unit=113, fmt=*) dummy1, dummy2, dummy3
-    do i = 1, num_bands
-      do j = 1, num_bands
-        read (unit=113, fmt=*) dummy1, dummy2, dummyR(1), dummyR(2), dummyR(3), dummyR(4), dummyR(5), dummyR(6)
-        system%real_space_position_elements(i, j, 1, nrpts) = cmplx(dummyR(1), dummyR(2), dp)
-        system%real_space_position_elements(i, j, 2, nrpts) = cmplx(dummyR(3), dummyR(4), dp)
-        system%real_space_position_elements(i, j, 3, nrpts) = cmplx(dummyR(5), dummyR(6), dp)
-      enddo
     enddo
 
     deallocate (dummyR)

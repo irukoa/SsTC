@@ -242,7 +242,7 @@ contains
         do m = 1, system%num_bands
 
           if (n == m) cycle
-          if (eig(m) > maxval(task%ext_var_data(1)%data(:)) .or. eig(n) > maxval(task%ext_var_data(1)%data(:))) cycle
+          !if (eig(m) > maxval(task%ext_var_data(1)%data(:)) .or. eig(n) > maxval(task%ext_var_data(1)%data(:))) cycle
 
           bpart = rho(n, n)*(1.0_dp - rho(m, m))
 
@@ -255,7 +255,7 @@ contains
 
             omega = task%ext_var_data(1)%data(r_mem)
             arg = (eig(m) - eig(n) - omega)/smearing
-            if (abs(arg) > 10.0_dp) cycle
+            if ((abs(arg) > 10.0_dp) .or. (arg /= arg)) cycle
             delta = utility_delta(arg)/smearing
 
             u(1, r_mem) = u(1, r_mem) + bpart*delta
