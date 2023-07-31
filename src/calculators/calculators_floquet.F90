@@ -184,17 +184,17 @@ contains
 
           H_TK = wannier_tdep_hamiltonian(system, q, k, floquet_task%diag, error) !In eV.
           if (error) then
-            write (unit=113, fmt="(a, i3, a)") "Error in function quasienergy at t-step, ", it, &
+            write (unit=stderr, fmt="(a, i4, a)") "Error in function quasienergy at t-step, ", it, &
               "when computing time-dependent Hamiltonian for modulation vector q = "
-            write (unit=113, fmt="(3E18.8E3, a)") q, "A^-1."
+            write (unit=stderr, fmt="(3e18.8e3, a)") q, "A^-1."
             return
           endif
 
           expH_TK = utility_exphs(-cmplx_i*dt*H_TK, system%num_bands, .true., error)
           if (error) then
-            write (unit=113, fmt="(a, i3, a)") "Error in function quasienergy at t-step, ", it, &
+            write (unit=stderr, fmt="(a, i4, a)") "Error in function quasienergy at t-step, ", it, &
               "when computing matrix exponential for modulation vector q = "
-            write (unit=113, fmt="(3E18.8E3, a)") q, "A^-1."
+            write (unit=stderr, fmt="(3e18.8e3, a)") q, "A^-1."
             return
           endif
 
@@ -204,14 +204,14 @@ contains
 
         hf = cmplx_i*omega*utility_logu(tev, system%num_bands, error)/(2*pi)
         if (error) then
-          write (unit=113, fmt="(a, i3, a)") "Error in function quasienergy when computing &
+          write (unit=stderr, fmt="(a)") "Error in function quasienergy when computing &
           & matrix log of the one-petiod time evolution operator."
           return
         endif
 
         call utility_diagonalize(hf, system%num_bands, quasi, rot, error)
         if (error) then
-          write (unit=113, fmt="(a, i3, a)") "Error in function quasienergy when computing the quasienergy spectrum."
+          write (unit=stderr, fmt="(a)") "Error in function quasienergy when computing the quasienergy spectrum."
           return
         endif
 
@@ -371,7 +371,8 @@ contains
       !Get eigenvalues and rotation from Wannier to Hamiltonian basis.
       call utility_diagonalize(w_hamiltonian, system%num_bands, eig, rotWH, error)
       if (error) then
-       write (unit=113, fmt="(a)") "Error in function floq_curr when computing the eigenvalues of the time-independent Hamiltonian."
+        write (unit=stderr, fmt="(a)") "Error in function floq_curr when computing&
+        & the eigenvalues of the time-independent Hamiltonian."
         return
       endif
       !Get occupations (a matrix in the Hamiltonian basis).
@@ -381,7 +382,7 @@ contains
       !Get velocities (Hamiltonian basis). TODO: CHECK IF WE ALSO NEED NONDIAGONAL ELEMENTS OR ONLY DIAGONAL ONES.
       vels = velocities(system, wannier_dhamiltonian_dk(system, k), eig, rotWH, error)
       if (error) then
-        write (unit=113, fmt="(a)") "Error in function floq_curr when computing the velocities in the degenerate subspace."
+        write (unit=stderr, fmt="(a)") "Error in function floq_curr when computing the velocities in the degenerate subspace."
         return
       endif
       !Rotate back to Wannier basis.
@@ -451,17 +452,17 @@ contains
 
               H_TK = wannier_tdep_hamiltonian(system, q, k, floquet_task%diag, error) !In eV.
               if (error) then
-                write (unit=113, fmt="(a, i3, a)") "Error in function floq_curr at t-step, ", it, &
+                write (unit=stderr, fmt="(a, i4, a)") "Error in function floq_curr at t-step, ", it, &
                   "when computing time-dependent Hamiltonian for modulation vector q = "
-                write (unit=113, fmt="(3E18.8E3, a)") q, "A^-1."
+                write (unit=stderr, fmt="(3e18.8e3, a)") q, "A^-1."
                 return
               endif
 
               expH_TK = utility_exphs(-cmplx_i*dt*H_TK, system%num_bands, .true., error)
               if (error) then
-                write (unit=113, fmt="(a, i3, a)") "Error in function floq_curr at t-step, ", it, &
+                write (unit=stderr, fmt="(a, i4, a)") "Error in function floq_curr at t-step, ", it, &
                   "when computing matrix exponential for modulation vector q = "
-                write (unit=113, fmt="(3E18.8E3, a)") q, "A^-1."
+                write (unit=stderr, fmt="(3e18.8e3, a)") q, "A^-1."
                 return
               endif
 
@@ -474,7 +475,7 @@ contains
             !Get effective Floquet Hamiltonian in the Wannier basis.
             hf = cmplx_i*omega*utility_logu(tev(floquet_task%Nt, :, :), system%num_bands, error)/(2*pi)
             if (error) then
-              write (unit=113, fmt="(a)") "Error in function floq_curr when computing &
+              write (unit=stderr, fmt="(a)") "Error in function floq_curr when computing &
               & matrix log of the one-petiod time evolution operator."
               return
             endif
@@ -482,7 +483,7 @@ contains
             !Diagonalize it to obtain the quasienergy spectra and the rotation matrix passing from Wannier to Floquet basis.
             call utility_diagonalize(hf, system%num_bands, quasi, rotWF, error)
             if (error) then
-              write (unit=113, fmt="(a)") "Error in function floq_curr when computing the quasienergy spectrum."
+              write (unit=stderr, fmt="(a)") "Error in function floq_curr when computing the quasienergy spectrum."
               return
             endif
 
@@ -495,8 +496,11 @@ contains
                 tper = t0 + dt*real(itper - 1, dp) !In eV^-1.
 
                 !compute the contribution for each time-instant.
-                integrand(itper, :, :) = matmul(TEV(itper, :, :), utility_exphs(cmplx_i*hf*tper, system%num_bands, .true., error))*exp(-cmplx_i*is*omega*tper) &
-                                         /real(floquet_task%Nt - 1, dp)!Adimensional. Units are OK.
+                integrand(itper, :, :) = matmul(TEV(itper, :, :), &
+                                                utility_exphs(cmplx_i*hf*tper, system%num_bands, .true., error)) &
+                                         *exp(-cmplx_i*is*omega*tper) &
+                                         /real(floquet_task%Nt - 1, dp)
+                !Adimensional. Units are OK.
 
                 !Shrink band indices.
                 call shrink_array(integrand(itper, :, :), shrink_integrand(itper, :), info) !TODO: if info=...???
@@ -656,7 +660,7 @@ contains
       enddo!m
     enddo!n
     if (error) then
-      write (unit=113, fmt="(a, i3, a)") "Error in function wannier_tdep_hamiltonian: &
+      write (unit=stderr, fmt="(a)") "Error in function wannier_tdep_hamiltonian: &
       & a large q has made the modulation factor become NaN and as a consequence H(t) is undetermined."
     endif
 

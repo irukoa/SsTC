@@ -233,7 +233,8 @@ contains
             call utility_diagonalize(v(n:n + deg(n) - 1, n:n + deg(n) - 1, i), &
                                      deg(n), degen_vels(n:n + deg(n) - 1), dummy_rot, error)
             if (error) then
-              write (unit=113, fmt="(a)") "Error in function velocities when computing the eigenvalues of the degenerate subspace."
+              write (unit=stderr, fmt="(a)") "Error in function velocities when computing&
+              & the eigenvalues of the degenerate subspace."
               return
             endif
             deallocate (dummy_rot)
@@ -307,7 +308,7 @@ contains
             call utility_diagonalize(mu(n:n + deg(n) - 1, n:n + deg(n) - 1, i, j), &
                                      deg(n), degen_mass(n:n + deg(n) - 1), dummy_rot, error)
             if (error) then
-              write (unit=113, fmt="(a)") "Error in function inverse_effective_mass&
+              write (unit=stderr, fmt="(a)") "Error in function inverse_effective_mass&
               & when computing the eigenvalues of the degenerate subspace."
               return
             endif
@@ -364,7 +365,7 @@ contains
     !Get velocities.
     vels = velocities(system, HW_a, eig, rot, error)
     if (error) then
-      write (unit=113, fmt="(a)") "Error in function cov_deriv_of_dipole when computing the velocities."
+      write (unit=stderr, fmt="(a)") "Error in function cov_deriv_of_dipole when computing the velocities."
       return
     endif
 

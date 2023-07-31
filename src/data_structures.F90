@@ -110,12 +110,13 @@ contains
     filename = trim(path_to_tb_file)//trim(name)//"_tb.dat"
     filename = trim(filename)
 
-    write (unit=112, fmt="(A)") "Reading file"//filename//"."
+    write (unit=stdout, fmt="(a)") "Initializing system "//trim(name)//"."
+    write (unit=stdout, fmt="(a)") "Reading file"//filename//"."
 
-    open (unit=113, action="read", file=filename)
-    read (unit=113, fmt=*)
+    open (newunit=stdin, action="read", file=filename)
+    read (unit=stdin, fmt=*)
     do i = 1, 3
-      read (unit=113, fmt=*) (system%direct_lattice_basis(i, j), j=1, 3)
+      read (unit=stdin, fmt=*) (system%direct_lattice_basis(i, j), j=1, 3)
     enddo
 
     do i = 1, 3
@@ -130,9 +131,9 @@ contains
                               system%metric_tensor(2, 1)*system%metric_tensor(1, 2)*system%metric_tensor(3, 3) - &
                               system%metric_tensor(3, 2)*system%metric_tensor(2, 3)*system%metric_tensor(1, 1))
 
-    read (unit=113, fmt=*) num_bands
+    read (unit=stdin, fmt=*) num_bands
     system%num_bands = num_bands
-    read (unit=113, fmt=*) nrpts
+    read (unit=stdin, fmt=*) nrpts
     system%num_R_points = nrpts
     allocate (system%R_point(system%num_R_points, 3), &
               system%deg_R_point(system%num_R_points), &
@@ -144,43 +145,43 @@ contains
 
     if (remainder == 0) then
       do i = 1, division
-        read (unit=113, fmt=*) (system%deg_R_point(15*(i - 1) + j), j=1, 15)
+        read (unit=stdin, fmt=*) (system%deg_R_point(15*(i - 1) + j), j=1, 15)
       enddo
     else
       do i = 1, division
-        read (unit=113, fmt=*) (system%deg_R_point(15*(i - 1) + j), j=1, 15)
+        read (unit=stdin, fmt=*) (system%deg_R_point(15*(i - 1) + j), j=1, 15)
       enddo
-      read (unit=113, fmt=*) (system%deg_R_point(15*(i - 1) + j), j=1, remainder)
+      read (unit=stdin, fmt=*) (system%deg_R_point(15*(i - 1) + j), j=1, remainder)
     endif
 
-    read (unit=113, fmt=*)
+    read (unit=stdin, fmt=*)
     allocate (dummyR(2))
-    write (unit=112, fmt="(A)") "Reading Hamiltonian."
+    write (unit=stdout, fmt="(A)") "Reading Hamiltonian..."
 
     do irpts = 1, nrpts
-      read (unit=113, fmt=*) (system%R_point(irpts, i), i=1, 3)
+      read (unit=stdin, fmt=*) (system%R_point(irpts, i), i=1, 3)
       do i = 1, num_bands
         do j = 1, num_bands
-          read (unit=113, fmt=*) dummy1, dummy2, dummyR(1), dummyR(2)
+          read (unit=stdin, fmt=*) dummy1, dummy2, dummyR(1), dummyR(2)
           !As pointed out in the W90 source code v3.1.0, get_oper.F90, ln 147, addition is required instead of equality.
           system%real_space_hamiltonian_elements(i, j, irpts) = &
             system%real_space_hamiltonian_elements(i, j, irpts) + cmplx(dummyR(1), dummyR(2), dp)
         enddo
       enddo
-      read (unit=113, fmt=*)
+      read (unit=stdin, fmt=*)
     enddo
 
     deallocate (dummyR)
-    write (unit=112, fmt="(A)") "Done."
+    write (unit=stdout, fmt="(a)") "Done."
 
     allocate (dummyR(6))
-    write (unit=112, fmt="(A)") "Reading Position Operator."
+    write (unit=stdout, fmt="(a)") "Reading position operator..."
 
     do irpts = 1, nrpts
-      read (unit=113, fmt=*) dummy1, dummy2, dummy3
+      read (unit=stdin, fmt=*) dummy1, dummy2, dummy3
       do i = 1, num_bands
         do j = 1, num_bands
-          read (unit=113, fmt=*) dummy1, dummy2, dummyR(1), dummyR(2), dummyR(3), dummyR(4), dummyR(5), dummyR(6)
+          read (unit=stdin, fmt=*) dummy1, dummy2, dummyR(1), dummyR(2), dummyR(3), dummyR(4), dummyR(5), dummyR(6)
           !As pointed out in the W90 source code v3.1.0, get_oper.F90, ln 147, addition is required instead of equality.
           system%real_space_position_elements(i, j, 1, irpts) = &
             system%real_space_position_elements(i, j, 1, irpts) + cmplx(dummyR(1), dummyR(2), dp)
@@ -191,13 +192,16 @@ contains
         enddo
       enddo
       if (irpts == nrpts) cycle
-      read (unit=113, fmt=*)
+      read (unit=stdin, fmt=*)
     enddo
 
     deallocate (dummyR)
-    write (unit=112, fmt="(A)") "Done."
+    write (unit=stdout, fmt="(a)") "Done."
 
-    close (unit=113)
+    close (unit=stdin)
+
+    write (unit=stdout, fmt="(a)") "System loaded sucessfully."
+    write (unit=stdout, fmt="(a)") ""
 
   end function sys_constructor
 

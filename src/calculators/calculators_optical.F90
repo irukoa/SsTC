@@ -82,7 +82,7 @@ contains
       !Get eigenvalues and rotation.
       call utility_diagonalize(w_hamiltonian, system%num_bands, eig, rot, error)
       if (error) then
-        write (unit=113, fmt="(a)") "Error in function optical_conductivity when computing the eigenvalues of the Hamiltonian."
+        write (unit=stderr, fmt="(a)") "Error in function optical_conductivity when computing the eigenvalues of the Hamiltonian."
         return
       endif
 
@@ -105,7 +105,7 @@ contains
       if (task%adpt_smearing) then
         vels = velocities(system, w_dk_hamiltonian, eig, rot, error)
         if (error) then
-          write (unit=113, fmt="(a)") "Error in function optical_conductivity when computing the velocities."
+          write (unit=stderr, fmt="(a)") "Error in function optical_conductivity when computing the velocities."
           return
         endif
         dk = (1.0_dp/(system%cell_volume*product(task%samples)))**(1.0_dp/3.0_dp) !Typical spacing = (inverse cell volume/samples)^(1/3).
@@ -217,7 +217,7 @@ contains
       !Get eigenvalues and rotation.
       call utility_diagonalize(w_hamiltonian, system%num_bands, eig, rot, error)
       if (error) then
-        write (unit=113, fmt="(a)") "Error in function jdos when computing the eigenvalues of the Hamiltonian."
+        write (unit=stderr, fmt="(a)") "Error in function jdos when computing the eigenvalues of the Hamiltonian."
         return
       endif
 
@@ -232,7 +232,7 @@ contains
       if (task%adpt_smearing) then
         vels = velocities(system, w_dk_hamiltonian, eig, rot, error)
         if (error) then
-          write (unit=113, fmt="(a)") "Error in function jdos when computing the velocities."
+          write (unit=stderr, fmt="(a)") "Error in function jdos when computing the velocities."
           return
         endif
         dk = (1.0_dp/(system%cell_volume*product(task%samples)))**(1.0_dp/3.0_dp) !Typical spacing = (inverse cell volume/samples)^(1/3).
@@ -343,7 +343,7 @@ contains
       !Get eigenvalues and rotation.
       call utility_diagonalize(w_hamiltonian, system%num_bands, eig, rot, error)
       if (error) then
-        write (unit=113, fmt="(a)") "Error in function shift_current when computing the eigenvalues of the Hamiltonian."
+        write (unit=stderr, fmt="(a)") "Error in function shift_current when computing the eigenvalues of the Hamiltonian."
         return
       endif
 
@@ -360,7 +360,7 @@ contains
       !Get covariant derivative of the dipoles in the Hamilonian basis.
       gen_r = cov_deriv_of_dipole(system, w_d2k_hamiltonian, w_dk_hamiltonian, w_connection, w_dk_connection, eig, rot, error)
       if (error) then
-        write (unit=113, fmt="(a)") "Error in function shift_current when computing the generalized derivative of the dipoles."
+        write (unit=stderr, fmt="(a)") "Error in function shift_current when computing the generalized derivative of the dipoles."
         return
       endif
 
@@ -372,7 +372,7 @@ contains
       if (task%adpt_smearing) then
         vels = velocities(system, w_dk_hamiltonian, eig, rot, error)
         if (error) then
-          write (unit=113, fmt="(a)") "Error in function shift_current when computing the velocities."
+          write (unit=stderr, fmt="(a)") "Error in function shift_current when computing the velocities."
           return
         endif
         dk = (1.0_dp/(system%cell_volume*product(task%samples)))**(1.0_dp/3.0_dp) !Typical spacing = (inverse cell volume/samples)^(1/3).

@@ -30,7 +30,7 @@ contains
     hamiltonian = wannier_hamiltonian(system, k)
     call utility_diagonalize(hamiltonian, system%num_bands, eig, rot, error)
     if (error) then
-      write (unit=113, fmt="(a, i3, a)") "Error in function bands when computing the eigenvalues of the Hamiltonian."
+      write (unit=stderr, fmt="(a)") "Error in function bands when computing the eigenvalues of the Hamiltonian."
       return
     endif
     u = eig

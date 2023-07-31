@@ -55,6 +55,8 @@ contains
     !Set name.
     task%name = name
 
+    write (unit=stdout, fmt="(a)") "Creating BZ integral task "//trim(task%name)//"."
+
     !Set integer index data.
     if (((N_int_ind) .ge. 1) .and. (present(int_ind_range))) then
       allocate (task%integer_indices(N_int_ind))
@@ -102,13 +104,13 @@ contains
     if (present(method)) then
       if (method == "extrapolation") then
         task%method = "extrapolation"
-        write (unit=112, fmt="(A)") "Warning: To employ the extrapolation method &
+        write (unit=stdout, fmt="(a)") "Warning: To employ the extrapolation method &
           & all the elements of the array 'samples' must be expressible as either 1 &
           & or 2^n + 1 for n = 0, 1, ..."
       elseif (method == "rectangle") then
         task%method = "rectangle"
       else
-        write (unit=112, fmt="(A)") "Integration method not recognized. Setting up rectangle method"
+        write (unit=stdout, fmt="(a)") "Integration method not recognized. Setting up rectangle method"
         task%method = "rectangle"
       endif
     else
@@ -121,6 +123,9 @@ contains
     else
       task%samples = (/10, 10, 10/)
     endif
+
+    write (unit=stdout, fmt="(a)") "Done."
+    write (unit=stdout, fmt="(a)") ""
 
   end subroutine BZ_integral_task_constructor
 
@@ -146,14 +151,14 @@ contains
 
     if (task%method == "extrapolation") then !Extraplation case. Requires large RAM.
 
-      write (unit=112, fmt="(A)") "Starting BZ sampling and integration subroutine with extrapolation method."
-      write (unit=112, fmt="(A)") "Integrating task: "//trim(task%name)//" in the BZ for the system "//trim(system%name)//"."
-      write (unit=112, fmt="(A)") "The required memory for the integration process is approximately,"
-      write (unit=112, fmt="(F15.3, A)") 16.0_dp*real(product(task%samples)*product(task%integer_indices)*&
+      write (unit=stdout, fmt="(a)") "Starting BZ sampling and integration subroutine with extrapolation method."
+      write (unit=stdout, fmt="(a)") "Integrating task: "//trim(task%name)//" in the BZ for the system "//trim(system%name)//"."
+      write (unit=stdout, fmt="(a)") "The required memory for the integration process is approximately,"
+      write (unit=stdout, fmt="(f15.3, a)") 16.0_dp*real(product(task%samples)*product(task%integer_indices)*&
       & product(task%continuous_indices), dp)/1024.0_dp**2, "MB."
-      write (unit=112, fmt="(A)") "Some computers limit the maximum memory an array can allocate."
-      write (unit=112, fmt="(A)") "If this is your case and SIGSEGV triggers try using the next command before executing tb.x:"
-      write (unit=112, fmt="(A)") "ulimit -s unlimited"
+      write (unit=stdout, fmt="(a)") "Some computers limit the maximum memory an array can allocate."
+      write (unit=stdout, fmt="(a)") "If this is your case and SIGSEGV triggers try using the next command before execution:"
+      write (unit=stdout, fmt="(a)") "ulimit -s unlimited"
 
       allocate (data_k(task%samples(1), task%samples(2), task%samples(3), &
                        product(task%integer_indices), product(task%continuous_indices)), &
@@ -164,7 +169,7 @@ contains
 
       TID = OMP_GET_THREAD_NUM()
       IF (TID .EQ. 0) THEN
-        write (unit=112, fmt="(A, I6, A)") "Running on ", OMP_GET_NUM_THREADS(), " threads."
+        write (unit=stdout, fmt="(a, i5, a)") "Running on ", OMP_GET_NUM_THREADS(), " threads."
       ENDIF
 
 !$OMP         DO COLLAPSE(3)
@@ -196,8 +201,8 @@ contains
             endif
 
             if (error) then
-              write (unit=113, fmt="(a, 3E18.8E3)") "Error when sampling k-point", k
-              write (unit=113, fmt="(a)") "Stopping..."
+              write (unit=stderr, fmt="(a, 3e18.8e3)") "Error when sampling k-point", k
+              write (unit=stderr, fmt="(a)") "Stopping..."
               stop
             endif
 
@@ -207,7 +212,7 @@ contains
 !$OMP       END DO
 !$OMP       END PARALLEL
 
-      write (unit=112, fmt="(A)") "Sampling done. Starting integration with extrapolation method."
+      write (unit=stdout, fmt="(a)") "Sampling done. Starting integration with extrapolation method."
 
       do i = 1, product(task%integer_indices) !For each integer index.
         do r = 1, product(task%continuous_indices) !For each continuous index.
@@ -220,20 +225,20 @@ contains
       enddo
 
       if (info == 1) then
-        write (unit=112, fmt="(A)") "Integral done. Extrapolation sucessfull."
+        write (unit=stdout, fmt="(a)") "Integral done. Extrapolation sucessfull."
       else
-        write (unit=112, fmt="(A)") "Integral done. Extrapolation fail and return rectangle approximation."
+        write (unit=stdout, fmt="(a)") "Integral done. Extrapolation failed. Returning rectangle approximation."
       endif
-      write (unit=112, fmt="(A)") ""
+      write (unit=stdout, fmt="(a)") ""
 
       deallocate (data_k, sdata_k)
 
     elseif (task%method == "rectangle") then !Rectangle method approximation case.
 
-      write (unit=112, fmt="(A)") "Starting BZ sampling and integration subroutine with rectangle method."
-      write (unit=112, fmt="(A)") "Integrating task: "//trim(task%name)//" in the BZ for the system "//trim(system%name)//"."
-      write (unit=112, fmt="(A)") "The required memory for the integration process is approximately,"
-      write (unit=112, fmt="(F15.3, A)") 16.0_dp*real(product(task%integer_indices)*&
+      write (unit=stdout, fmt="(a)") "Starting BZ sampling and integration subroutine with rectangle method."
+      write (unit=stdout, fmt="(a)") "Integrating task: "//trim(task%name)//" in the BZ for the system "//trim(system%name)//"."
+      write (unit=stdout, fmt="(a)") "The required memory for the integration process is approximately,"
+      write (unit=stdout, fmt="(f15.3, a)") 16.0_dp*real(product(task%integer_indices)*&
       & product(task%continuous_indices), dp)/1024.0_dp**2, "MB."
 
       allocate (temp_res(product(task%integer_indices), product(task%continuous_indices)))
@@ -243,7 +248,7 @@ contains
 
       TID = OMP_GET_THREAD_NUM()
       IF (TID .EQ. 0) THEN
-        write (unit=112, fmt="(A, I6, A)") "Running on ", OMP_GET_NUM_THREADS(), " threads."
+        write (unit=stdout, fmt="(a, I5, a)") "Running on ", OMP_GET_NUM_THREADS(), " threads."
       ENDIF
 
 !$OMP       DO COLLAPSE(3)
@@ -275,8 +280,8 @@ contains
             endif
 
             if (error) then
-              write (unit=113, fmt="(a, 3E18.8E3)") "Error when sampling k-point", k
-              write (unit=113, fmt="(a)") "Stopping..."
+              write (unit=stderr, fmt="(a, 3e18.8e3)") "Error when sampling k-point", k
+              write (unit=stderr, fmt="(a)") "Stopping..."
               stop
             endif
 
@@ -286,13 +291,13 @@ contains
 !$OMP     END DO
 !$OMP     END PARALLEL
 
-      write (unit=112, fmt="(A)") "Integral done."
+      write (unit=stdout, fmt="(a)") "Integral done."
 
       task%result = temp_res/product(task%samples)
 
       deallocate (temp_res)
 
-      write (unit=112, fmt="(A)") ""
+      write (unit=stdout, fmt="(a)") ""
     endif
 
   end subroutine sample_and_integrate_BZ_integral_task
@@ -306,6 +311,9 @@ contains
     integer :: i_arr(size(task%integer_indices)), &
                r_arr(size(task%continuous_indices))
     integer :: i_mem, r_mem, count
+    integer :: printunit
+
+    write (unit=stdout, fmt="(a)") "Printing BZ integral task: "//trim(task%name)//" for the system "//trim(system%name)//"."
 
     if (associated(task%local_calculator)) then
 
@@ -319,18 +327,18 @@ contains
         enddo
         filename = trim(filename)//'.dat'
 
-        open (unit=111, action="write", file=filename)
+        open (newunit=printunit, action="write", file=filename)
 
-        write (unit=111, fmt="(2E18.8E3)") real(task%result(i_mem, 1), dp), aimag(task%result(i_mem, 1))
+        write (unit=printunit, fmt="(2e18.8e3)") real(task%result(i_mem, 1), dp), aimag(task%result(i_mem, 1))
 
-        close (unit=111)
+        close (unit=printunit)
 
       enddo
 
     elseif (associated(task%global_calculator)) then
 
-      write (fmtf, "(I10)") size(task%continuous_indices) + 2
-      fmtf = '('//trim(adjustl(trim(fmtf)))//'E18.8E3)'
+      write (fmtf, "(i10)") size(task%continuous_indices) + 2
+      fmtf = '('//trim(adjustl(trim(fmtf)))//'e18.8e3)'
 
       do i_mem = 1, product(task%integer_indices) !For each integer index.
 
@@ -342,22 +350,25 @@ contains
         enddo
         filename = trim(filename)//'.dat'
 
-        open (unit=111, action="write", file=filename)
+        open (newunit=printunit, action="write", file=filename)
 
         do r_mem = 1, product(task%continuous_indices) !For each continuous index.
 
           r_arr = continuous_memory_element_to_array_element(task, r_mem) !Pass to array layout.
 
-          write (unit=111, fmt=fmtf) (task%ext_var_data(count)%data(r_arr(count)), count=1, size(task%continuous_indices)), &
+          write (unit=printunit, fmt=fmtf) (task%ext_var_data(count)%data(r_arr(count)), count=1, size(task%continuous_indices)), &
             real(task%result(i_mem, r_mem), dp), aimag(task%result(i_mem, r_mem))
 
         enddo
 
-        close (unit=111)
+        close (unit=printunit)
 
       enddo
 
     endif
+
+    write (unit=stdout, fmt="(a)") "Printing done."
+    write (unit=stdout, fmt="(a)") ""
 
   end subroutine print_BZ_integral_task
 

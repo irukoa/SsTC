@@ -58,6 +58,8 @@ contains
     !Set name.
     task%name = name
 
+    write (unit=stdout, fmt="(a)") "Creating kpath task "//trim(task%name)//"."
+
     !Set vector info
     allocate (task%vectors(Nvec, 3), task%number_of_pts(Nvec - 1))
     task%vectors = vec_coord
@@ -106,6 +108,9 @@ contains
     !Set calculation of a particular integer component.
     if (present(part_int_comp)) task%particular_integer_component = integer_array_element_to_memory_element(task, part_int_comp)
 
+    write (unit=stdout, fmt="(a)") "Done."
+    write (unit=stdout, fmt="(a)") ""
+
   end subroutine kpath_constructor
 
   subroutine kpath_sampler(task, system)
@@ -123,8 +128,7 @@ contains
 
     allocate (temp_res(product(task%integer_indices), product(task%continuous_indices), sum(task%number_of_pts)))
 
-    write (unit=112, fmt="(A)") "Starting kpath sampling subroutine."
-    write (unit=112, fmt="(A)") "Sampling task: "//trim(task%name)//" for the system "//trim(system%name)//"."
+    write (unit=stdout, fmt="(a)") "Sampling kpath task: "//trim(task%name)//" for the system "//trim(system%name)//"."
 
     !Sampling.
     do ivec = 1, size(task%vectors(:, 1)) - 1 !For each considered vector except the last one.
@@ -149,8 +153,8 @@ contains
         endif
 
         if (error) then
-          write (unit=113, fmt="(a, 3E18.8E3)") "Error when sampling k-point", k
-          write (unit=113, fmt="(a)") "Stopping..."
+          write (unit=stderr, fmt="(a, 3e18.8e3)") "Error when sampling k-point", k
+          write (unit=stderr, fmt="(a)") "Stopping..."
           stop
         endif
 
@@ -159,8 +163,8 @@ contains
 !$OMP       END PARALLEL
     enddo
 
-    write (unit=112, fmt="(A)") "Sampling done."
-    write (unit=112, fmt="(A)") ""
+    write (unit=stdout, fmt="(a)") "Sampling done."
+    write (unit=stdout, fmt="(a)") ""
 
     task%kpath_data = temp_res
 
@@ -176,7 +180,10 @@ contains
     character(len=400) :: filename, fmtf
     integer :: i_arr(size(task%integer_indices)), r_arr(size(task%continuous_indices))
     integer :: i_mem, r_mem, count, countk, ivec, isampling
+    integer :: printunit
     real(kind=dp) :: k(3)
+
+    write (unit=stdout, fmt="(a)") "Printing kpath task: "//trim(task%name)//" for the system "//trim(system%name)//"."
 
     if (associated(task%local_calculator)) then
 
@@ -190,7 +197,7 @@ contains
         enddo
         filename = trim(filename)//'.dat'
 
-        open (unit=111, action="write", file=filename)
+        open (newunit=printunit, action="write", file=filename)
 
         countk = 0
         do ivec = 1, size(task%vectors(:, 1)) - 1 !For each considered vector except the last one.
@@ -204,12 +211,12 @@ contains
                   (task%vectors(ivec + 1, :) - task%vectors(ivec, :))*real(isampling - 1, dp) &
                   /real(task%number_of_pts(ivec) - 1, dp)
             endif
-            write (unit=111, fmt="(6E18.8E3)") real(countk, dp), k, real(task%kpath_data(i_mem, 1, countk), dp), &
+            write (unit=printunit, fmt="(6E18.8E3)") real(countk, dp), k, real(task%kpath_data(i_mem, 1, countk), dp), &
               aimag(task%kpath_data(i_mem, 1, countk))
           enddo
         enddo
 
-        close (unit=111)
+        close (unit=printunit)
 
       enddo
     elseif (associated(task%global_calculator)) then
@@ -227,7 +234,7 @@ contains
         enddo
         filename = trim(filename)//'.dat'
 
-        open (unit=111, action="write", file=filename)
+        open (newunit=printunit, action="write", file=filename)
 
         do r_mem = 1, product(task%continuous_indices) !For each continuous index.
 
@@ -246,7 +253,7 @@ contains
                     real(task%number_of_pts(ivec) - 1, dp)
               endif
 
-              write (unit=111, fmt=fmtf) real(countk, dp), k, &
+              write (unit=printunit, fmt=fmtf) real(countk, dp), k, &
                 (task%ext_var_data(count)%data(r_arr(count)), count=1, size(task%continuous_indices)), &
                 real(task%kpath_data(i_mem, r_mem, countk), dp), aimag(task%kpath_data(i_mem, r_mem, countk))
             enddo
@@ -254,10 +261,14 @@ contains
 
         enddo
 
-        close (unit=111)
+        close (unit=printunit)
 
       enddo
     endif
+
+    write (unit=stdout, fmt="(a)") "Printing done."
+    write (unit=stdout, fmt="(a)") ""
+
   end subroutine print_kpath
 
 end module kpath
