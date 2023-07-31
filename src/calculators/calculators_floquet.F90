@@ -1,44 +1,55 @@
-module calculators_floquet
+module SsTC_calculators_floquet
 
-  use utility
-  use extrapolation_integration
-  use data_structures
-  use local_k_quantities
-  use kpath
-  use integrator
+  use SsTC_utility
+  use SsTC_extrapolation_integration
+  use SsTC_data_structures
+  use SsTC_local_k_quantities
+  use SsTC_kpath
+  use SsTC_integrator
 
   implicit none
 
-  type, extends(BZ_integral_task) :: floq_BZ_integral_task
+  private
+
+  type, extends(SsTC_BZ_integral_task) :: SsTC_floq_BZ_integral_task
     integer              :: Nt = 65 !2^6 + 1 Discretization points of each period.
     integer            :: Ns = 10 !Considered Harmonics.
     logical                       :: diag = .false. !If we only consider diagonal terms of the pos. operator.
-  end type
+  end type SsTC_floq_BZ_integral_task
 
-  type, extends(k_path_task) :: floq_k_path_task
+  type, extends(SsTC_kpath_task) :: SsTC_floq_kpath_task
     integer              :: Nt = 65 !2^6 + 1 Discretization points of each period.
     integer              :: Ns = 10 !Considered Harmonics.
     logical                       :: diag = .false. !If we only consider diagonal terms of the pos. operator.
-  end type
+  end type SsTC_floq_kpath_task
+
+  public :: SsTC_floq_BZ_integral_task
+  public :: SsTC_floq_kpath_task
+
+  public :: SsTC_quasienergy_kpath_task_constructor
+  public :: SsTC_quasienergy
+
+  public :: SsTC_floq_curr_BZ_integral_constructor
+  public :: SsTC_floq_curr
 
 contains
 
   !====DEFAULT CALCULATORS====!
 
   !====QUASIENERGY CALCULATOR AND CONSTRUCTOR====!
-  subroutine quasienergy_kpath_task_constructor(floq_task, system, Nvec, vec_coord, nkpts, &
-                                                Nharm, &
-                                                axstart, axend, axsteps, &
-                                                pxstart, pxend, pxsteps, &
-                                                aystart, ayend, aysteps, &
-                                                pystart, pyend, pysteps, &
-                                                azstart, azend, azsteps, &
-                                                pzstart, pzend, pzsteps, &
-                                                omegastart, omegaend, omegasteps, &
-                                                t0start, t0end, t0steps, &
-                                                floq_Nt, floq_NS, floq_diag)
+  subroutine SsTC_quasienergy_kpath_task_constructor(floq_task, system, Nvec, vec_coord, nkpts, &
+                                                     Nharm, &
+                                                     axstart, axend, axsteps, &
+                                                     pxstart, pxend, pxsteps, &
+                                                     aystart, ayend, aysteps, &
+                                                     pystart, pyend, pysteps, &
+                                                     azstart, azend, azsteps, &
+                                                     pzstart, pzend, pzsteps, &
+                                                     omegastart, omegaend, omegasteps, &
+                                                     t0start, t0end, t0steps, &
+                                                     floq_Nt, floq_NS, floq_diag)
 
-    type(sys), intent(in)  :: system
+    type(SsTC_sys), intent(in)  :: system
     integer, intent(in) :: Nvec
     real(kind=dp), intent(in) :: vec_coord(Nvec, 3)
     integer, intent(in) :: nkpts(Nvec - 1)
@@ -65,7 +76,7 @@ contains
     integer, optional, intent(in) :: floq_Nt, floq_NS
     logical, optional, intent(in) :: floq_diag
 
-    type(floq_k_path_task), intent(out) :: floq_task
+    type(SsTC_floq_kpath_task), intent(out) :: floq_task
 
     do iharm = 1, Nharm
       start(6*(iharm - 1) + 1) = axstart(iharm)
@@ -101,24 +112,24 @@ contains
     end(6*Nharm + 2) = omegaend
     steps(6*Nharm + 2) = omegasteps
 
-    call kpath_constructor(task=floq_task, name="quasienergy", &
-                           g_calculator=quasienergy, &
-                           Nvec=Nvec, vec_coord=vec_coord, nkpts=nkpts, &
-                           N_int_ind=1, int_ind_range=(/system%num_bands/), &
-                           N_ext_vars=6*Nharm + 2, &
-                           ext_vars_start=start, &
-                           ext_vars_end=end, &
-                           ext_vars_steps=steps)
+    call SsTC_kpath_constructor(task=floq_task, name="quasienergy", &
+                                g_calculator=SsTC_quasienergy, &
+                                Nvec=Nvec, vec_coord=vec_coord, nkpts=nkpts, &
+                                N_int_ind=1, int_ind_range=(/system%num_bands/), &
+                                N_ext_vars=6*Nharm + 2, &
+                                ext_vars_start=start, &
+                                ext_vars_end=end, &
+                                ext_vars_steps=steps)
 
     if (present(floq_Nt)) floq_task%Nt = floq_Nt
     if (present(floq_Ns)) floq_task%Ns = floq_Ns
     if (present(floq_diag)) floq_task%diag = floq_diag
 
-  end subroutine quasienergy_kpath_task_constructor
+  end subroutine SsTC_quasienergy_kpath_task_constructor
   !==========DEFAULT QUASIENERGY KPATH TASK==========!
-  function quasienergy(floquet_task, system, k, error) result(u)
-    class(global_k_data), intent(in) :: floquet_task
-    type(sys), intent(in) :: system
+  function SsTC_quasienergy(floquet_task, system, k, error) result(u)
+    class(SsTC_global_k_data), intent(in) :: floquet_task
+    type(SsTC_sys), intent(in) :: system
     real(kind=dp), intent(in) :: k(3)
     logical, intent(inout) :: error
 
@@ -140,7 +151,7 @@ contains
                         rot(system%num_bands, system%num_bands)
 
     select type (floquet_task)
-    type is (floq_k_path_task)
+    type is (SsTC_floq_kpath_task)
 
       Nharm = (size(floquet_task%continuous_indices) - 2)/6
       allocate (amplitudes(Nharm, 3), phases(Nharm, 3))
@@ -149,7 +160,7 @@ contains
 
       do r_mem = 1, product(floquet_task%continuous_indices)
 
-        r_arr = continuous_memory_element_to_array_element(floquet_task, r_mem)
+        r_arr = SsTC_continuous_memory_element_to_array_element(floquet_task, r_mem)
 
         omega = floquet_task%ext_var_data(size(floquet_task%continuous_indices)) &
                 %data(r_arr(size(floquet_task%continuous_indices)))
@@ -180,9 +191,9 @@ contains
 
           tper = t0 + dt*real(it - 1, dp) !In eV^-1.
 
-          q = int_driving_field(amplitudes, phases, omega, tper) !In A^-1
+          q = SsTC_int_driving_field(amplitudes, phases, omega, tper) !In A^-1
 
-          H_TK = wannier_tdep_hamiltonian(system, q, k, floquet_task%diag, error) !In eV.
+          H_TK = SsTC_wannier_tdep_hamiltonian(system, q, k, floquet_task%diag, error) !In eV.
           if (error) then
             write (unit=stderr, fmt="(a, i4, a)") "Error in function quasienergy at t-step, ", it, &
               "when computing time-dependent Hamiltonian for modulation vector q = "
@@ -190,7 +201,7 @@ contains
             return
           endif
 
-          expH_TK = utility_exphs(-cmplx_i*dt*H_TK, system%num_bands, .true., error)
+          expH_TK = SsTC_utility_exphs(-cmplx_i*dt*H_TK, system%num_bands, .true., error)
           if (error) then
             write (unit=stderr, fmt="(a, i4, a)") "Error in function quasienergy at t-step, ", it, &
               "when computing matrix exponential for modulation vector q = "
@@ -202,14 +213,14 @@ contains
 
         enddo
 
-        hf = cmplx_i*omega*utility_logu(tev, system%num_bands, error)/(2*pi)
+        hf = cmplx_i*omega*SsTC_utility_logu(tev, system%num_bands, error)/(2*pi)
         if (error) then
           write (unit=stderr, fmt="(a)") "Error in function quasienergy when computing &
           & matrix log of the one-petiod time evolution operator."
           return
         endif
 
-        call utility_diagonalize(hf, system%num_bands, quasi, rot, error)
+        call SsTC_utility_diagonalize(hf, system%num_bands, quasi, rot, error)
         if (error) then
           write (unit=stderr, fmt="(a)") "Error in function quasienergy when computing the quasienergy spectrum."
           return
@@ -225,23 +236,23 @@ contains
 
     end select
 
-  end function quasienergy
+  end function SsTC_quasienergy
   !====END QUASIENERGY CALCULATOR AND CONSTRUCTOR====!
 
   !====FLOQUET CURRENT CALCULATOR AND CONSTRUCTOR====!
-  subroutine floq_curr_BZ_integral_constructor(floq_task, method, samples, &
-                                               Nharm, &
-                                               axstart, axend, axsteps, &
-                                               pxstart, pxend, pxsteps, &
-                                               aystart, ayend, aysteps, &
-                                               pystart, pyend, pysteps, &
-                                               azstart, azend, azsteps, &
-                                               pzstart, pzend, pzsteps, &
-                                               omegastart, omegaend, omegasteps, &
-                                               t0start, t0end, t0steps, &
-                                               tstart, tend, tsteps, &
-                                               floq_Nt, floq_NS, floq_diag, &
-                                               particular_integer_component)
+  subroutine SsTC_floq_curr_BZ_integral_constructor(floq_task, method, samples, &
+                                                    Nharm, &
+                                                    axstart, axend, axsteps, &
+                                                    pxstart, pxend, pxsteps, &
+                                                    aystart, ayend, aysteps, &
+                                                    pystart, pyend, pysteps, &
+                                                    azstart, azend, azsteps, &
+                                                    pzstart, pzend, pzsteps, &
+                                                    omegastart, omegaend, omegasteps, &
+                                                    t0start, t0end, t0steps, &
+                                                    tstart, tend, tsteps, &
+                                                    floq_Nt, floq_NS, floq_diag, &
+                                                    particular_integer_component)
 
     character(len=*), optional, intent(in) :: method
     integer, optional, intent(in) :: samples(3)
@@ -271,7 +282,7 @@ contains
 
     integer, optional, intent(in) :: particular_integer_component(:)
 
-    type(floq_BZ_integral_task), intent(out) :: floq_task
+    type(SsTC_floq_BZ_integral_task), intent(out) :: floq_task
 
     do iharm = 1, Nharm
       start(6*(iharm - 1) + 1) = axstart(iharm)
@@ -311,30 +322,30 @@ contains
     end(6*Nharm + 3) = tend
     steps(6*Nharm + 3) = tsteps
 
-    call BZ_integral_task_constructor(task=floq_task, name="floq_curr", &
-                                      g_calculator=floq_curr, &
-                                      method=method, samples=samples, &
-                                      N_int_ind=1, int_ind_range=(/3/), &
-                                      N_ext_vars=6*Nharm + 3, &
-                                      ext_vars_start=start, &
-                                      ext_vars_end=end, &
-                                      ext_vars_steps=steps, &
-                                      part_int_comp=particular_integer_component)
+    call SsTC_BZ_integral_task_constructor(task=floq_task, name="floq_curr", &
+                                           g_calculator=SsTC_floq_curr, &
+                                           method=method, samples=samples, &
+                                           N_int_ind=1, int_ind_range=(/3/), &
+                                           N_ext_vars=6*Nharm + 3, &
+                                           ext_vars_start=start, &
+                                           ext_vars_end=end, &
+                                           ext_vars_steps=steps, &
+                                           part_int_comp=particular_integer_component)
 
     !Function floq_curr assumes that all the information on the driving field is stored in the iterable.
     !Information on omega, t0 and t is passed via the last 3 indices of start(:), end(:) and steps(:) arrays.
     forall (i=1:6*Nharm) iterable_vars(i) = i
-    call construct_iterable(floq_task, iterable_vars)
+    call SsTC_construct_iterable(floq_task, iterable_vars)
 
     if (present(floq_Nt)) floq_task%Nt = floq_Nt
     if (present(floq_Ns)) floq_task%Ns = floq_Ns
     if (present(floq_diag)) floq_task%diag = floq_diag
 
-  end subroutine floq_curr_BZ_integral_constructor
+  end subroutine SsTC_floq_curr_BZ_integral_constructor
   !==========DEFAULT FLOQUET CURRENT INTEGRAL TASK==========!
-  function floq_curr(floquet_task, system, k, error) result(u)
-    class(global_k_data), intent(in) :: floquet_task
-    type(sys), intent(in) :: system
+  function SsTC_floq_curr(floquet_task, system, k, error) result(u)
+    class(SsTC_global_k_data), intent(in) :: floquet_task
+    type(SsTC_sys), intent(in) :: system
     real(kind=dp), intent(in) :: k(3)
     logical, intent(inout) :: error
 
@@ -363,24 +374,24 @@ contains
     complex(kind=dp), allocatable :: tev(:, :, :), pt(:, :, :), shrinkqs(:), qs(:, :, :), integrand(:, :, :), shrink_integrand(:, :)
 
     select type (floquet_task)
-    type is (floq_BZ_integral_task)
+    type is (SsTC_floq_BZ_integral_task)
 
       !Gather required quantities in the Wannier basis.
       !Time-independent Hamiltonian.
-      w_hamiltonian = wannier_hamiltonian(system, k)
+      w_hamiltonian = SsTC_wannier_hamiltonian(system, k)
       !Get eigenvalues and rotation from Wannier to Hamiltonian basis.
-      call utility_diagonalize(w_hamiltonian, system%num_bands, eig, rotWH, error)
+      call SsTC_utility_diagonalize(w_hamiltonian, system%num_bands, eig, rotWH, error)
       if (error) then
         write (unit=stderr, fmt="(a)") "Error in function floq_curr when computing&
         & the eigenvalues of the time-independent Hamiltonian."
         return
       endif
       !Get occupations (a matrix in the Hamiltonian basis).
-      rho = hamiltonian_occ_matrix(system, eig)
+      rho = SsTC_hamiltonian_occ_matrix(system, eig)
       !Rotate them back to the Wannier basis (notice W\rho W^\dagger instead of W^\dagger\rho W).
       rho = matmul(matmul(rotWH, rho), transpose(conjg(rotWH)))
       !Get velocities (Hamiltonian basis). TODO: CHECK IF WE ALSO NEED NONDIAGONAL ELEMENTS OR ONLY DIAGONAL ONES.
-      vels = velocities(system, wannier_dhamiltonian_dk(system, k), eig, rotWH, error)
+      vels = SsTC_velocities(system, SsTC_wannier_dhamiltonian_dk(system, k), eig, rotWH, error)
       if (error) then
         write (unit=stderr, fmt="(a)") "Error in function floq_curr when computing the velocities in the degenerate subspace."
         return
@@ -448,9 +459,9 @@ contains
 
               tper = t0 + dt*real(itper - 1, dp) !In eV^-1.
 
-              q = int_driving_field(amplitudes, phases, omega, tper) !In A^-1
+              q = SsTC_int_driving_field(amplitudes, phases, omega, tper) !In A^-1
 
-              H_TK = wannier_tdep_hamiltonian(system, q, k, floquet_task%diag, error) !In eV.
+              H_TK = SsTC_wannier_tdep_hamiltonian(system, q, k, floquet_task%diag, error) !In eV.
               if (error) then
                 write (unit=stderr, fmt="(a, i4, a)") "Error in function floq_curr at t-step, ", it, &
                   "when computing time-dependent Hamiltonian for modulation vector q = "
@@ -458,7 +469,7 @@ contains
                 return
               endif
 
-              expH_TK = utility_exphs(-cmplx_i*dt*H_TK, system%num_bands, .true., error)
+              expH_TK = SsTC_utility_exphs(-cmplx_i*dt*H_TK, system%num_bands, .true., error)
               if (error) then
                 write (unit=stderr, fmt="(a, i4, a)") "Error in function floq_curr at t-step, ", it, &
                   "when computing matrix exponential for modulation vector q = "
@@ -473,7 +484,7 @@ contains
             !At this point, the time-evolution operator for each time-instant within a period has been calculated in the Wannier basis.
 
             !Get effective Floquet Hamiltonian in the Wannier basis.
-            hf = cmplx_i*omega*utility_logu(tev(floquet_task%Nt, :, :), system%num_bands, error)/(2*pi)
+            hf = cmplx_i*omega*SsTC_utility_logu(tev(floquet_task%Nt, :, :), system%num_bands, error)/(2*pi)
             if (error) then
               write (unit=stderr, fmt="(a)") "Error in function floq_curr when computing &
               & matrix log of the one-petiod time evolution operator."
@@ -481,7 +492,7 @@ contains
             endif
 
             !Diagonalize it to obtain the quasienergy spectra and the rotation matrix passing from Wannier to Floquet basis.
-            call utility_diagonalize(hf, system%num_bands, quasi, rotWF, error)
+            call SsTC_utility_diagonalize(hf, system%num_bands, quasi, rotWF, error)
             if (error) then
               write (unit=stderr, fmt="(a)") "Error in function floq_curr when computing the quasienergy spectrum."
               return
@@ -497,20 +508,20 @@ contains
 
                 !compute the contribution for each time-instant.
                 integrand(itper, :, :) = matmul(TEV(itper, :, :), &
-                                                utility_exphs(cmplx_i*hf*tper, system%num_bands, .true., error)) &
+                                                SsTC_utility_exphs(cmplx_i*hf*tper, system%num_bands, .true., error)) &
                                          *exp(-cmplx_i*is*omega*tper) &
                                          /real(floquet_task%Nt - 1, dp)
                 !Adimensional. Units are OK.
 
                 !Shrink band indices.
-                call shrink_array(integrand(itper, :, :), shrink_integrand(itper, :), info) !TODO: if info=...???
+                call SsTC_shrink_array(integrand(itper, :, :), shrink_integrand(itper, :), info) !TODO: if info=...???
 
               enddo
 
               !Extrapolate.
-              call integral_extrapolation(shrink_integrand, (/floquet_task%Nt/), (/t0, t0 + 2*pi/omega/), shrinkqs, info) !TODO: if info=...???
+              call SsTC_integral_extrapolation(shrink_integrand, (/floquet_task%Nt/), (/t0, t0 + 2*pi/omega/), shrinkqs, info) !TODO: if info=...???
               !Expand to Q_s.
-              call expand_array(shrinkqs, qs(is, :, :), info) !TODO: if info=...???
+              call SsTC_expand_array(shrinkqs, qs(is, :, :), info) !TODO: if info=...???
               !At this point, the Q_s are in the Wannier basis, we pass them to the Floquet basis.
               qs(is, :, :) = matmul(matmul(transpose(conjg(rotWF)), qs(is, :, :)), rotWF)
             enddo
@@ -534,7 +545,7 @@ contains
               !We pass to eV^-1 by dividing by hbar_over_e
               t = t/hbar_over_e
 
-              r_mem = continuous_array_element_to_memory_element(floquet_task, r_arr)
+              r_mem = SsTC_continuous_array_element_to_memory_element(floquet_task, r_arr)
 
               do i_mem = 1, product(floquet_task%integer_indices)
 
@@ -571,13 +582,13 @@ contains
 
     !stop !TODO: Testing purposes.
 
-  end function floq_curr
+  end function SsTC_floq_curr
   !====END FLOQUET CURRENT CALCULATOR AND CONSTRUCTOR====!
 
   !====CORE PROCEDURES====!
-  function wannier_tdep_hamiltonian(system, q, k, diag, error) result(H_TK)
+  function SsTC_wannier_tdep_hamiltonian(system, q, k, diag, error) result(H_TK)
 
-    type(sys), intent(in)     :: system
+    type(SsTC_sys), intent(in)     :: system
 
     real(kind=dp), intent(in) :: q(3), & !In A^-1.
                                  k(3)    !In crystal coordineates.
@@ -664,9 +675,9 @@ contains
       & a large q has made the modulation factor become NaN and as a consequence H(t) is undetermined."
     endif
 
-  end function wannier_tdep_hamiltonian
+  end function SsTC_wannier_tdep_hamiltonian
 
-  function int_driving_field(amplitudes, phases, omega, t) result(q)
+  function SsTC_int_driving_field(amplitudes, phases, omega, t) result(q)
 
     real(kind=dp), intent(in) :: amplitudes(:, :), phases(:, :), &
                                  omega, t
@@ -690,7 +701,7 @@ contains
     !the divide by |e| to obain it in 1/m. Lastly pass to 1/A by multiplying by 1^-10.
     q = q*1.0E-10_dp
 
-  end function int_driving_field
+  end function SsTC_int_driving_field
   !=================================!
 
-end module calculators_floquet
+end module SsTC_calculators_floquet

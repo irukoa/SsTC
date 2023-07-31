@@ -1,13 +1,15 @@
-module kpath
+module SsTC_kpath
 
   USE OMP_LIB
 
-  use utility
-  use data_structures
+  use SsTC_utility
+  use SsTC_data_structures
 
   implicit none
 
-  type, extends(global_k_data) :: k_path_task
+  private
+
+  type, extends(SsTC_global_k_data) :: SsTC_kpath_task
     !1st index is the id of the vector in the path.
     !2nd index corresponds to the component of the vector
     !in the path in coordinates relative to the reciprocal lattice.
@@ -18,25 +20,27 @@ module kpath
     !Array to store data with integer index,
     !continuous index and kpt index respectively.
     complex(kind=dp), allocatable :: kpath_data(:, :, :)
-  end type k_path_task
+  end type SsTC_kpath_task
 
-  public :: kpath_constructor
-  public :: kpath_sampler
-  public :: print_kpath
+  public :: SsTC_kpath_task
+
+  public :: SsTC_kpath_constructor
+  public :: SsTC_kpath_sampler
+  public :: SsTC_print_kpath
 
 contains
 
-  subroutine kpath_constructor(task, &
-                               name, &
-                               l_calculator, g_calculator, &
-                               Nvec, vec_coord, nkpts, &
-                               N_int_ind, int_ind_range, &
-                               N_ext_vars, ext_vars_start, ext_vars_end, ext_vars_steps, &
-                               part_int_comp)
+  subroutine SsTC_kpath_constructor(task, &
+                                    name, &
+                                    l_calculator, g_calculator, &
+                                    Nvec, vec_coord, nkpts, &
+                                    N_int_ind, int_ind_range, &
+                                    N_ext_vars, ext_vars_start, ext_vars_end, ext_vars_steps, &
+                                    part_int_comp)
     character(len=*) :: name
 
-    procedure(local_calculator), optional :: l_calculator
-    procedure(global_calculator), optional :: g_calculator
+    procedure(SsTC_local_calculator), optional :: l_calculator
+    procedure(SsTC_global_calculator), optional :: g_calculator
 
     integer, intent(in) :: Nvec
     real(kind=dp), intent(in) :: vec_coord(Nvec, 3)
@@ -51,7 +55,7 @@ contains
 
     integer, optional, intent(in) :: part_int_comp(:)
 
-    class(k_path_task), intent(out) :: task
+    class(SsTC_kpath_task), intent(out) :: task
 
     integer :: i
 
@@ -82,7 +86,7 @@ contains
       do i = 1, N_ext_vars
         task%continuous_indices(i) = ext_vars_steps(i)
         allocate (task%ext_var_data(i)%data(ext_vars_steps(i)))
-        task%ext_var_data(i) = external_variable_constructor(ext_vars_start(i), ext_vars_end(i), ext_vars_steps(i))
+        task%ext_var_data(i) = SsTC_external_variable_constructor(ext_vars_start(i), ext_vars_end(i), ext_vars_steps(i))
       enddo
     else
       allocate (task%continuous_indices(1), task%ext_var_data(1))
@@ -106,17 +110,18 @@ contains
     task%kpath_data = cmplx_0
 
     !Set calculation of a particular integer component.
-    if (present(part_int_comp)) task%particular_integer_component = integer_array_element_to_memory_element(task, part_int_comp)
+    if (present(part_int_comp)) task%particular_integer_component = &
+      SsTC_integer_array_element_to_memory_element(task, part_int_comp)
 
     write (unit=stdout, fmt="(a)") "Done."
     write (unit=stdout, fmt="(a)") ""
 
-  end subroutine kpath_constructor
+  end subroutine SsTC_kpath_constructor
 
-  subroutine kpath_sampler(task, system)
+  subroutine SsTC_kpath_sampler(task, system)
 
-    class(k_path_task), intent(inout) :: task
-    type(sys), intent(in)    :: system
+    class(SsTC_kpath_task), intent(inout) :: task
+    type(SsTC_sys), intent(in)    :: system
 
     integer       :: ivec, isampling
     real(kind=dp) :: k(3)
@@ -170,12 +175,12 @@ contains
 
     deallocate (temp_res)
 
-  end subroutine kpath_sampler
+  end subroutine SsTC_kpath_sampler
 
-  subroutine print_kpath(task, system)
+  subroutine SsTC_print_kpath(task, system)
     !Subroutine to format and output files related to the result of the task "task".
-    class(k_path_task), intent(in) :: task
-    type(sys), intent(in) :: system
+    class(SsTC_kpath_task), intent(in) :: task
+    type(SsTC_sys), intent(in) :: system
 
     character(len=400) :: filename, fmtf
     integer :: i_arr(size(task%integer_indices)), r_arr(size(task%continuous_indices))
@@ -189,7 +194,7 @@ contains
 
       do i_mem = 1, product(task%integer_indices) !For each integer index.
 
-        i_arr = integer_memory_element_to_array_element(task, i_mem) !Pass to array layout.
+        i_arr = SsTC_integer_memory_element_to_array_element(task, i_mem) !Pass to array layout.
 
         filename = trim(system%name)//'-'//trim(task%name)//'_'
         do count = 1, size(task%integer_indices)
@@ -226,7 +231,7 @@ contains
 
       do i_mem = 1, product(task%integer_indices) !For each integer index.
 
-        i_arr = integer_memory_element_to_array_element(task, i_mem) !Pass to array layout.
+        i_arr = SsTC_integer_memory_element_to_array_element(task, i_mem) !Pass to array layout.
 
         filename = trim(system%name)//'-'//trim(task%name)//'_'
         do count = 1, size(task%integer_indices)
@@ -238,7 +243,7 @@ contains
 
         do r_mem = 1, product(task%continuous_indices) !For each continuous index.
 
-          r_arr = continuous_memory_element_to_array_element(task, r_mem) !Pass to array layout.
+          r_arr = SsTC_continuous_memory_element_to_array_element(task, r_mem) !Pass to array layout.
 
           countk = 0
           do ivec = 1, size(task%vectors(:, 1)) - 1 !For each considered vector except the last one.
@@ -269,6 +274,6 @@ contains
     write (unit=stdout, fmt="(a)") "Printing done."
     write (unit=stdout, fmt="(a)") ""
 
-  end subroutine print_kpath
+  end subroutine SsTC_print_kpath
 
-end module kpath
+end module SsTC_kpath

@@ -1,10 +1,12 @@
-module utility
+module SsTC_utility
 
   use, intrinsic :: iso_fortran_env, only: input_unit, &
     output_unit, &
     error_unit
 
   implicit none
+
+  private
 
   !Default units for input, output and error.
   integer, public :: stdin = input_unit, &
@@ -29,24 +31,24 @@ module utility
                                       hbar_over_e = 6.582119e-16_dp
 
   !Symmetrization and antisymmetrization.
-  integer, dimension(6), parameter :: alpha_S = (/1, 2, 3, 1, 1, 2/)
-  integer, dimension(6), parameter :: beta_S = (/1, 2, 3, 2, 3, 3/)
+  integer, dimension(6), parameter, public :: SsTC_alpha_S = (/1, 2, 3, 1, 1, 2/)
+  integer, dimension(6), parameter, public :: SsTC_beta_S = (/1, 2, 3, 2, 3, 3/)
 
-  integer, dimension(3), parameter :: alpha_A = (/2, 3, 1/)
-  integer, dimension(3), parameter :: beta_A = (/3, 1, 2/)
+  integer, dimension(3), parameter, public :: SsTC_alpha_A = (/2, 3, 1/)
+  integer, dimension(3), parameter, public :: SsTC_beta_A = (/3, 1, 2/)
 
-  public :: utility_delta
-  public :: utility_delta_vec
-  public :: utility_get_degen
-  public :: utility_diagonalize
-  public :: utility_schur
-  public :: utility_exphs
-  public :: utility_logu
+  public :: SsTC_utility_delta
+  public :: SsTC_utility_delta_vec
+  public :: SsTC_utility_get_degen
+  public :: SsTC_utility_diagonalize
+  public :: SsTC_utility_schur
+  public :: SsTC_utility_exphs
+  public :: SsTC_utility_logu
 
 contains
 
   !=============================================================!
-  function utility_delta(x) result(res)
+  function SsTC_utility_delta(x) result(res)
     !========================================================================!
     !Auxiliary routine to approximate the Dirac delta of x.                  !
     !========================================================================!
@@ -60,9 +62,9 @@ contains
     arg = min(200.0_dp, x**2)
     res = exp(-arg)/sqrt(pi)
 
-  end function utility_delta
+  end function SsTC_utility_delta
 
-  function utility_delta_vec(x) result(res)
+  function SsTC_utility_delta_vec(x) result(res)
     !========================================================================!
     !Auxiliary routine to approximate the Dirac delta of an array x.         !
     !For each x_i returns res_i = \delta(x_i).                               !
@@ -77,10 +79,10 @@ contains
     arg = min(200.0_dp, x**2)
     res = exp(-arg)/sqrt(pi)
 
-  end function utility_delta_vec
+  end function SsTC_utility_delta_vec
 
   !=============================================================!
-  function utility_get_degen(eig, degen_thr) result(deg)
+  function SsTC_utility_get_degen(eig, degen_thr) result(deg)
     !========================================================================!
     !Auxiliary routine to get the degree of degeneracy for a given list eig. !
     !The list is supposed to have it's elements stored in ascending order:   !
@@ -131,12 +133,12 @@ contains
       endif
     enddo
 
-  end function utility_get_degen
+  end function SsTC_utility_get_degen
 
   !===============WRAPPERS FOR SOME LAPACK ROUTINES===============!
 
   !===========================================================!
-  subroutine utility_diagonalize(mat, dim, eig, rot, error)
+  subroutine SsTC_utility_diagonalize(mat, dim, eig, rot, error)
     !==================================================================!
     !                                                                  !
     !!Given a hermitian dim x dim matrix mat, computes its             !
@@ -187,10 +189,10 @@ contains
       return
     endif
 
-  end subroutine utility_diagonalize
+  end subroutine SsTC_utility_diagonalize
 
   !===========================================================!
-  subroutine utility_schur(mat, dim, T, Z, error, S)
+  subroutine SsTC_utility_schur(mat, dim, T, Z, error, S)
     !==================================================================!
     !                                                                  !
     !!Given a dim x dim matrix mat, computes its Schur decomposition   !
@@ -246,11 +248,11 @@ contains
       return
     endif
 
-  end subroutine utility_schur
+  end subroutine SsTC_utility_schur
 
   !========HERMITIAN MATRIX EXPONENTIAL AND UNITARY MATRIX LOGARITHM========!
 
-  function utility_exphs(mat, dim, skew, error) result(exphs)
+  function SsTC_utility_exphs(mat, dim, skew, error) result(exphs)
     !==================================================================!
     !                                                                  !
     !Given a Hermitian/Skew-Hermitian dim x dim matrix mat, the routine!
@@ -277,7 +279,7 @@ contains
       !Skew-Hermitian matrix.
       exphs = cmplx_i*mat !Now exphs is Hermitian.
 
-      call utility_diagonalize(exphs, dim, eig, rot, error)
+      call SsTC_utility_diagonalize(exphs, dim, eig, rot, error)
       if (error) then
         write (unit=stderr, fmt="(a)") "Error in utility_exphs."
         return
@@ -293,7 +295,7 @@ contains
     else
       !Hermitian matrix.
 
-      call utility_diagonalize(mat, dim, eig, rot, error)
+      call SsTC_utility_diagonalize(mat, dim, eig, rot, error)
       if (error) then
         write (unit=stderr, fmt="(a)") "Error in utility_exphs."
         return
@@ -307,9 +309,9 @@ contains
 
     endif
 
-  end function utility_exphs
+  end function SsTC_utility_exphs
 
-  function utility_logu(mat, dim, error) result(logu)
+  function SsTC_utility_logu(mat, dim, error) result(logu)
     !==================================================================!
     !                                                                  !
     !Given an Unitary dim x dim matrix mat, computes the Skew-Hermitian!
@@ -328,7 +330,7 @@ contains
 
     logu = 0.d0
 
-    call utility_schur(mat, dim, eig, rot, error)
+    call SsTC_utility_schur(mat, dim, eig, rot, error)
     if (error) then
       write (unit=stderr, fmt="(a)") "Error in utility_logu."
       return
@@ -340,6 +342,6 @@ contains
 
     logu = matmul(matmul(rot, logu), conjg(transpose(rot)))
 
-  end function utility_logu
+  end function SsTC_utility_logu
 
-end module utility
+end module SsTC_utility

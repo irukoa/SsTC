@@ -1,10 +1,12 @@
-module data_structures
+module SsTC_data_structures
 
-  use utility
+  use SsTC_utility
 
   implicit none
 
-  type sys
+  private
+
+  type SsTC_sys
     character(len=120)            :: name
     integer                       :: num_bands                                !Number of bands.
     real(kind=dp)                 :: direct_lattice_basis(3, 3)               !Direct lattice basis vectors in A. 1st index is vector label, 2nd index is vector component.
@@ -18,80 +20,83 @@ module data_structures
     real(kind=dp)                 :: e_fermi = 0.0_dp                         !Fermi energy.
     real(kind=dp)                 :: deg_thr = 1.0E-4_dp                      !Degeneracy threshold in eV.
     real(kind=dp)                 :: deg_offset = 0.04_dp                     !Offset for regularization in case of deeneracies in eV.
-  end type sys
+  end type SsTC_sys
 
-  type local_k_data
-    character(len=120)                           :: name
-    integer, allocatable                         :: integer_indices(:)              !Each entry contains the range of each of the integer indices.
-    complex(kind=dp), allocatable                :: k_data(:)                       !Data local for each k with integer index in memory array,
-    procedure(local_calculator), pointer, nopass :: local_calculator                 !Pointer to the local calculator.
-    integer                                      :: particular_integer_component = 0 !Specification of some integer component.
-  end type local_k_data
+  type SsTC_local_k_data
+    character(len=120)                                :: name
+    integer, allocatable                              :: integer_indices(:)               !Each entry contains the range of each of the integer indices.
+    complex(kind=dp), allocatable                     :: k_data(:)                        !Data local for each k with integer index in memory array,
+    procedure(SsTC_local_calculator), pointer, nopass :: local_calculator                 !Pointer to the local calculator.
+    integer                                           :: particular_integer_component = 0 !Specification of some integer component.
+  end type SsTC_local_k_data
 
-  type, extends(local_k_data) :: global_k_data
-    integer, allocatable                          :: continuous_indices(:) !Each entry contains the range of each continuous indices.
-    type(external_vars), allocatable              :: ext_var_data(:)       !External variable data.
-    procedure(global_calculator), pointer, nopass :: global_calculator     !Pointer to the global calculator.
-    integer, allocatable                          :: iterables(:, :)       !Iterable dictionary.
-  end type global_k_data
+  type, extends(SsTC_local_k_data) :: SsTC_global_k_data
+    integer, allocatable                               :: continuous_indices(:) !Each entry contains the range of each continuous indices.
+    type(SsTC_external_vars), allocatable                   :: ext_var_data(:)       !External variable data.
+    procedure(SsTC_global_calculator), pointer, nopass :: global_calculator     !Pointer to the global calculator.
+    integer, allocatable                               :: iterables(:, :)       !Iterable dictionary.
+  end type SsTC_global_k_data
 
-  type external_vars
+  type SsTC_external_vars
     real(kind=dp), allocatable :: data(:) !External variable data array.
-  end type external_vars
+  end type SsTC_external_vars
 
   !Interfaces for the generic functions returning k dependent quantities.
   abstract interface
-    function global_calculator(task, system, k, error) result(u)
-      import :: global_k_data, sys, external_vars, dp
+    function SsTC_local_calculator(k_data, system, k, error) result(u)
+      import :: SsTC_local_k_data, SsTC_sys, SsTC_external_vars, dp
 
-      class(global_k_data), intent(in) :: task
-      type(sys), intent(in)            :: system
-      real(kind=dp), intent(in)        :: k(3)
-      logical, intent(inout)           :: error
-
-      complex(kind=dp)                 :: u(product(task%integer_indices), product(task%continuous_indices))
-    end function global_calculator
-  end interface
-
-  abstract interface
-    function local_calculator(k_data, system, k, error) result(u)
-      import :: local_k_data, sys, external_vars, dp
-
-      class(local_k_data), intent(in) :: k_data
-      type(sys), intent(in)           :: system
+      class(SsTC_local_k_data), intent(in) :: k_data
+      type(SsTC_sys), intent(in)           :: system
       real(kind=dp), intent(in)       :: k(3)
       logical, intent(inout)          :: error
 
       complex(kind=dp)                :: u(product(k_data%integer_indices))
-    end function local_calculator
+    end function SsTC_local_calculator
   end interface
 
-  public :: local_k_data
-  public :: global_k_data
+  abstract interface
+    function SsTC_global_calculator(task, system, k, error) result(u)
+      import :: SsTC_global_k_data, SsTC_sys, SsTC_external_vars, dp
 
-  public :: sys
-  public :: sys_constructor
+      class(SsTC_global_k_data), intent(in) :: task
+      type(SsTC_sys), intent(in)            :: system
+      real(kind=dp), intent(in)        :: k(3)
+      logical, intent(inout)           :: error
 
-  public :: external_vars
-  public :: external_variable_constructor
+      complex(kind=dp)                 :: u(product(task%integer_indices), product(task%continuous_indices))
+    end function SsTC_global_calculator
+  end interface
 
-  public :: integer_array_element_to_memory_element
-  public :: integer_memory_element_to_array_element
-  public :: continuous_array_element_to_memory_element
-  public :: continuous_memory_element_to_array_element
-  public :: construct_iterable
+  public :: SsTC_local_k_data
+  public :: SsTC_global_k_data
+
+  public :: SsTC_local_calculator
+  public :: SsTC_global_calculator
+
+  public :: SsTC_sys
+  public :: SsTC_sys_constructor
+
+  public :: SsTC_external_vars
+  public :: SsTC_external_variable_constructor
+
+  public :: SsTC_integer_array_element_to_memory_element
+  public :: SsTC_integer_memory_element_to_array_element
+  public :: SsTC_continuous_array_element_to_memory_element
+  public :: SsTC_continuous_memory_element_to_array_element
+  public :: SsTC_construct_iterable
 
 contains
 
-  function sys_constructor(name, path_to_tb_file, efermi, deg_thr, deg_offset &
-                           ) result(system)
+  function SsTC_sys_constructor(name, path_to_tb_file, efermi, deg_thr, deg_offset &
+                                ) result(system)
 
     character(len=*), intent(in) :: name
     character(len=*), intent(in) :: path_to_tb_file
     real(kind=dp), optional, intent(in) :: efermi, &
                                            deg_thr, deg_offset
 
-    type(sys) :: system
+    type(SsTC_sys) :: system
 
     character(len=400) :: filename
     integer            :: num_bands, nrpts, &
@@ -203,14 +208,14 @@ contains
     write (unit=stdout, fmt="(a)") "System loaded sucessfully."
     write (unit=stdout, fmt="(a)") ""
 
-  end function sys_constructor
+  end function SsTC_sys_constructor
 
-  function external_variable_constructor(start, end, steps) result(vars)
+  function SsTC_external_variable_constructor(start, end, steps) result(vars)
     !Function to set external variable data.
     real(kind=dp), intent(in) :: start, end
     integer, intent(in) :: steps
 
-    type(external_vars) :: vars
+    type(SsTC_external_vars) :: vars
 
     integer :: i
 
@@ -224,14 +229,14 @@ contains
       enddo
     endif
 
-  end function external_variable_constructor
+  end function SsTC_external_variable_constructor
 
   !==UTILITY FUNCTIONS TO PASS "MEMORY LAYOUT" INDICES TO "ARRAY LAYOUT" AND VICE-VERSA==!
   !See discussion at https://eli.thegreenplace.net/2015/memory-layout-of-multi-dimensional-arrays
 
-  function integer_array_element_to_memory_element(data_k, i_arr) result(i_mem)
+  function SsTC_integer_array_element_to_memory_element(data_k, i_arr) result(i_mem)
     !Get integer indices from array layout to memory layout.
-    class(local_k_data), intent(in) :: data_k
+    class(SsTC_local_k_data), intent(in) :: data_k
     integer, intent(in) :: i_arr(size(data_k%integer_indices))
 
     integer :: i_mem
@@ -243,11 +248,11 @@ contains
       i_mem = (i_mem - 1)*data_k%integer_indices(counter + 1) + i_arr(counter + 1)
     enddo
 
-  end function integer_array_element_to_memory_element
+  end function SsTC_integer_array_element_to_memory_element
 
-  function integer_memory_element_to_array_element(data_k, i_mem) result(i_arr)
+  function SsTC_integer_memory_element_to_array_element(data_k, i_mem) result(i_arr)
     !Get integer indices from memory layout to array layout.
-    class(local_k_data), intent(in) :: data_k
+    class(SsTC_local_k_data), intent(in) :: data_k
     integer, intent(in)                :: i_mem
 
     integer :: i_arr(size(data_k%integer_indices))
@@ -265,11 +270,11 @@ contains
       endif
     enddo
 
-  end function integer_memory_element_to_array_element
+  end function SsTC_integer_memory_element_to_array_element
 
-  function continuous_array_element_to_memory_element(task, r_arr) result(r_mem)
+  function SsTC_continuous_array_element_to_memory_element(task, r_arr) result(r_mem)
     !Get continuous indices from array layout to memory layout.
-    class(global_k_data), intent(in) :: task
+    class(SsTC_global_k_data), intent(in) :: task
     integer, intent(in) :: r_arr(size(task%continuous_indices))
 
     integer :: r_mem
@@ -281,11 +286,11 @@ contains
       r_mem = (r_mem - 1)*task%continuous_indices(counter + 1) + r_arr(counter + 1)
     enddo
 
-  end function continuous_array_element_to_memory_element
+  end function SsTC_continuous_array_element_to_memory_element
 
-  function continuous_memory_element_to_array_element(task, r_mem) result(r_arr)
+  function SsTC_continuous_memory_element_to_array_element(task, r_mem) result(r_arr)
     !Get continuous indices from memory layout to array layout.
-    class(global_k_data), intent(in) :: task
+    class(SsTC_global_k_data), intent(in) :: task
     integer, intent(in) :: r_mem
 
     integer :: r_arr(size(task%continuous_indices))
@@ -303,9 +308,9 @@ contains
       endif
     enddo
 
-  end function continuous_memory_element_to_array_element
+  end function SsTC_continuous_memory_element_to_array_element
 
-  subroutine construct_iterable(global, vars)
+  subroutine SsTC_construct_iterable(global, vars)
     !Creates a dictionaty with all the possible permutations of the
     !considered variation of the continuous variables specified
     !in the array elements of "vars".
@@ -317,7 +322,7 @@ contains
     !1st index the label of the permutation and in the 2nd index
     !the particular permutation, of size(global%continuous_indices),
     !of the variables i_j for all j in size(vars).
-    class(global_k_data) :: global
+    class(SsTC_global_k_data) :: global
     integer, intent(in) :: vars(:)
 
     integer :: i, j, n, counter, reduction
@@ -356,6 +361,6 @@ contains
 
     deallocate (temp_arr)
 
-  end subroutine construct_iterable
+  end subroutine SsTC_construct_iterable
 
-end module data_structures
+end module SsTC_data_structures

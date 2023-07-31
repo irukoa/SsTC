@@ -1,8 +1,8 @@
-module extrapolation_integration
+module SsTC_extrapolation_integration
 
-  use utility
+  use SsTC_utility
 
-  !V1.0.1(modified) By Álvaro R. Puente-Uriona.
+  !V1.0.1 By Álvaro R. Puente-Uriona for use un the SsTC package.
 
   !Standalone module to compute integrals using the extrapolation
   !a.k.a. Romberg method.
@@ -33,20 +33,22 @@ module extrapolation_integration
 
   implicit none
 
-  public :: integral_extrapolation
-  public :: shrink_array
-  public :: expand_array
+  private
 
-  interface integral_extrapolation
+  public :: SsTC_integral_extrapolation
+  public :: SsTC_shrink_array
+  public :: SsTC_expand_array
+
+  interface SsTC_integral_extrapolation
     module procedure scalar_integral_extrapolation_real
     module procedure vector_integral_extrapolation_real
     module procedure scalar_integral_extrapolation_complex
     module procedure vector_integral_extrapolation_complex
     module procedure scalar_integral_extrapolation_complex_array_real_bounds
     module procedure vector_integral_extrapolation_complex_array_real_bounds
-  end interface integral_extrapolation
+  end interface SsTC_integral_extrapolation
 
-  interface shrink_array
+  interface SsTC_shrink_array
     module procedure shrink_rarray1
     module procedure shrink_rarray2
     module procedure shrink_rarray3
@@ -55,9 +57,9 @@ module extrapolation_integration
     module procedure shrink_carray2
     module procedure shrink_carray3
     module procedure shrink_carray4
-  end interface shrink_array
+  end interface SsTC_shrink_array
 
-  interface expand_array
+  interface SsTC_expand_array
     module procedure expand_rarray1
     module procedure expand_rarray2
     module procedure expand_rarray3
@@ -66,7 +68,7 @@ module extrapolation_integration
     module procedure expand_carray2
     module procedure expand_carray3
     module procedure expand_carray4
-  end interface expand_array
+  end interface SsTC_expand_array
 
 contains
 
@@ -1551,4 +1553,4 @@ contains
 
   end subroutine expand_carray4
 
-end module extrapolation_integration
+end module SsTC_extrapolation_integration

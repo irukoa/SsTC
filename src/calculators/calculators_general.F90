@@ -1,23 +1,25 @@
-module calculators_general
+module SsTC_calculators_general
 
-  use utility
-  use data_structures
-  use local_k_quantities
-  use kpath
+  use SsTC_utility
+  use SsTC_data_structures
+  use SsTC_local_k_quantities
+  use SsTC_kpath
 
   implicit none
 
-  public :: bands
-  public :: bands_kpath_task_constructor
+  private
+
+  public :: SsTC_bands_kpath_task_constructor
+  public :: SsTC_bands
 
 contains
 
   !====DEFAULT CALCULATORS====!
 
   !====BANDS CALCULATOR AND CONSTRUCTOR====!
-  function bands(k_data, system, k, error) result(u)
-    class(local_k_data), intent(in) :: k_data
-    type(sys), intent(in) :: system
+  function SsTC_bands(k_data, system, k, error) result(u)
+    class(SsTC_local_k_data), intent(in) :: k_data
+    type(SsTC_sys), intent(in) :: system
     real(kind=dp), intent(in) :: k(3)
     logical, intent(inout) :: error
 
@@ -27,30 +29,30 @@ contains
                         rot(system%num_bands, system%num_bands)
     real(kind=dp) :: eig(system%num_bands)
 
-    hamiltonian = wannier_hamiltonian(system, k)
-    call utility_diagonalize(hamiltonian, system%num_bands, eig, rot, error)
+    hamiltonian = SsTC_wannier_hamiltonian(system, k)
+    call SsTC_utility_diagonalize(hamiltonian, system%num_bands, eig, rot, error)
     if (error) then
       write (unit=stderr, fmt="(a)") "Error in function bands when computing the eigenvalues of the Hamiltonian."
       return
     endif
     u = eig
-  end function bands
+  end function SsTC_bands
   !==========DEFAULT BANDS KPATH TASK==========!
-  subroutine bands_kpath_task_constructor(task, system, Nvec, vec_coord, nkpts)
+  subroutine SsTC_bands_kpath_task_constructor(task, system, Nvec, vec_coord, nkpts)
 
-    type(sys), intent(in)  :: system
+    type(SsTC_sys), intent(in)  :: system
     integer, intent(in) :: Nvec
     real(kind=dp), intent(in) :: vec_coord(Nvec, 3)
     integer, intent(in) :: nkpts(Nvec - 1)
 
-    type(k_path_task), intent(out) :: task
+    type(SsTC_kpath_task), intent(out) :: task
 
-    call kpath_constructor(task=task, name="def_bands", &
-                           l_calculator=bands, &
-                           Nvec=Nvec, vec_coord=vec_coord, nkpts=nkpts, &
-                           N_int_ind=1, int_ind_range=(/system%num_bands/), &
-                           N_ext_vars=1)
-  end subroutine bands_kpath_task_constructor
+    call SsTC_kpath_constructor(task=task, name="def_bands", &
+                                l_calculator=SsTC_bands, &
+                                Nvec=Nvec, vec_coord=vec_coord, nkpts=nkpts, &
+                                N_int_ind=1, int_ind_range=(/system%num_bands/), &
+                                N_ext_vars=1)
+  end subroutine SsTC_bands_kpath_task_constructor
   !====END BANDS CALCULATOR AND CONSTRUCTOR====!
 
-end module calculators_general
+end module SsTC_calculators_general

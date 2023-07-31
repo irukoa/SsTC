@@ -1,14 +1,16 @@
-module integrator
+module SsTC_integrator
 
   USE OMP_LIB
 
-  use utility
-  use data_structures
-  use extrapolation_integration
+  use SsTC_utility
+  use SsTC_data_structures
+  use SsTC_extrapolation_integration
 
   implicit none
 
-  type, extends(global_k_data) :: BZ_integral_task
+  private
+
+  type, extends(SsTC_global_k_data) :: SsTC_BZ_integral_task
     !Integration method.
     character(len=120)                             :: method
     !Integration samples.
@@ -16,25 +18,27 @@ module integrator
     !Result of the integration, contains the integer
     !index and the continuous index in memory layout, respectively.
     complex(kind=dp), allocatable                  :: result(:, :)
-  end type BZ_integral_task
+  end type SsTC_BZ_integral_task
 
-  public :: BZ_integral_task_constructor
-  public :: sample_and_integrate_BZ_integral_task
-  public :: print_BZ_integral_task
+  public :: SsTC_BZ_integral_task
+
+  public :: SsTC_BZ_integral_task_constructor
+  public :: SsTC_sample_and_integrate_BZ_integral_task
+  public :: SsTC_print_BZ_integral_task
 
 contains
 
-  subroutine BZ_integral_task_constructor(task, name, &
-                                          l_calculator, g_calculator, &
-                                          method, samples, &
-                                          N_int_ind, int_ind_range, &
-                                          N_ext_vars, ext_vars_start, ext_vars_end, ext_vars_steps, &
-                                          part_int_comp)
+  subroutine SsTC_BZ_integral_task_constructor(task, name, &
+                                               l_calculator, g_calculator, &
+                                               method, samples, &
+                                               N_int_ind, int_ind_range, &
+                                               N_ext_vars, ext_vars_start, ext_vars_end, ext_vars_steps, &
+                                               part_int_comp)
 
     character(len=*) :: name
 
-    procedure(local_calculator), optional :: l_calculator
-    procedure(global_calculator), optional :: g_calculator
+    procedure(SsTC_local_calculator), optional :: l_calculator
+    procedure(SsTC_global_calculator), optional :: g_calculator
 
     character(len=*), optional, intent(in) :: method
     integer, optional, intent(in) :: samples(3)
@@ -48,7 +52,7 @@ contains
 
     integer, optional, intent(in) :: part_int_comp(:)
 
-    class(BZ_integral_task), intent(out) :: task
+    class(SsTC_BZ_integral_task), intent(out) :: task
 
     integer :: i
 
@@ -74,7 +78,7 @@ contains
       do i = 1, N_ext_vars
         task%continuous_indices(i) = ext_vars_steps(i)
         allocate (task%ext_var_data(i)%data(ext_vars_steps(i)))
-        task%ext_var_data(i) = external_variable_constructor(ext_vars_start(i), ext_vars_end(i), ext_vars_steps(i))
+        task%ext_var_data(i) = SsTC_external_variable_constructor(ext_vars_start(i), ext_vars_end(i), ext_vars_steps(i))
       enddo
     else
       allocate (task%continuous_indices(1), task%ext_var_data(1))
@@ -98,7 +102,8 @@ contains
     task%result = cmplx_0
 
     !Set calculation of a particular integer component.
-    if (present(part_int_comp)) task%particular_integer_component = integer_array_element_to_memory_element(task, part_int_comp)
+    if (present(part_int_comp)) task%particular_integer_component = &
+      SsTC_integer_array_element_to_memory_element(task, part_int_comp)
 
     !Set integration method.
     if (present(method)) then
@@ -127,14 +132,14 @@ contains
     write (unit=stdout, fmt="(a)") "Done."
     write (unit=stdout, fmt="(a)") ""
 
-  end subroutine BZ_integral_task_constructor
+  end subroutine SsTC_BZ_integral_task_constructor
 
   !Sub to integrate calculators which return a complex array with integer and continuous indices.
   !The interface for the generic calculator function is given in data_structures module.
-  subroutine sample_and_integrate_BZ_integral_task(task, system)
+  subroutine SsTC_sample_and_integrate_BZ_integral_task(task, system)
 
-    class(BZ_integral_task), intent(inout) :: task
-    type(sys), intent(in)    :: system
+    class(SsTC_BZ_integral_task), intent(inout) :: task
+    type(SsTC_sys), intent(in)    :: system
 
     complex(kind=dp), allocatable :: data_k(:, :, :, :, :), &
                                      sdata_k(:, :, :), &
@@ -165,7 +170,7 @@ contains
                 sdata_k(product(task%samples), &
                         product(task%integer_indices), product(task%continuous_indices)))
 
-!$OMP       PARALLEL DEFAULT(SHARED) PRIVATE(k) !!TODO: Check if the comporobation for task%samples() == 1 slows down the code too much.
+!$OMP       PARALLEL DEFAULT(SHARED) PRIVATE(k)
 
       TID = OMP_GET_THREAD_NUM()
       IF (TID .EQ. 0) THEN
@@ -217,10 +222,10 @@ contains
       do i = 1, product(task%integer_indices) !For each integer index.
         do r = 1, product(task%continuous_indices) !For each continuous index.
           !Pass data array to memory layout.
-          call shrink_array(data_k(:, :, :, i, r), sdata_k(:, i, r), info)
+          call SsTC_shrink_array(data_k(:, :, :, i, r), sdata_k(:, i, r), info)
           !Integrate, if possible extrapolation method.
-          call integral_extrapolation(sdata_k(:, i, r), task%samples, &
-                                      (/-0.5_dp, 0.5_dp, -0.5_dp, 0.5_dp, -0.5_dp, 0.5_dp/), task%result(i, r), info)
+          call SsTC_integral_extrapolation(sdata_k(:, i, r), task%samples, &
+                                           (/-0.5_dp, 0.5_dp, -0.5_dp, 0.5_dp, -0.5_dp, 0.5_dp/), task%result(i, r), info)
         enddo
       enddo
 
@@ -244,7 +249,7 @@ contains
       allocate (temp_res(product(task%integer_indices), product(task%continuous_indices)))
       temp_res = cmplx(0.0_dp, 0.0_dp, dp)
 
-!$OMP       PARALLEL DEFAULT (SHARED) PRIVATE (k) REDUCTION (+: temp_res) !!TODO: Check if the comporobation for task%samples() == 1 slows down the code too much.
+!$OMP       PARALLEL DEFAULT (SHARED) PRIVATE (k) REDUCTION (+: temp_res)
 
       TID = OMP_GET_THREAD_NUM()
       IF (TID .EQ. 0) THEN
@@ -300,12 +305,12 @@ contains
       write (unit=stdout, fmt="(a)") ""
     endif
 
-  end subroutine sample_and_integrate_BZ_integral_task
+  end subroutine SsTC_sample_and_integrate_BZ_integral_task
 
-  subroutine print_BZ_integral_task(task, system)
+  subroutine SsTC_print_BZ_integral_task(task, system)
     !Subroutine to format and output files related to the result of the task "task".
-    class(BZ_integral_task), intent(in) :: task
-    type(sys), intent(in) :: system
+    class(SsTC_BZ_integral_task), intent(in) :: task
+    type(SsTC_sys), intent(in) :: system
 
     character(len=400) :: filename, fmtf
     integer :: i_arr(size(task%integer_indices)), &
@@ -319,7 +324,7 @@ contains
 
       do i_mem = 1, product(task%integer_indices) !For each integer index.
 
-        i_arr = integer_memory_element_to_array_element(task, i_mem) !Pass to array layout.
+        i_arr = SsTC_integer_memory_element_to_array_element(task, i_mem) !Pass to array layout.
 
         filename = trim(system%name)//'-'//trim(task%name)//'_'
         do count = 1, size(task%integer_indices)
@@ -342,7 +347,7 @@ contains
 
       do i_mem = 1, product(task%integer_indices) !For each integer index.
 
-        i_arr = integer_memory_element_to_array_element(task, i_mem) !Pass to array layout.
+        i_arr = SsTC_integer_memory_element_to_array_element(task, i_mem) !Pass to array layout.
 
         filename = trim(system%name)//'-'//trim(task%name)//'_'
         do count = 1, size(task%integer_indices)
@@ -354,7 +359,7 @@ contains
 
         do r_mem = 1, product(task%continuous_indices) !For each continuous index.
 
-          r_arr = continuous_memory_element_to_array_element(task, r_mem) !Pass to array layout.
+          r_arr = SsTC_continuous_memory_element_to_array_element(task, r_mem) !Pass to array layout.
 
           write (unit=printunit, fmt=fmtf) (task%ext_var_data(count)%data(r_arr(count)), count=1, size(task%continuous_indices)), &
             real(task%result(i_mem, r_mem), dp), aimag(task%result(i_mem, r_mem))
@@ -370,6 +375,6 @@ contains
     write (unit=stdout, fmt="(a)") "Printing done."
     write (unit=stdout, fmt="(a)") ""
 
-  end subroutine print_BZ_integral_task
+  end subroutine SsTC_print_BZ_integral_task
 
-end module integrator
+end module SsTC_integrator
