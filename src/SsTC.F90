@@ -103,6 +103,8 @@ module SsTC
   public :: SsTC_default_shift_current_constructor
   public :: SsTC_shift_current
 
+  !Topological.<---TODO.
+
 contains
 
   subroutine SsTC_init(nThreads, nNested, exec_label)

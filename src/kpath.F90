@@ -128,8 +128,10 @@ contains
 
     complex(kind=dp), allocatable :: temp_res(:, :, :)
 
-    logical :: error
-    error = .false.
+    integer :: report_step
+    integer :: progress = 0
+
+    logical :: error = .false.
 
     allocate (temp_res(product(task%integer_indices), product(task%continuous_indices), sum(task%number_of_pts)))
 
@@ -137,6 +139,7 @@ contains
 
     !Sampling.
     do ivec = 1, size(task%vectors(:, 1)) - 1 !For each considered vector except the last one.
+      report_step = nint(real(task%number_of_pts(ivec)/100, dp)) + 1
 !$OMP       PARALLEL SHARED(temp_res) PRIVATE(isampling, k)
 !$OMP       DO
       do isampling = 1, task%number_of_pts(ivec)
@@ -163,9 +166,18 @@ contains
           stop
         endif
 
+!$OMP         ATOMIC UPDATE
+        progress = progress + 1
+
+        if (modulo(progress, report_step) == report_step/2) then !Update progress every 1000 kpts.
+          write (unit=stdout, fmt="(a, i3, a, i12, a, i12, a)") "Vector No. ", ivec, &
+            ". Progress: ", progress, "/", task%number_of_pts(ivec), " kpts sampled."
+        endif
+
       enddo
 !$OMP       END DO
 !$OMP       END PARALLEL
+      progress = 0
     enddo
 
     write (unit=stdout, fmt="(a)") "Sampling done."

@@ -149,10 +149,12 @@ contains
 
     integer :: ik1, ik2, ik3, info, i, r
 
-    integer :: TID
+    integer :: TID, report_step
+    integer :: progress = 0
 
-    logical :: error
-    error = .false.
+    logical :: error = .false.
+
+    report_step = nint(real(product(task%samples)/100, dp)) + 1
 
     if (task%method == "extrapolation") then !Extraplation case. Requires large RAM.
 
@@ -211,11 +213,19 @@ contains
               stop
             endif
 
+!$OMP             ATOMIC UPDATE
+            progress = progress + 1
+
+            if (modulo(progress, report_step) == report_step/2) then !Update progress every 1000 kpts.
+              write (unit=stdout, fmt="(a, i12, a, i12, a)") "Progress: ", progress, "/", product(task%samples), " kpts sampled."
+            endif
+
           enddo
         enddo
       enddo
 !$OMP       END DO
 !$OMP       END PARALLEL
+      progress = 0
 
       write (unit=stdout, fmt="(a)") "Sampling done. Starting integration with extrapolation method."
 
@@ -290,11 +300,19 @@ contains
               stop
             endif
 
+!$OMP             ATOMIC UPDATE
+            progress = progress + 1
+
+            if (modulo(progress, report_step) == report_step/2) then !Update progress every 1000 kpts.
+              write (unit=stdout, fmt="(a, i12, a, i12, a)") "Progress: ", progress, "/", product(task%samples), " kpts sampled."
+            endif
+
           enddo
         enddo
       enddo
 !$OMP     END DO
 !$OMP     END PARALLEL
+      progress = 0
 
       write (unit=stdout, fmt="(a)") "Integral done."
 
