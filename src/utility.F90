@@ -42,6 +42,7 @@ module SsTC_utility
   public :: SsTC_utility_get_degen
   public :: SsTC_utility_diagonalize
   public :: SsTC_utility_schur
+  public :: SsTC_utility_SVD
   public :: SsTC_utility_exphs
   public :: SsTC_utility_logu
 
@@ -147,7 +148,7 @@ contains
     !                                                                  !
     !==================================================================!
 
-    logical, intent(out)            :: error
+    logical, intent(inout)            :: error
 
     integer, intent(in)               :: dim
     complex*16, intent(in)               :: mat(dim, dim)
@@ -202,7 +203,7 @@ contains
     !                                                                  !
     !==================================================================!
 
-    logical, intent(out)            :: error
+    logical, intent(inout)            :: error
 
     integer, intent(in)               :: dim
     complex*16, intent(in)               :: mat(dim, dim)
@@ -249,6 +250,74 @@ contains
     endif
 
   end subroutine SsTC_utility_schur
+
+  subroutine SsTC_utility_SVD(mat, sigma, error, U, V)
+    !==================================================================!
+    !                                                                  !
+    !!Given a m x n matrix mat, computes its Singular value            !
+    !decomposition mat = U*sigma*V^dagger.                             !
+    !                                                                  !
+    !==================================================================!
+
+    logical, intent(inout)            :: error
+
+    complex*16, intent(in)               :: mat(:, :)
+    real(8), intent(out)                 :: sigma(size(mat(:, 1)), size(mat(1, :)))
+
+    complex*16, intent(out), optional :: U(size(mat(:, 1)), size(mat(:, 1))), &
+                                         V(size(mat(1, :)), size(mat(1, :)))
+
+    complex*16 :: B(size(mat(:, 1)), size(mat(1, :)))
+    real(8) :: sigmaw(min(size(mat(:, 1)), size(mat(1, :))))
+    complex*16 :: Uw(size(mat(:, 1)), size(mat(:, 1))), &
+                  Vw(size(mat(1, :)), size(mat(1, :)))
+    complex*16, allocatable :: work(:)
+    real(8)                                        :: rwork(5*min(size(mat(1, :)), size(mat(:, 1))))
+
+    integer :: m, n
+    integer :: info, lwork
+
+    integer :: i
+
+    external                                       :: zgesvd
+
+    m = size(mat(:, 1)) !Number of rows of the input matrix.
+    n = size(mat(1, :)) !Number of cols of the input matrix.
+
+    !Initialization.
+    B = mat
+    sigma = 0.d0
+
+    !Query optimal workspace.
+    lwork = -1
+    allocate (work(1))
+    call zgesvd('A', 'A', m, n, B, m, sigmaw, Uw, m, Vw, n, work, lwork, rwork, info)
+    lwork = nint(real(work(1), 8))
+    deallocate (work)
+
+    !Calculation.
+    allocate (work(lwork))
+    call zgesvd('A', 'A', m, n, B, m, sigmaw, Uw, m, Vw, n, work, lwork, rwork, info)
+    forall (i=1:size(sigmaw)) sigma(i, i) = sigmaw(i)
+    if (present(U)) U = Uw
+    if (present(V)) V = conjg(transpose(Vw))
+    deallocate (work)
+
+    !Check convergence.
+    if (info < 0) then
+      error = .True.
+      write (unit=stderr, fmt='(a, i3, a)') 'Error in utility_svd: THE ', -info, &
+        ' ARGUMENT OF CGESVD HAD AN ILLEGAL VALUE'
+      return
+    endif
+    if (info > 0) then
+      error = .True.
+      write (unit=stderr, fmt='(a, i3,a)') 'Error in utility_svd: ', info, &
+        ' SUPERDIAGONALS FAILED TO CONVERGE TO ZERO'
+      return
+    endif
+
+  end subroutine SsTC_utility_SVD
 
   !========HERMITIAN MATRIX EXPONENTIAL AND UNITARY MATRIX LOGARITHM========!
 

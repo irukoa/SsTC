@@ -30,6 +30,7 @@ module SsTC
   public :: SsTC_utility_get_degen
   public :: SsTC_utility_diagonalize
   public :: SsTC_utility_schur
+  public :: SsTC_utility_SVD
   public :: SsTC_utility_exphs
   public :: SsTC_utility_logu
 
