@@ -3,12 +3,17 @@ module SsTC
   USE OMP_LIB
 
   use SsTC_utility
-  use SsTC_data_structures
   use SsTC_extrapolation_integration
-  use SsTC_local_k_quantities
+
+  use SsTC_data_structures
+
   use SsTC_kpath
   use SsTC_kslice
+  use SsTC_sampler
   use SsTC_integrator
+
+  use SsTC_local_k_quantities
+
   use SsTC_calculators_general
   use SsTC_calculators_floquet
   use SsTC_calculators_optical
