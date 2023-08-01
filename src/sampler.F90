@@ -94,7 +94,8 @@ contains
     if (present(samples)) task%samples = samples
 
     !Set result.
-  allocate (task%BZ_data(product(task%integer_indices), product(task%continuous_indices), task%samples(1), task%samples(2), task%samples(3)))
+    allocate (task%BZ_data(product(task%integer_indices), product(task%continuous_indices), &
+                           task%samples(1), task%samples(2), task%samples(3)))
     task%BZ_data = cmplx_0
 
     !Set calculation of a particular integer component.
