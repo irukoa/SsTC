@@ -53,7 +53,8 @@ SsTC.o: $(SRC)/SsTC.F90 utility.o extrapolation_integration.o data_structures.o 
 main: SsTC.o
 			ar cr "$(BIN)/libSsTC.a" $(OBJ)/*.o
 			mv *.mod $(BIN)
+			rm -f $(SRC)/*.mod $(CALC)/*.mod
 
 .PHONY: uninstall
 uninstall:
-	rm -rf $(OBJ)/*.o *.mod $(BIN)/*.x
+	rm -rf $(OBJ)/*.o *.mod $(BIN)/*
