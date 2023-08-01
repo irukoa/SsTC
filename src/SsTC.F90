@@ -68,6 +68,10 @@ module SsTC
   !Kslice.
   public :: SsTC_kslice_task
 
+  public :: SsTC_kslice_task_constructor
+  public :: SsTC_sample_kslice_task
+  public :: SsTC_print_kslice
+
   !Integrator.
   public :: SsTC_BZ_integral_task
 
