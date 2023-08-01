@@ -20,6 +20,7 @@ module SsTC
 
   private
 
+  !Core Procedures.
   !Initialization.
   public :: SsTC_init
 
@@ -38,6 +39,11 @@ module SsTC
   public :: SsTC_utility_SVD
   public :: SsTC_utility_exphs
   public :: SsTC_utility_logu
+
+  !Extrapolation integration.
+  public :: SsTC_integral_extrapolation
+  public :: SsTC_shrink_array
+  public :: SsTC_expand_array
 
   !Data structures.
   public :: SsTC_local_k_data
@@ -58,11 +64,6 @@ module SsTC
   public :: SsTC_continuous_memory_element_to_array_element
   public :: SsTC_construct_iterable
 
-  !Extrapolation integration.
-  public :: SsTC_integral_extrapolation
-  public :: SsTC_shrink_array
-  public :: SsTC_expand_array
-
   !Kpath.
   public :: SsTC_kpath_task
 
@@ -77,6 +78,13 @@ module SsTC
   public :: SsTC_sample_kslice_task
   public :: SsTC_print_kslice
 
+  !BZ Sampler.
+  public :: SsTC_sampling_task
+
+  public :: SsTC_sampling_task_constructor
+  public :: SsTC_sample_sampling_task
+  public :: SsTC_print_sampling
+
   !Integrator.
   public :: SsTC_BZ_integral_task
 
@@ -84,8 +92,7 @@ module SsTC
   public :: SsTC_sample_and_integrate_BZ_integral_task
   public :: SsTC_print_BZ_integral_task
 
-  !BZ Sampler.<---TODO.
-
+  !Non-Core Procedures:
   !Calculators:
   !General.
   public :: SsTC_bands_kpath_task_constructor
@@ -112,8 +119,6 @@ module SsTC
 
   public :: SsTC_default_shift_current_constructor
   public :: SsTC_shift_current
-
-  !Topological.<---TODO.
 
 contains
 

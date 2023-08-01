@@ -15,7 +15,6 @@ module SsTC_kslice
                      vector(2, 3) = reshape((/1.0_dp, 0.0_dp, 0.0_dp, 1.0_dp, 0.0_dp, 0.0_dp/), (/2, 3/))
     integer       :: mesh(2) = (/100, 100/)
     complex(kind=dp), allocatable :: kslice_data(:, :, :, :) !Integer index, continuous index and kpt index 1 and 2 respectively.
-
   end type SsTC_kslice_task
 
   public :: SsTC_kslice_task
