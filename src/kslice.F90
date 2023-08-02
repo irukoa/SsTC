@@ -10,11 +10,13 @@ module SsTC_kslice
   private
 
   type, extends(SsTC_global_k_data) :: SsTC_kslice_task
-    !Default: sample k_z = 0 slice in a 100x100 mesh.
+    !Default: sample k_z = 0 slice in a 100x100 samples.
     real(kind=dp) :: corner(3) = (/-0.5_dp, -0.5_dp, 0.0_dp/), &
                      vector(2, 3) = reshape((/1.0_dp, 0.0_dp, 0.0_dp, 1.0_dp, 0.0_dp, 0.0_dp/), (/2, 3/))
-    integer       :: mesh(2) = (/100, 100/)
-    complex(kind=dp), allocatable :: kslice_data(:, :, :, :) !Integer index, continuous index and kpt index 1 and 2 respectively.
+    integer       :: samples(2) = (/100, 100/)
+
+    !Integer index, continuous index and kpt index 1 and 2 respectively.
+    complex(kind=dp), allocatable :: kslice_data(:, :, :, :)
   end type SsTC_kslice_task
 
   public :: SsTC_kslice_task
@@ -27,25 +29,25 @@ contains
 
   subroutine SsTC_kslice_task_constructor(task, name, &
                                           l_calculator, g_calculator, &
-                                          corner, vector_a, vector_b, mesh, &
+                                          corner, vector_a, vector_b, samples, &
                                           N_int_ind, int_ind_range, &
                                           N_ext_vars, ext_vars_start, ext_vars_end, ext_vars_steps, &
                                           part_int_comp)
 
     character(len=*) :: name
 
-    procedure(SsTC_local_calculator), optional :: l_calculator
+    procedure(SsTC_local_calculator), optional  :: l_calculator
     procedure(SsTC_global_calculator), optional :: g_calculator
 
     real(kind=dp), optional, intent(in) :: corner(3), vector_a(3), vector_b(3)
-    integer, optional, intent(in) :: mesh(2)
+    integer, optional, intent(in)       :: samples(2)
 
     integer, optional, intent(in) :: N_int_ind
     integer, optional, intent(in) :: int_ind_range(:)
 
-    integer, optional, intent(in) :: N_ext_vars
+    integer, optional, intent(in)       :: N_ext_vars
     real(kind=dp), optional, intent(in) :: ext_vars_start(:), ext_vars_end(:)
-    integer, optional, intent(in) :: ext_vars_steps(:)
+    integer, optional, intent(in)       :: ext_vars_steps(:)
 
     integer, optional, intent(in) :: part_int_comp(:)
 
@@ -53,10 +55,10 @@ contains
 
     logical :: error = .False.
 
-    integer :: i
+    integer          :: i
     complex(kind=dp) :: lindep(2, 3)
-    real(kind=dp) :: sigma(2, 3)
-    logical :: dep = .False.
+    real(kind=dp)    :: sigma(2, 3)
+    logical          :: dep = .False.
 
     !Set name.
     task%name = name
@@ -97,10 +99,10 @@ contains
     endif
 
     !Set number of samples.
-    if (present(mesh)) then
-      task%mesh = mesh
+    if (present(samples)) then
+      task%samples = samples
     endif
-    if ((task%mesh(1) .LE. 1) .or. (task%mesh(2) .LE. 1)) task%mesh = (/2, 2/)
+    if ((task%samples(1) .LE. 1) .or. (task%samples(2) .LE. 1)) task%samples = (/2, 2/)
 
     !Set integer index data.
     if (((N_int_ind) .ge. 1) .and. (present(int_ind_range))) then
@@ -139,7 +141,7 @@ contains
     endif
 
     !Set kdata.
-    allocate (task%kslice_data(product(task%integer_indices), product(task%continuous_indices), task%mesh(1), task%mesh(2)))
+    allocate (task%kslice_data(product(task%integer_indices), product(task%continuous_indices), task%samples(1), task%samples(2)))
     task%kslice_data = cmplx_0
 
     !Set calculation of a particular integer component.
@@ -154,7 +156,7 @@ contains
   subroutine SsTC_sample_kslice_task(task, system)
 
     class(SsTC_kslice_task), intent(inout) :: task
-    type(SsTC_sys), intent(in)    :: system
+    type(SsTC_sys), intent(in)             :: system
 
     real(kind=dp) :: k(3)
 
@@ -165,12 +167,12 @@ contains
 
     logical :: error = .false.
 
-    report_step = nint(real(product(task%mesh)/100, dp)) + 1
+    report_step = nint(real(product(task%samples)/100, dp)) + 1
 
     write (unit=stdout, fmt="(a)") "Starting BZ sampling subroutine kslice."
     write (unit=stdout, fmt="(a)") "Sampling task: "//trim(task%name)//" in the BZ for the system "//trim(system%name)//"."
     write (unit=stdout, fmt="(a)") "The required memory for the sampling process is approximately,"
-    write (unit=stdout, fmt="(f15.3, a)") 16.0_dp*real(product(task%mesh)*product(task%integer_indices)*&
+    write (unit=stdout, fmt="(f15.3, a)") 16.0_dp*real(product(task%samples)*product(task%integer_indices)*&
     & product(task%continuous_indices), dp)/1024.0_dp**2, "MB."
     write (unit=stdout, fmt="(a)") "Some computers limit the maximum memory an array can allocate."
     write (unit=stdout, fmt="(a)") "If this is your case and SIGSEGV triggers try using the next command before execution:"
@@ -184,12 +186,12 @@ contains
     ENDIF
 
 !$OMP         DO COLLAPSE(2)
-    do ik1 = 1, task%mesh(1)
-      do ik2 = 1, task%mesh(2)
+    do ik1 = 1, task%samples(1)
+      do ik2 = 1, task%samples(2)
 
         k = task%corner + &
-            task%vector(1, :)*real(ik1 - 1, dp)/real(task%mesh(1) - 1, dp) + &
-            task%vector(2, :)*real(ik2 - 1, dp)/real(task%mesh(2) - 1, dp)
+            task%vector(1, :)*real(ik1 - 1, dp)/real(task%samples(1) - 1, dp) + &
+            task%vector(2, :)*real(ik2 - 1, dp)/real(task%samples(2) - 1, dp)
 
         !Gather data.
         if (associated(task%local_calculator)) then
@@ -208,7 +210,7 @@ contains
         progress = progress + 1
 
         if (modulo(progress, report_step) == report_step/2) then !Update progress every 1000 kpts.
-          write (unit=stdout, fmt="(a, i12, a, i12, a)") "Progress: ", progress, "/", product(task%mesh), " kpts sampled."
+          write (unit=stdout, fmt="(a, i12, a, i12, a)") "Progress: ", progress, "/", product(task%samples), " kpts sampled."
         endif
 
       enddo
@@ -226,13 +228,17 @@ contains
   subroutine SsTC_print_kslice(task, system)
     !Subroutine to format and output files related to the result of the task "task".
     class(SsTC_kslice_task), intent(in) :: task
-    type(SsTC_sys), intent(in) :: system
+    type(SsTC_sys), intent(in)          :: system
+
+    real(kind=dp) :: k(3)
 
     character(len=400) :: filename, fmtf
-    integer :: i_arr(size(task%integer_indices)), r_arr(size(task%continuous_indices))
-    integer :: i_mem, r_mem, count, ik1, ik2
-    integer :: printunit
-    real(kind=dp) :: k(3)
+    integer            :: i_arr(size(task%integer_indices)), &
+                          r_arr(size(task%continuous_indices))
+    integer            :: i_mem, r_mem, &
+                          count, &
+                          ik1, ik2
+    integer            :: printunit
 
     write (unit=stdout, fmt="(a)") "Printing kslice task: "//trim(task%name)//" for the system "//trim(system%name)//"."
 
@@ -250,12 +256,12 @@ contains
 
         open (newunit=printunit, action="write", file=filename)
 
-        do ik1 = 1, task%mesh(1)
-          do ik2 = 1, task%mesh(2)
+        do ik1 = 1, task%samples(1)
+          do ik2 = 1, task%samples(2)
 
             k = task%corner + &
-                task%vector(1, :)*real(ik1 - 1, dp)/real(task%mesh(1) - 1, dp) + &
-                task%vector(2, :)*real(ik2 - 1, dp)/real(task%mesh(2) - 1, dp)
+                task%vector(1, :)*real(ik1 - 1, dp)/real(task%samples(1) - 1, dp) + &
+                task%vector(2, :)*real(ik2 - 1, dp)/real(task%samples(2) - 1, dp)
 
             write (unit=printunit, fmt="(5e18.8e3)") k, real(task%kslice_data(i_mem, 1, ik1, ik2), dp), &
               aimag(task%kslice_data(i_mem, 1, ik1, ik2))
@@ -287,12 +293,12 @@ contains
 
           r_arr = SsTC_continuous_memory_element_to_array_element(task, r_mem) !Pass to array layout.
 
-          do ik1 = 1, task%mesh(1)
-            do ik2 = 1, task%mesh(2)
+          do ik1 = 1, task%samples(1)
+            do ik2 = 1, task%samples(2)
 
               k = task%corner + &
-                  task%vector(1, :)*real(ik1 - 1, dp)/real(task%mesh(1) - 1, dp) + &
-                  task%vector(2, :)*real(ik2 - 1, dp)/real(task%mesh(2) - 1, dp)
+                  task%vector(1, :)*real(ik1 - 1, dp)/real(task%samples(1) - 1, dp) + &
+                  task%vector(2, :)*real(ik2 - 1, dp)/real(task%samples(2) - 1, dp)
 
               write (unit=printunit, fmt=fmtf) k, &
                 (task%ext_var_data(count)%data(r_arr(count)), count=1, size(task%continuous_indices)), &

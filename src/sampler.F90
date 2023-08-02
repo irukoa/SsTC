@@ -10,8 +10,9 @@ module SsTC_sampler
   private
 
   type, extends(SsTC_global_k_data) :: SsTC_sampling_task
-    integer :: samples(3) = (/100, 100, 100/)
-    complex(kind=dp), allocatable :: BZ_data(:, :, :, :, :) !Integer index, continuous index and kpt index 1, 2 and 3 respectively.
+    integer                       :: samples(3) = (/100, 100, 100/)
+    !Integer index, continuous index and kpt index 1, 2 and 3 respectively.
+    complex(kind=dp), allocatable :: BZ_data(:, :, :, :, :)
   end type SsTC_sampling_task
 
   public :: SsTC_sampling_task
@@ -31,7 +32,7 @@ contains
 
     character(len=*) :: name
 
-    procedure(SsTC_local_calculator), optional :: l_calculator
+    procedure(SsTC_local_calculator), optional  :: l_calculator
     procedure(SsTC_global_calculator), optional :: g_calculator
 
     integer, optional, intent(in) :: samples(3)
@@ -39,9 +40,9 @@ contains
     integer, optional, intent(in) :: N_int_ind
     integer, optional, intent(in) :: int_ind_range(:)
 
-    integer, optional, intent(in) :: N_ext_vars
+    integer, optional, intent(in)       :: N_ext_vars
     real(kind=dp), optional, intent(in) :: ext_vars_start(:), ext_vars_end(:)
-    integer, optional, intent(in) :: ext_vars_steps(:)
+    integer, optional, intent(in)       :: ext_vars_steps(:)
 
     integer, optional, intent(in) :: part_int_comp(:)
 
@@ -110,7 +111,7 @@ contains
   subroutine SsTC_sample_sampling_task(task, system)
 
     class(SsTC_sampling_task), intent(inout) :: task
-    type(SsTC_sys), intent(in)    :: system
+    type(SsTC_sys), intent(in)               :: system
 
     real(kind=dp) :: k(3)
 
@@ -195,13 +196,17 @@ contains
   subroutine SsTC_print_sampling(task, system)
     !Subroutine to format and output files related to the result of the task "task".
     class(SsTC_sampling_task), intent(in) :: task
-    type(SsTC_sys), intent(in) :: system
+    type(SsTC_sys), intent(in)            :: system
+
+    real(kind=dp) :: k(3)
 
     character(len=400) :: filename, fmtf
-    integer :: i_arr(size(task%integer_indices)), r_arr(size(task%continuous_indices))
-    integer :: i_mem, r_mem, count, ik1, ik2, ik3
-    integer :: printunit
-    real(kind=dp) :: k(3)
+    integer            :: i_arr(size(task%integer_indices)), &
+                          r_arr(size(task%continuous_indices))
+    integer            :: i_mem, r_mem, &
+                          count, &
+                          ik1, ik2, ik3
+    integer            :: printunit
 
     write (unit=stdout, fmt="(a)") "Printing sampling task: "//trim(task%name)//" for the system "//trim(system%name)//"."
 
@@ -249,6 +254,7 @@ contains
         close (unit=printunit)
 
       enddo
+
     elseif (associated(task%global_calculator)) then
 
       write (fmtf, "(I10)") size(task%continuous_indices) + 5
@@ -303,6 +309,7 @@ contains
         close (unit=printunit)
 
       enddo
+
     endif
 
     write (unit=stdout, fmt="(a)") "Printing done."

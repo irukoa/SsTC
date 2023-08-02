@@ -37,18 +37,18 @@ contains
 
     character(len=*) :: name
 
-    procedure(SsTC_local_calculator), optional :: l_calculator
+    procedure(SsTC_local_calculator), optional  :: l_calculator
     procedure(SsTC_global_calculator), optional :: g_calculator
 
     character(len=*), optional, intent(in) :: method
-    integer, optional, intent(in) :: samples(3)
+    integer, optional, intent(in)          :: samples(3)
 
     integer, optional, intent(in) :: N_int_ind
     integer, optional, intent(in) :: int_ind_range(:)
 
-    integer, optional, intent(in) :: N_ext_vars
+    integer, optional, intent(in)       :: N_ext_vars
     real(kind=dp), optional, intent(in) :: ext_vars_start(:), ext_vars_end(:)
-    integer, optional, intent(in) :: ext_vars_steps(:)
+    integer, optional, intent(in)       :: ext_vars_steps(:)
 
     integer, optional, intent(in) :: part_int_comp(:)
 
@@ -134,12 +134,10 @@ contains
 
   end subroutine SsTC_BZ_integral_task_constructor
 
-  !Sub to integrate calculators which return a complex array with integer and continuous indices.
-  !The interface for the generic calculator function is given in data_structures module.
   subroutine SsTC_sample_and_integrate_BZ_integral_task(task, system)
 
     class(SsTC_BZ_integral_task), intent(inout) :: task
-    type(SsTC_sys), intent(in)    :: system
+    type(SsTC_sys), intent(in)                  :: system
 
     complex(kind=dp), allocatable :: data_k(:, :, :, :, :), &
                                      sdata_k(:, :, :), &
@@ -147,7 +145,9 @@ contains
 
     real(kind=dp) :: k(3)
 
-    integer :: ik1, ik2, ik3, info, i, r
+    integer :: ik1, ik2, ik3, &
+               info, &
+               i, r
 
     integer :: TID, report_step
     integer :: progress = 0
@@ -328,13 +328,13 @@ contains
   subroutine SsTC_print_BZ_integral_task(task, system)
     !Subroutine to format and output files related to the result of the task "task".
     class(SsTC_BZ_integral_task), intent(in) :: task
-    type(SsTC_sys), intent(in) :: system
+    type(SsTC_sys), intent(in)               :: system
 
     character(len=400) :: filename, fmtf
-    integer :: i_arr(size(task%integer_indices)), &
-               r_arr(size(task%continuous_indices))
-    integer :: i_mem, r_mem, count
-    integer :: printunit
+    integer            :: i_arr(size(task%integer_indices)), &
+                          r_arr(size(task%continuous_indices))
+    integer            :: i_mem, r_mem, count
+    integer            :: printunit
 
     write (unit=stdout, fmt="(a)") "Printing BZ integral task: "//trim(task%name)//" for the system "//trim(system%name)//"."
 
