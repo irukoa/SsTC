@@ -15,7 +15,7 @@ module SsTC_kpath
     !in the path in coordinates relative to the reciprocal lattice.
     real(kind=dp), allocatable :: vectors(:, :)
     !Its size is the number of vectors in the BZ - 1.
-    !vector(i) contains the number of k-points between vector i and vector i+1.
+    !number_of_pts(i) contains the number of k-points between vector i and vector i+1.
     integer, allocatable :: number_of_pts(:)
     !Array to store data with integer index,
     !continuous index and kpt index respectively.
@@ -37,21 +37,22 @@ contains
                                     N_int_ind, int_ind_range, &
                                     N_ext_vars, ext_vars_start, ext_vars_end, ext_vars_steps, &
                                     part_int_comp)
+
     character(len=*) :: name
 
-    procedure(SsTC_local_calculator), optional :: l_calculator
+    procedure(SsTC_local_calculator), optional  :: l_calculator
     procedure(SsTC_global_calculator), optional :: g_calculator
 
-    integer, intent(in) :: Nvec
+    integer, intent(in)       :: Nvec
     real(kind=dp), intent(in) :: vec_coord(Nvec, 3)
-    integer, intent(in) :: nkpts(Nvec - 1)
+    integer, intent(in)       :: nkpts(Nvec - 1)
 
     integer, optional, intent(in) :: N_int_ind
     integer, optional, intent(in) :: int_ind_range(:)
 
-    integer, optional, intent(in) :: N_ext_vars
+    integer, optional, intent(in)       :: N_ext_vars
     real(kind=dp), optional, intent(in) :: ext_vars_start(:), ext_vars_end(:)
-    integer, optional, intent(in) :: ext_vars_steps(:)
+    integer, optional, intent(in)       :: ext_vars_steps(:)
 
     integer, optional, intent(in) :: part_int_comp(:)
 
@@ -121,7 +122,7 @@ contains
   subroutine SsTC_kpath_sampler(task, system)
 
     class(SsTC_kpath_task), intent(inout) :: task
-    type(SsTC_sys), intent(in)    :: system
+    type(SsTC_sys), intent(in)            :: system
 
     integer       :: ivec, isampling
     real(kind=dp) :: k(3)
@@ -192,12 +193,16 @@ contains
   subroutine SsTC_print_kpath(task, system)
     !Subroutine to format and output files related to the result of the task "task".
     class(SsTC_kpath_task), intent(in) :: task
-    type(SsTC_sys), intent(in) :: system
+    type(SsTC_sys), intent(in)         :: system
 
     character(len=400) :: filename, fmtf
-    integer :: i_arr(size(task%integer_indices)), r_arr(size(task%continuous_indices))
-    integer :: i_mem, r_mem, count, countk, ivec, isampling
-    integer :: printunit
+    integer            :: i_arr(size(task%integer_indices)), &
+                          r_arr(size(task%continuous_indices))
+    integer            :: i_mem, r_mem, &
+                          count, &
+                          countk, ivec, isampling
+    integer            :: printunit
+
     real(kind=dp) :: k(3)
 
     write (unit=stdout, fmt="(a)") "Printing kpath task: "//trim(task%name)//" for the system "//trim(system%name)//"."
@@ -236,6 +241,7 @@ contains
         close (unit=printunit)
 
       enddo
+
     elseif (associated(task%global_calculator)) then
 
       write (fmtf, "(I10)") size(task%continuous_indices) + 6
@@ -281,6 +287,7 @@ contains
         close (unit=printunit)
 
       enddo
+
     endif
 
     write (unit=stdout, fmt="(a)") "Printing done."
