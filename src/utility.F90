@@ -117,8 +117,8 @@ contains
       enddo
     enddo
 
-    !In the case of eig(j+2)-eig(j+1)<degen_thr and eig(j+1)-eig(j)<degen_thr,
-    !but eig(j+2)-eig(j)>degen_thr (closely packed levels),
+    !In the case of eig(j+2) - eig(j+1) < degen_thr and eig(j+1) - eig(j) < degen_thr,
+    !but eig(j+2) - eig(j) > degen_thr (closely packed levels),
     do i = dim - 1, 2, -1
       if ((deg(i) .GT. 1) .AND. (deg(i - 1) .GT. 1)) then
         deg(i - 1) = deg(i) + 1   !increase the degeneracy value of the
@@ -148,18 +148,16 @@ contains
     !                                                                  !
     !==================================================================!
 
-    logical, intent(inout)            :: error
-
-    integer, intent(in)               :: dim
-    complex*16, intent(in)               :: mat(dim, dim)
-    real(8), intent(out)              :: eig(dim)      !Eigenvalues.
-    complex*16, intent(out)              :: rot(dim, dim)  !Eigenvectors.
+    integer, intent(in)     :: dim
+    complex*16, intent(in)  :: mat(dim, dim)
+    real(8), intent(out)    :: eig(dim)      !Eigenvalues.
+    complex*16, intent(out) :: rot(dim, dim) !Eigenvectors.
+    logical, intent(inout)  :: error
 
     complex*16, allocatable :: work(:)
-    real(8)                                        :: rwork(3*dim - 2)
-    integer                                        :: info, lwork
-
-    external                                       :: zheev
+    real(8)                 :: rwork(3*dim - 2)
+    integer                 :: info, lwork
+    external                :: zheev
 
     !Initialization.
     rot = mat
@@ -180,13 +178,13 @@ contains
     if (info < 0) then
       error = .True.
       write (unit=stderr, fmt='(a, i3, a)') 'Error in utility_diagonalize: THE ', -info, &
-        ' ARGUMENT OF ZHEEV HAD AN ILLEGAL VALUE'
+        ' ARGUMENT OF ZHEEV HAD AN ILLEGAL VALUE.'
       return
     endif
     if (info > 0) then
       error = .True.
       write (unit=stderr, fmt='(a, i3, a)') 'Error in utility_diagonalize: ', info, &
-        ' EIGENVECTORS FAILED TO CONVERGE'
+        ' EIGENVECTORS FAILED TO CONVERGE.'
       return
     endif
 
@@ -203,21 +201,19 @@ contains
     !                                                                  !
     !==================================================================!
 
-    logical, intent(inout)            :: error
-
     integer, intent(in)               :: dim
-    complex*16, intent(in)               :: mat(dim, dim)
-    complex*16, intent(out)              :: T(dim)      !Eigenvalues (diagonal elements of B).
-    complex*16, intent(out)              :: Z(dim, dim)  !Eigenvectors.
-    complex*16, optional, intent(out)              :: S(dim, dim)  !Schur Form.
+    complex*16, intent(in)            :: mat(dim, dim)
+    complex*16, intent(out)           :: T(dim)      !Eigenvalues (diagonal elements of B).
+    complex*16, intent(out)           :: Z(dim, dim) !Eigenvectors.
+    logical, intent(inout)            :: error
+    complex*16, intent(out), optional :: S(dim, dim) !Schur Form.
 
-    complex*16                                     :: B(dim, dim)
+    complex*16              :: B(dim, dim)
     complex*16, allocatable :: work(:)
-    real(8)                                        :: rwork(dim)
-    integer                                        :: info, lwork, sdim
-    logical                                        :: bwork(dim), select
-
-    external                                       :: zgees
+    real(8)                 :: rwork(dim)
+    integer                 :: info, lwork, sdim
+    logical                 :: bwork(dim), select
+    external                :: zgees
 
     !Initialization.
     B = mat
@@ -239,13 +235,13 @@ contains
     if (info < 0) then
       error = .True.
       write (unit=stderr, fmt='(a, i3, a)') 'Error in utility_schur: THE ', -info, &
-        ' ARGUMENT OF ZGEES HAD AN ILLEGAL VALUE'
+        ' ARGUMENT OF ZGEES HAD AN ILLEGAL VALUE.'
       return
     endif
     if (info > 0) then
       error = .True.
       write (unit=stderr, fmt='(a, i3,a)') 'Error in utility_schur: ', info, &
-        ' EIGENVECTORS FAILED TO CONVERGE'
+        ' EIGENVECTORS FAILED TO CONVERGE.'
       return
     endif
 
@@ -259,27 +255,23 @@ contains
     !                                                                  !
     !==================================================================!
 
+    complex*16, intent(in)            :: mat(:, :)
+    real(8), intent(out)              :: sigma(size(mat(:, 1)), size(mat(1, :)))
     logical, intent(inout)            :: error
-
-    complex*16, intent(in)               :: mat(:, :)
-    real(8), intent(out)                 :: sigma(size(mat(:, 1)), size(mat(1, :)))
-
     complex*16, intent(out), optional :: U(size(mat(:, 1)), size(mat(:, 1))), &
                                          V(size(mat(1, :)), size(mat(1, :)))
 
-    complex*16 :: B(size(mat(:, 1)), size(mat(1, :)))
-    real(8) :: sigmaw(min(size(mat(:, 1)), size(mat(1, :))))
-    complex*16 :: Uw(size(mat(:, 1)), size(mat(:, 1))), &
-                  Vw(size(mat(1, :)), size(mat(1, :)))
+    complex*16              :: B(size(mat(:, 1)), size(mat(1, :)))
+    real(8)                 :: sigmaw(min(size(mat(:, 1)), size(mat(1, :))))
+    complex*16              :: Uw(size(mat(:, 1)), size(mat(:, 1))), &
+                               Vw(size(mat(1, :)), size(mat(1, :)))
     complex*16, allocatable :: work(:)
-    real(8)                                        :: rwork(5*min(size(mat(1, :)), size(mat(:, 1))))
+    real(8)                 :: rwork(5*min(size(mat(1, :)), size(mat(:, 1))))
+    external                :: zgesvd
 
     integer :: m, n
     integer :: info, lwork
-
     integer :: i
-
-    external                                       :: zgesvd
 
     m = size(mat(:, 1)) !Number of rows of the input matrix.
     n = size(mat(1, :)) !Number of cols of the input matrix.
@@ -307,19 +299,19 @@ contains
     if (info < 0) then
       error = .True.
       write (unit=stderr, fmt='(a, i3, a)') 'Error in utility_svd: THE ', -info, &
-        ' ARGUMENT OF CGESVD HAD AN ILLEGAL VALUE'
+        ' ARGUMENT OF CGESVD HAD AN ILLEGAL VALUE.'
       return
     endif
     if (info > 0) then
       error = .True.
       write (unit=stderr, fmt='(a, i3,a)') 'Error in utility_svd: ', info, &
-        ' SUPERDIAGONALS FAILED TO CONVERGE TO ZERO'
+        ' SUPERDIAGONALS FAILED TO CONVERGE TO ZERO.'
       return
     endif
 
   end subroutine SsTC_utility_SVD
 
-  !========HERMITIAN MATRIX EXPONENTIAL AND UNITARY MATRIX LOGARITHM========!
+  !========HERMITIAN/ANTIHERMITIAN MATRIX EXPONENTIAL AND UNITARY MATRIX LOGARITHM========!
 
   function SsTC_utility_exphs(mat, dim, skew, error) result(exphs)
     !==================================================================!
@@ -331,16 +323,15 @@ contains
     !                                                                  !
     !==================================================================!
 
-    logical, intent(inout)            :: error
+    integer, intent(in)          :: dim
+    complex(kind=dp), intent(in) :: mat(dim, dim)
+    logical, intent(in)          :: skew
+    logical, intent(inout)       :: error
 
-    integer, intent(in)               :: dim
-    complex(kind=dp), intent(in)               :: mat(dim, dim)
-    logical, intent(in)               :: skew
-
-    complex(kind=dp)                               :: exphs(dim, dim), &
-                                                      rot(dim, dim)
-    real(kind=dp)                                  :: eig(dim)
-    integer                                        :: i
+    complex(kind=dp) :: exphs(dim, dim), &
+                        rot(dim, dim)
+    real(kind=dp)    :: eig(dim)
+    integer          :: i
 
     exphs = cmplx_0
 
@@ -388,14 +379,14 @@ contains
     !                                                                  !
     !==================================================================!
 
-    logical, intent(inout)            :: error
+    integer, intent(in)          :: dim
+    complex(kind=dp), intent(in) :: mat(dim, dim)
+    logical, intent(inout)       :: error
 
-    integer, intent(in)               :: dim
-    complex(kind=dp), intent(in)               :: mat(dim, dim)
-
-    complex(kind=dp)                               :: logu(dim, dim), &
-                                                      rot(dim, dim), eig(dim)
-    integer                                        :: i
+    complex(kind=dp) :: logu(dim, dim), &
+                        rot(dim, dim), &
+                        eig(dim)
+    integer          :: i
 
     logu = 0.d0
 
