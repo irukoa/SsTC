@@ -28,14 +28,14 @@ contains
   function SsTC_wannier_hamiltonian(system, k) result(HW)
     !Output: Wannier basis Hamiltonian.
     !1st and 2nd indexes: bands.
-    type(SsTC_sys), intent(in)  :: system
+    type(SsTC_sys), intent(in) :: system
     real(kind=dp), intent(in)  :: k(3)
 
     complex(kind=dp) :: HW(system%num_bands, system%num_bands)
 
     type(SsTC_local_k_data), allocatable :: H_get(:)
-    integer, allocatable :: i_arr(:)
-    integer :: i_mem
+    integer, allocatable                 :: i_arr(:)
+    integer                              :: i_mem
 
     !Get Hamiltonian in memory layout.
     call SsTC_get_hamiltonian(system, k, H_get)
@@ -53,14 +53,14 @@ contains
   function SsTC_wannier_berry_connection(system, k) result(AW)
     !Output: Wannier basis Berry connection.
     !1st and 2nd indexes: bands, 3rd index: cartesian comp.
-    type(SsTC_sys), intent(in)  :: system
+    type(SsTC_sys), intent(in) :: system
     real(kind=dp), intent(in)  :: k(3)
 
     complex(kind=dp) :: AW(system%num_bands, system%num_bands, 3)
 
     type(SsTC_local_k_data), allocatable :: A_get(:)
-    integer, allocatable :: i_arr(:)
-    integer :: i_mem
+    integer, allocatable                 :: i_arr(:)
+    integer                              :: i_mem
 
     !Get Berry connection in memory layout.
     call SsTC_get_position(system, k, A_get)
@@ -78,14 +78,14 @@ contains
   function SsTC_wannier_dhamiltonian_dk(system, k) result(DHW)
     !Output: 1st k-derivative of the Wannier Hamiltonian.
     !1st and 2nd indexes: bands, 3rd index: derivative comp.
-    type(SsTC_sys), intent(in)  :: system
+    type(SsTC_sys), intent(in) :: system
     real(kind=dp), intent(in)  :: k(3)
 
     complex(kind=dp) :: DHW(system%num_bands, system%num_bands, 3)
 
     type(SsTC_local_k_data), allocatable :: H_get(:)
-    integer, allocatable :: i_arr(:)
-    integer :: i_mem
+    integer, allocatable                 :: i_arr(:)
+    integer                              :: i_mem
 
     !Get Hamiltonian in memory layout.
     call SsTC_get_hamiltonian(system, k, H_get, Nder_i=1)
@@ -104,14 +104,14 @@ contains
     !Output: 2nd k-derivative of the Wannier Hamiltonian.
     !1st and 2nd indexes: bands, 3rd index: cartesian comp.
     !4th index : derivative direction
-    type(SsTC_sys), intent(in)  :: system
+    type(SsTC_sys), intent(in) :: system
     real(kind=dp), intent(in)  :: k(3)
 
     complex(kind=dp) :: DDHW(system%num_bands, system%num_bands, 3, 3)
 
     type(SsTC_local_k_data), allocatable :: H_get(:)
-    integer, allocatable :: i_arr(:)
-    integer :: i_mem
+    integer, allocatable                 :: i_arr(:)
+    integer                              :: i_mem
 
     !Get Hamiltonian in memory layout.
     call SsTC_get_hamiltonian(system, k, H_get, Nder_i=2)
@@ -130,14 +130,14 @@ contains
     !Output: 1st k-derivative of the Wannier Berry connection.
     !1st and 2nd indexes: bands, 3rd index: cartesian comp.
     !4th index : derivative direction
-    type(SsTC_sys), intent(in)  :: system
+    type(SsTC_sys), intent(in) :: system
     real(kind=dp), intent(in)  :: k(3)
 
     complex(kind=dp) :: DAW(system%num_bands, system%num_bands, 3, 3)
 
     type(SsTC_local_k_data), allocatable :: A_get(:)
-    integer, allocatable :: i_arr(:)
-    integer :: i_mem
+    integer, allocatable                 :: i_arr(:)
+    integer                              :: i_mem
 
     !Get Hamiltonian in memory layout.
     call SsTC_get_position(system, k, A_get, Nder_i=1)
@@ -155,7 +155,7 @@ contains
   function SsTC_hamiltonian_occ_matrix(system, eig) result(rho)
     !Output: Fermi occupation matrix in the Hamiltonian basis.
     !1st and 2nd indexes: bands.
-    type(SsTC_sys), intent(in)  :: system
+    type(SsTC_sys), intent(in) :: system
     real(kind=dp), intent(in)  :: eig(system%num_bands)
 
     complex(kind=dp) :: rho(system%num_bands, system%num_bands)
@@ -174,8 +174,8 @@ contains
     !Output: Vector valued matrix D in Eq. (32) in
     !10.1103/PhysRevB.75.195121 .
     !1st and 2nd indexes: bands, 3rd index: cartesian comp.
-    type(SsTC_sys), intent(in) :: system
-    real(kind=dp), intent(in) :: eig(system%num_bands)
+    type(SsTC_sys), intent(in)   :: system
+    real(kind=dp), intent(in)    :: eig(system%num_bands)
     complex(kind=dp), intent(in) :: rot(system%num_bands, system%num_bands)
     complex(kind=dp), intent(in) :: HW_a(system%num_bands, system%num_bands, 3)
 
@@ -198,12 +198,14 @@ contains
   end function SsTC_non_abelian_d
 
   function SsTC_velocities(system, HW_a, eig, rot, error) result(v)
-    type(SsTC_sys), intent(in) :: system
-    real(kind=dp), intent(in) :: eig(system%num_bands)
+    !Output: Velocities v_{nm, a} in Eq. (18) in
+    !10.1103/PhysRevB.75.195121 .
+    !1st and 2nd indexes: bands, 3rd index: cartesian comp.
+    type(SsTC_sys), intent(in)   :: system
+    real(kind=dp), intent(in)    :: eig(system%num_bands)
     complex(kind=dp), intent(in) :: rot(system%num_bands, system%num_bands)
     complex(kind=dp), intent(in) :: HW_a(system%num_bands, system%num_bands, 3)
-
-    logical, intent(inout) :: error
+    logical, intent(inout)       :: error
 
     complex(kind=dp) :: v(system%num_bands, system%num_bands, 3)
 
@@ -250,22 +252,27 @@ contains
   end function SsTC_velocities
 
   function SsTC_inverse_effective_mass(system, HW_a_b, HW_a, eig, rot, error) result(mu)
-    type(SsTC_sys), intent(in) :: system
-    real(kind=dp), intent(in) :: eig(system%num_bands)
+    !Output: Inverse effective mass \mu_{nm, ab} with analogous def to velocities in Eq. (18) in
+    !10.1103/PhysRevB.75.195121 .
+    !1st and 2nd indexes: bands, 3rd and 4th index: cartesian comp.
+    type(SsTC_sys), intent(in)   :: system
+    real(kind=dp), intent(in)    :: eig(system%num_bands)
     complex(kind=dp), intent(in) :: rot(system%num_bands, system%num_bands)
     complex(kind=dp), intent(in) :: HW_a_b(system%num_bands, system%num_bands, 3, 3)
     complex(kind=dp), intent(in) :: HW_a(system%num_bands, system%num_bands, 3)
+    logical, intent(inout)       :: error
 
-    logical, intent(inout) :: error
+    complex(kind=dp) :: mu(system%num_bands, system%num_bands, 3, 3)
 
-    complex(kind=dp) :: mu(system%num_bands, system%num_bands, 3, 3), &
-                        rot_H_a(system%num_bands, system%num_bands, 3), &
-                        D_a(system%num_bands, system%num_bands, 3), &
-                        rot_H_a_b(system%num_bands, system%num_bands, 3, 3)
+    complex(kind=dp) :: rot_H_a(system%num_bands, system%num_bands, 3), &
+                        rot_H_a_b(system%num_bands, system%num_bands, 3, 3), &
+                        D_a(system%num_bands, system%num_bands, 3)
 
-    integer :: i, j, ij, n, deg(system%num_bands)
+    integer                       :: i, j, ij, &
+                                     n, &
+                                     deg(system%num_bands)
     complex(kind=dp), allocatable :: dummy_rot(:, :)
-    real(kind=dp) :: degen_mass(system%num_bands)
+    real(kind=dp)                 :: degen_mass(system%num_bands)
 
     !Get degeneracies.
     deg = SsTC_utility_get_degen(eig, system%deg_thr)
@@ -327,26 +334,26 @@ contains
   end function SsTC_inverse_effective_mass
 
   function SsTC_cov_deriv_of_dipole(system, HW_a_b, HW_a, AW_a, AW_a_b, eig, rot, error) result(cov_r)
-    type(SsTC_sys), intent(in) :: system
-    real(kind=dp), intent(in) :: eig(system%num_bands)
+    type(SsTC_sys), intent(in)   :: system
+    real(kind=dp), intent(in)    :: eig(system%num_bands)
     complex(kind=dp), intent(in) :: rot(system%num_bands, system%num_bands)
     complex(kind=dp), intent(in) :: HW_a_b(system%num_bands, system%num_bands, 3, 3)
     complex(kind=dp), intent(in) :: HW_a(system%num_bands, system%num_bands, 3)
     complex(kind=dp), intent(in) :: AW_a(system%num_bands, system%num_bands, 3)
     complex(kind=dp), intent(in) :: AW_a_b(system%num_bands, system%num_bands, 3, 3)
+    logical, intent(inout)       :: error
 
-    logical, intent(inout) :: error
+    complex(kind=dp) :: cov_r(system%num_bands, system%num_bands, 3, 3)
 
-    complex(kind=dp) :: cov_r(system%num_bands, system%num_bands, 3, 3), &
-                        rot_H_a(system%num_bands, system%num_bands, 3), &
-                        vels(system%num_bands, system%num_bands, 3), &
-                        D_a(system%num_bands, system%num_bands, 3), &
+    complex(kind=dp) :: rot_H_a(system%num_bands, system%num_bands, 3), &
                         rot_H_a_b(system%num_bands, system%num_bands, 3, 3), &
-                        rot_A_a_b(system%num_bands, system%num_bands, 3, 3), &
+                        vels(system%num_bands, system%num_bands, 3), &
                         rot_A_a(system%num_bands, system%num_bands, 3), &
+                        rot_A_a_b(system%num_bands, system%num_bands, 3, 3), &
+                        D_a(system%num_bands, system%num_bands, 3), &
+                        r(system%num_bands, system%num_bands, 3), &
                         sum_AD(system%num_bands, system%num_bands, 3, 3), &
-                        sum_HD(system%num_bands, system%num_bands, 3, 3), &
-                        r(system%num_bands, system%num_bands, 3)
+                        sum_HD(system%num_bands, system%num_bands, 3, 3)
 
     integer :: i, j, n, m, p
 
@@ -420,22 +427,21 @@ contains
   !====CORE ROUTINES====!
 
   subroutine SsTC_get_hamiltonian(system, k, H, Nder_i, only_i)
-    type(SsTC_sys), intent(in) :: system
-    real(kind=dp), intent(in) :: k(3)
-    integer, optional :: Nder_i !Order of the derivative. Nder = 0 means normal Hamiltonian, Nder = 1, \partial H/\partial k^i...
-    logical, optional :: only_i !Determine, in the case of Nder > 0, if all derivatives i with i < Nder are requested.
-
+    type(SsTC_sys), intent(in)                        :: system
+    real(kind=dp), intent(in)                         :: k(3)
     type(SsTC_local_k_data), allocatable, intent(out) :: H(:)
+    integer, optional                                 :: Nder_i !Order of the derivative. Nder = 0 means normal Hamiltonian, Nder = 1, \partial H/\partial k^i...
+    logical, optional                                 :: only_i !Determine, in the case of Nder > 0, if all derivatives i with i < Nder are requested.
 
     integer :: Nder
     logical :: only
 
-    integer :: i, j, i_mem, irpts, ivec
+    integer              :: i, j, &
+                            i_mem, &
+                            irpts, ivec
     integer, allocatable ::  i_arr(:)
-
-    real(kind=dp) :: kdotr, prod_R, vec(3)
-
-    complex(kind=dp) :: temp_res
+    real(kind=dp)        :: kdotr, prod_R, vec(3)
+    complex(kind=dp)     :: temp_res
 
     if (.not. (present(Nder_i))) then
       Nder = 0
@@ -571,22 +577,21 @@ contains
   end subroutine SsTC_get_hamiltonian
 
   subroutine SsTC_get_position(system, k, A, Nder_i, only_i)
-    type(SsTC_sys), intent(in) :: system
-    real(kind=dp), intent(in) :: k(3)
-    integer, optional :: Nder_i !Order of the derivative. Nder = 0 means normal Berry connection, Nder = 1, \partial A^i/\partial k^j...
-    logical, optional :: only_i !Determine, in the case of Nder > 0, if all derivatives i with i < Nder are requested.
-
+    type(SsTC_sys), intent(in)                        :: system
+    real(kind=dp), intent(in)                         :: k(3)
     type(SsTC_local_k_data), allocatable, intent(out) :: A(:)
+    integer, optional                                 :: Nder_i !Order of the derivative. Nder = 0 means normal Berry connection, Nder = 1, \partial A^i/\partial k^j...
+    logical, optional                                 :: only_i !Determine, in the case of Nder > 0, if all derivatives i with i < Nder are requested.
 
     integer :: Nder
     logical :: only
 
-    integer :: i, j, i_mem, irpts, ivec
+    integer              :: i, j, &
+                            i_mem, &
+                            irpts, ivec
     integer, allocatable ::  i_arr(:)
-
-    real(kind=dp) :: kdotr, prod_R, vec(3)
-
-    complex(kind=dp) :: temp_res
+    real(kind=dp)        :: kdotr, prod_R, vec(3)
+    complex(kind=dp)     :: temp_res
 
     if (.not. (present(Nder_i))) then
       Nder = 0

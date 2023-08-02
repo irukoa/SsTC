@@ -92,6 +92,21 @@ module SsTC
   public :: SsTC_sample_and_integrate_BZ_integral_task
   public :: SsTC_print_BZ_integral_task
 
+  !Local k-dependent Quantities.
+  public :: SsTC_wannier_hamiltonian
+  public :: SsTC_wannier_berry_connection
+  public :: SsTC_wannier_dhamiltonian_dk
+  public :: SsTC_wannier_d2hamiltonian_dk2
+  public :: SsTC_wannier_dberry_connection_dk
+  public :: SsTC_hamiltonian_occ_matrix
+  public :: SsTC_non_abelian_d
+  public :: SsTC_velocities
+  public :: SsTC_inverse_effective_mass
+  public :: SsTC_cov_deriv_of_dipole
+
+  public :: SsTC_get_hamiltonian
+  public :: SsTC_get_position
+
   !Non-Core Procedures:
   !Calculators:
   !General.
