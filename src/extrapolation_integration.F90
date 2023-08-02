@@ -75,10 +75,10 @@ contains
   subroutine scalar_integral_extrapolation_real(array, sizes, int_bounds, result, info)
 
     real(kind=dp), intent(in)  :: array(:), int_bounds(:)
-    integer, intent(in)  :: sizes(:)
+    integer, intent(in)        :: sizes(:)
 
     real(kind=dp), intent(out) :: result
-    integer, intent(out) :: info
+    integer, intent(out)       :: info
 
     integer                    :: n1, n2, n3, ep
     real(kind=dp)              :: nr1, nr2, nr3
@@ -98,18 +98,6 @@ contains
     endif
 
     if (size(sizes) .eq. 3) then
-
-      !Approximate to 0.
-      !if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp) .or. &
-      !    (abs(int_bounds(4) - int_bounds(3)) .le. 1.0E-6_dp) .or. &
-      !    (abs(int_bounds(6) - int_bounds(5)) .le. 1.0E-6_dp)) then
-
-      !  result = cmplx(0.0_dp, 0.0_dp, dp)
-      !  info = 1 !Sucess.
-      !  return
-
-      !endif
-
       !Calculate n_i = log_2(N_i - 1)
       !Exceptional case: N_i = 1:
       !Assign an otherwise unachievable negative number and use it
@@ -168,15 +156,6 @@ contains
 
     elseif (size(sizes) .eq. 2) then
 
-      !if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp) .or. &
-      !    (abs(int_bounds(4) - int_bounds(3)) .le. 1.0E-6_dp)) then
-
-      !  result = 0.0_dp
-      !  info = 1
-      !  return
-
-      !endif
-
       if (sizes(1) .eq. 1) then
         nr1 = -1.0_dp
         n1 = -1
@@ -215,14 +194,6 @@ contains
       endif
 
     elseif (size(sizes) .eq. 1) then
-
-      !if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp)) then
-
-      !  result = 0.0_dp
-      !  info = 1
-      !  return
-
-      !endif
 
       if (sizes(1) .eq. 1) then
         nr1 = -1.0_dp
@@ -288,7 +259,7 @@ contains
   subroutine scalar_integral_extrapolation_complex(array, sizes, int_bounds, result, info)
 
     complex(kind=dp), intent(in)  :: array(:), int_bounds(:)
-    integer, intent(in)  :: sizes(:)
+    integer, intent(in)           :: sizes(:)
 
     complex(kind=dp), intent(out) :: result
     integer, intent(out) :: info
@@ -311,18 +282,6 @@ contains
     endif
 
     if (size(sizes) .eq. 3) then
-
-      !Approximate to 0.
-      !if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp) .or. &
-      !    (abs(int_bounds(4) - int_bounds(3)) .le. 1.0E-6_dp) .or. &
-      !    (abs(int_bounds(6) - int_bounds(5)) .le. 1.0E-6_dp)) then
-
-      !  result = cmplx(0.0_dp, 0.0_dp, dp)
-      !  info = 1 !Sucess.
-      !  return
-
-      !endif
-
       !Calculate n_i = log_2(N_i - 1)
       !Exceptional case: N_i = 1:
       !Assign an otherwise unachievable negative number and use it
@@ -381,15 +340,6 @@ contains
 
     elseif (size(sizes) .eq. 2) then
 
-      !if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp) .or. &
-      !    (abs(int_bounds(4) - int_bounds(3)) .le. 1.0E-6_dp)) then
-
-      !  result = cmplx(0.0_dp, 0.0_dp, dp)
-      !  info = 1
-      !  return
-
-      !endif
-
       if (sizes(1) .eq. 1) then
         nr1 = -1.0_dp
         n1 = -1
@@ -429,14 +379,6 @@ contains
 
     elseif (size(sizes) .eq. 1) then
 
-      !if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp)) then
-
-      !  result = cmplx(0.0_dp, 0.0_dp, dp)
-      !  info = 1
-      !  return
-
-      !endif
-
       if (sizes(1) .eq. 1) then
         nr1 = -1.0_dp
         n1 = -1
@@ -464,6 +406,7 @@ contains
     else
 
       info = -1
+
       return
 
     endif
@@ -525,18 +468,6 @@ contains
     endif
 
     if (size(sizes) .eq. 3) then
-
-      !Approximate to 0.
-      !if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp) .or. &
-      !    (abs(int_bounds(4) - int_bounds(3)) .le. 1.0E-6_dp) .or. &
-      !    (abs(int_bounds(6) - int_bounds(5)) .le. 1.0E-6_dp)) then
-
-      !  result = cmplx(0.0_dp, 0.0_dp, dp)
-      !  info = 1 !Sucess.
-      !  return
-
-      !endif
-
       !Calculate n_i = log_2(N_i - 1)
       !Exceptional case: N_i = 1:
       !Assign an otherwise unachievable negative number and use it
@@ -595,15 +526,6 @@ contains
 
     elseif (size(sizes) .eq. 2) then
 
-      !if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp) .or. &
-      !    (abs(int_bounds(4) - int_bounds(3)) .le. 1.0E-6_dp)) then
-
-      !  result = cmplx(0.0_dp, 0.0_dp, dp)
-      !  info = 1
-      !  return
-
-      !endif
-
       if (sizes(1) .eq. 1) then
         nr1 = -1.0_dp
         n1 = -1
@@ -641,14 +563,6 @@ contains
       endif
 
     elseif (size(sizes) .eq. 1) then
-
-      !if ((abs(int_bounds(2) - int_bounds(1)) .le. 1.0E-6_dp)) then
-
-      !  result = cmplx(0.0_dp, 0.0_dp, dp)
-      !  info = 1
-      !  return
-
-      !endif
 
       if (sizes(1) .eq. 1) then
         nr1 = -1.0_dp
@@ -803,7 +717,7 @@ contains
       !The output, u, is the last extrapolated result.
 
       real(kind=dp), intent(in) :: array(:)
-      integer, intent(in) :: n
+      integer, intent(in)       :: n
 
       real(kind=dp)             :: u
       real(kind=dp)             :: workarray(n)
@@ -853,7 +767,7 @@ contains
       !by: size(array) = 1 + 2^n.
 
       real(kind=dp), intent(in) :: array(:)
-      integer, intent(in) :: n
+      integer, intent(in)       :: n
       real(kind=dp)             :: org_array(size(array))
 
       integer                   :: i, j, k, l
@@ -968,7 +882,7 @@ contains
       !The output, u, is the last extrapolated result.
 
       complex(kind=dp), intent(in) :: array(:)
-      integer, intent(in) :: n
+      integer, intent(in)          :: n
 
       complex(kind=dp)             :: u
       complex(kind=dp)             :: workarray(n)
@@ -1018,7 +932,7 @@ contains
       !by: size(array) = 1 + 2^n.
 
       complex(kind=dp), intent(in) :: array(:)
-      integer, intent(in) :: n
+      integer, intent(in)          :: n
       complex(kind=dp)             :: org_array(size(array))
 
       integer                      :: i, j, k, l
