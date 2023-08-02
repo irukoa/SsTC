@@ -136,9 +136,9 @@ contains
           do m = 1, system%num_bands
 
             if (n == m) cycle
-            if (eig(m) > maxval(task%ext_var_data(1)%data(:)) .or. eig(n) > maxval(task%ext_var_data(1)%data(:))) cycle
+            !if (eig(m) > maxval(task%ext_var_data(1)%data(:)) .or. eig(n) > maxval(task%ext_var_data(1)%data(:))) cycle
 
-            bpart = (rho(n, n) - rho(m, m))*(eig(n) - eig(m))* & !TODO: CHECK THIS FORMULA.
+            bpart = (rho(n, n) - rho(m, m))*(eig(n) - eig(m))* &
                     connection(m, n, i)*connection(n, m, j)
 
             if (task%adpt_smearing) then
