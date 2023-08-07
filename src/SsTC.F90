@@ -20,7 +20,6 @@ module SsTC
 
   private
 
-  !Core Procedures.
   !Initialization.
   public :: SsTC_init
 
@@ -108,32 +107,7 @@ module SsTC
   public :: SsTC_get_position
 
   !Non-Core Procedures:
-  !Calculators:
-  !General.
-  public :: SsTC_bands_kpath_task_constructor
-  public :: SsTC_bands
-
-  !Floquet.
-  public :: SsTC_floq_BZ_integral_task
-  public :: SsTC_floq_kpath_task
-
-  public :: SsTC_quasienergy_kpath_task_constructor
-  public :: SsTC_quasienergy
-
-  public :: SsTC_floq_curr_BZ_integral_constructor
-  public :: SsTC_floq_curr
-
-  !Optical.
-  public :: SsTC_optical_BZ_integral_task
-
-  public :: SsTC_default_optical_conductivity_constructor
-  public :: SsTC_optical_conductivity
-
-  public :: SsTC_default_jdos_constructor
-  public :: SsTC_jdos
-
-  public :: SsTC_default_shift_current_constructor
-  public :: SsTC_shift_current
+  !Loaded by mods.
 
 contains
 

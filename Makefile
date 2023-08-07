@@ -6,8 +6,11 @@ F90FLAGS = -fPIE -g -warn all -check bounds -O2 -qopenmp -lmkl_intel_lp64 -lmkl_
 SRC = ./src
 OBJ = ./src/obj
 BIN = ./bin
-
 CALC = ./src/calculators
+
+DEPS = utility.o extrapolation_integration.o data_structures.o kpath.o kslice.o sampler.o integrator.o local_k_quantities.o #Base deps of SsTC.o, these get updated if mods are detected.
+
+include ./src/calculators/Makefile #Checks for mods.
 
 utility.o: $(SRC)/utility.F90
 					 $(F90) $(F90FLAGS) -c $(SRC)/utility.F90 -o "$(OBJ)/utility.o"
@@ -37,17 +40,7 @@ local_k_quantities.o: $(SRC)/local_k_quantities.F90 utility.o data_structures.o
 											$(F90) $(F90FLAGS) -c $(SRC)/local_k_quantities.F90 -o "$(OBJ)/local_k_quantities.o"
 
 
-calculators_general.o: $(CALC)/calculators_general.F90 utility.o data_structures.o local_k_quantities.o kpath.o
-									 		 $(F90) $(F90FLAGS) -c $(CALC)/calculators_general.F90 -o "$(OBJ)/calculators_general.o"
-
-calculators_floquet.o: $(CALC)/calculators_floquet.F90 utility.o data_structures.o local_k_quantities.o kpath.o integrator.o
-									 		 $(F90) $(F90FLAGS) -c $(CALC)/calculators_floquet.F90 -o "$(OBJ)/calculators_floquet.o"
-
-calculators_optical.o: $(CALC)/calculators_optical.F90 utility.o data_structures.o local_k_quantities.o integrator.o
-									 		 $(F90) $(F90FLAGS) -c $(CALC)/calculators_optical.F90 -o "$(OBJ)/calculators_optical.o"
-
-
-SsTC.o: $(SRC)/SsTC.F90 utility.o extrapolation_integration.o data_structures.o kpath.o kslice.o sampler.o integrator.o local_k_quantities.o calculators_general.o calculators_floquet.o calculators_optical.o
+SsTC.o: $(SRC)/SsTC.F90 $(DEPS)
 				$(F90) $(F90FLAGS) -c $(SRC)/SsTC.F90 -o "$(OBJ)/SsTC.o"
 
 main: SsTC.o

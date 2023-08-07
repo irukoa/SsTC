@@ -1,0 +1,9 @@
+[submodule "src/calculators/SsTC_general"]
+	path = src/calculators/SsTC_general
+	url = https://github.com/irukoa/SsTC_general
+[submodule "src/calculators/SsTC_optical"]
+	path = src/calculators/SsTC_optical
+	url = https://github.com/irukoa/SsTC_optical
+[submodule "src/calculators/SsTC_floquet"]
+	path = src/calculators/SsTC_floquet
+	url = https://github.com/irukoa/SsTC_floquet
