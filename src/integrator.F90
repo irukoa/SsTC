@@ -4,7 +4,7 @@ module SsTC_integrator
 
   use SsTC_utility
   use SsTC_data_structures
-  use SsTC_extrapolation_integration
+  use extrapolation_integration
 
   implicit none
 
@@ -232,10 +232,10 @@ contains
       do i = 1, product(task%integer_indices) !For each integer index.
         do r = 1, product(task%continuous_indices) !For each continuous index.
           !Pass data array to memory layout.
-          call SsTC_shrink_array(data_k(:, :, :, i, r), sdata_k(:, i, r), info)
+          call shrink_array(data_k(:, :, :, i, r), sdata_k(:, i, r), info)
           !Integrate, if possible extrapolation method.
-          call SsTC_integral_extrapolation(sdata_k(:, i, r), task%samples, &
-                                           (/-0.5_dp, 0.5_dp, -0.5_dp, 0.5_dp, -0.5_dp, 0.5_dp/), task%result(i, r), info)
+          call integral_extrapolation(sdata_k(:, i, r), task%samples, &
+                                      (/-0.5_dp, 0.5_dp, -0.5_dp, 0.5_dp, -0.5_dp, 0.5_dp/), task%result(i, r), info)
         enddo
       enddo
 

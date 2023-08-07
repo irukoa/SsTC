@@ -3,7 +3,10 @@ module SsTC
   USE OMP_LIB
 
   use SsTC_utility
-  use SsTC_extrapolation_integration
+
+  use extrapolation_integration, only: SsTC_integral_extrapolation => integral_extrapolation, &
+    SsTC_shrink_array => shrink_array, &
+    SsTC_expand_array => expand_array
 
   use SsTC_data_structures
 
