@@ -15,8 +15,8 @@ include ./src/calculators/Makefile #Checks for mods.
 utility.o: $(SRC)/utility.F90
 					 $(F90) $(F90FLAGS) -c $(SRC)/utility.F90 -o "$(OBJ)/utility.o"
 
-extrapolation_integration.o: $(SRC)/extrapolation_integration.F90 utility.o
-														 $(F90) $(F90FLAGS) -c $(SRC)/extrapolation_integration.F90 -o "$(OBJ)/extrapolation_integration.o"
+extrapolation_integration.o: $(SRC)/F90-Extrapolation-Integration/integration.F90
+														 $(F90) $(F90FLAGS) -c $(SRC)/F90-Extrapolation-Integration/integration.F90 -o "$(OBJ)/extrapolation_integration.o"
 
 
 data_structures.o: $(SRC)/data_structures.F90 utility.o

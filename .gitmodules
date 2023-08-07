@@ -7,3 +7,6 @@
 [submodule "src/calculators/SsTC_floquet"]
 	path = src/calculators/SsTC_floquet
 	url = https://github.com/irukoa/SsTC_floquet
+[submodule "src/F90-Extrapolation-Integration"]
+	path = src/F90-Extrapolation-Integration
+	url = https://github.com/irukoa/F90-Extrapolation-Integration

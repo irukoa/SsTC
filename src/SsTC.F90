@@ -106,9 +106,6 @@ module SsTC
   public :: SsTC_get_hamiltonian
   public :: SsTC_get_position
 
-  !Non-Core Procedures:
-  !Loaded by mods.
-
 contains
 
   subroutine SsTC_init(nThreads, nNested, exec_label)
