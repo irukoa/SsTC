@@ -15,8 +15,8 @@ module SsTC_local_k_quantities
   public :: SsTC_hamiltonian_occ_matrix
   public :: SsTC_non_abelian_d
   public :: SsTC_velocities
-  public :: SsTC_inverse_effective_mass
-  public :: SsTC_cov_deriv_of_dipole
+  public :: SsTC_inverse_effective_mass !<---- TODO: test me.
+  public :: SsTC_cov_deriv_of_dipole !<---- TODO: fixme.
 
   public :: SsTC_get_hamiltonian
   public :: SsTC_get_position

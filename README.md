@@ -14,17 +14,21 @@ We recommend ifort (IFORT), at least, `--version` 2021.5.0 20211109.
 
 -pthread compile flag.
 
+Python3. We recommend Python 3.9.7 :: Intel Corporation.
+
 ## Libraries:
 
 Intel's Math Kernel Library (MLK).
 
 OpenMP Library (OMP).
 
+Python3's 're' and 'glob' libraries.
+
 # Installation:
 
-1. Clone this repository on a destination of your choice.
+1. Clone this repository with the falg `--recurse-submodules` on a destination of your choice.
 
-        bash:/path/of/your/choice$ git clone https://github.com/irukoa/SsTC.git
+        bash:/path/of/your/choice$ git clone --recurse-submodules https://github.com/irukoa/SsTC.git
 
 2. Change directory to SsTC.
 
