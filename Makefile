@@ -3,6 +3,8 @@ default: main
 F90 = ifort
 F90FLAGS = -fPIE -g -warn all -check bounds -O2 -qopenmp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread
 
+PY = python3
+
 SRC = ./src
 OBJ = ./src/obj
 BIN = ./bin
@@ -41,7 +43,9 @@ local_k_quantities.o: $(SRC)/local_k_quantities.F90 utility.o data_structures.o
 
 
 SsTC.o: $(SRC)/SsTC.F90 $(DEPS)
-				$(F90) $(F90FLAGS) -c $(SRC)/SsTC.F90 -o "$(OBJ)/SsTC.o"
+				$(PY) $(SRC)/mod_setup.py
+				$(F90) $(F90FLAGS) -c $(SRC)/SsTC_mod.F90 -o "$(OBJ)/SsTC.o"
+				rm $(SRC)/SsTC_mod.F90
 
 main: SsTC.o
 			ar cr "$(BIN)/libSsTC.a" $(OBJ)/*.o
