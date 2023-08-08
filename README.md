@@ -26,7 +26,7 @@ Python3's 're' and 'glob' libraries.
 
 # Installation:
 
-1. Clone this repository with the falg `--recurse-submodules` on a destination of your choice.
+1. Clone this repository with the flag `--recurse-submodules` on a destination of your choice.
 
         bash:/path/of/your/choice$ git clone --recurse-submodules https://github.com/irukoa/SsTC.git
 
