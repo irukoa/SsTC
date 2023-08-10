@@ -15,7 +15,7 @@ module SsTC_local_k_quantities
   public :: SsTC_hamiltonian_occ_matrix
   public :: SsTC_non_abelian_d
   public :: SsTC_velocities
-  public :: SsTC_inverse_effective_mass !<---- TODO: test me.
+  public :: SsTC_inverse_effective_mass
   public :: SsTC_cov_deriv_of_dipole !<---- TODO: fixme.
 
   public :: SsTC_get_hamiltonian
@@ -102,8 +102,8 @@ contains
 
   function SsTC_wannier_d2hamiltonian_dk2(system, k) result(DDHW)
     !Output: 2nd k-derivative of the Wannier Hamiltonian.
-    !1st and 2nd indexes: bands, 3rd index: cartesian comp.
-    !4th index : derivative direction
+    !1st and 2nd indexes: bands,
+    !3rd and 4th indexes: derivative directions.
     type(SsTC_sys), intent(in) :: system
     real(kind=dp), intent(in)  :: k(3)
 
