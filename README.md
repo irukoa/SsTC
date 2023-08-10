@@ -6,6 +6,10 @@
 
 ## Make software.
 
+## Python 3:
+
+We recommend Python 3.9.7 :: Intel Corporation.
+
 ## Fortran compiler:
 
 Fortran 2018 (ISO/IEC 1539:2018) complying compiler.
@@ -13,8 +17,6 @@ Fortran 2018 (ISO/IEC 1539:2018) complying compiler.
 We recommend ifort (IFORT), at least, `--version` 2021.5.0 20211109.
 
 -pthread compile flag.
-
-Python3. We recommend Python 3.9.7 :: Intel Corporation.
 
 ## Libraries:
 
