@@ -514,9 +514,9 @@ contains
 
           temp_res = temp_res + & !Compute sum.
                      ((cmplx_i)**Nder)*(prod_R)*exp(cmplx_i*kdotr)* &
-                     system%real_space_hamiltonian_elements(i_arr(1), i_arr(2), irpts) &
-                     /real(system%deg_R_point(irpts), dp)
-          !TODO: Recheck if system%deg_R_point(irpts) appears dividing.
+                     system%real_space_hamiltonian_elements(i_arr(1), i_arr(2), irpts) !&
+          !/real(system%deg_R_point(irpts), dp)
+          !TODO: Recheck the deg_R_points division.
         enddo!irpts
 !$OMP         END DO
 !$OMP         END PARALLEL
@@ -560,9 +560,9 @@ contains
 
             temp_res = temp_res + & !Compute sum.
                        ((cmplx_i)**(i - 1))*(prod_R)* &
-                       exp(cmplx_i*kdotr)*system%real_space_hamiltonian_elements(i_arr(1), i_arr(2), irpts) &
-                       /real(system%deg_R_point(irpts), dp)
-            !TODO: Recheck if system%deg_R_point(irpts) appears dividing.
+                       exp(cmplx_i*kdotr)*system%real_space_hamiltonian_elements(i_arr(1), i_arr(2), irpts) !&
+            !/real(system%deg_R_point(irpts), dp)
+            !TODO: Recheck the deg_R_points division.
           enddo!irpts
 !$OMP           END DO
 !$OMP           END PARALLEL
@@ -666,9 +666,9 @@ contains
 
           temp_res = temp_res + & !Compute sum.
                      ((cmplx_i)**Nder)*(prod_R)* &
-                     exp(cmplx_i*kdotr)*system%real_space_position_elements(i_arr(1), i_arr(2), i_arr(3), irpts) &
-                     /real(system%deg_R_point(irpts), dp)
-          !TODO: Recheck if system%deg_R_point(irpts) appears dividing.
+                     exp(cmplx_i*kdotr)*system%real_space_position_elements(i_arr(1), i_arr(2), i_arr(3), irpts) !&
+          !/real(system%deg_R_point(irpts), dp)
+          !TODO: Recheck the deg_R_points division.
         enddo!irpts
 !$OMP         END DO
 !$OMP         END PARALLEL
@@ -712,9 +712,9 @@ contains
 
             temp_res = temp_res + & !Compute sum.
                        ((cmplx_i)**(i - 1))*(prod_R)* &
-                       exp(cmplx_i*kdotr)*system%real_space_position_elements(i_arr(1), i_arr(2), i_arr(3), irpts) &
-                       /real(system%deg_R_point(irpts), dp)
-            !TODO: Recheck if system%deg_R_point(irpts) appears dividing.
+                       exp(cmplx_i*kdotr)*system%real_space_position_elements(i_arr(1), i_arr(2), i_arr(3), irpts) !&
+            !/real(system%deg_R_point(irpts), dp)
+            !TODO: Recheck the deg_R_points division.
           enddo!irpts
 !$OMP           END DO
 !$OMP           END PARALLEL
