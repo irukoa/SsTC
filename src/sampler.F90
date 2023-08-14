@@ -53,7 +53,7 @@ contains
     !Set name.
     task%name = name
 
-    write (unit=stdout, fmt="(a)") "Creating BZ sampling task "//trim(task%name)//"."
+    write (unit=stdout, fmt="(a)") "          Creating BZ sampling task "//trim(task%name)//"."
 
     !Set integer index data.
     if (((N_int_ind) .ge. 1) .and. (present(int_ind_range))) then
@@ -103,7 +103,7 @@ contains
     if (present(part_int_comp)) task%particular_integer_component = &
       SsTC_integer_array_element_to_memory_element(task, part_int_comp)
 
-    write (unit=stdout, fmt="(a)") "Done."
+    write (unit=stdout, fmt="(a)") "          Done."
     write (unit=stdout, fmt="(a)") ""
 
   end subroutine SsTC_sampling_task_constructor
@@ -119,19 +119,22 @@ contains
 
     integer :: TID, report_step
     integer :: progress = 0
+    real(kind=dp) :: start_time, end_time
 
     logical :: error = .false.
 
     report_step = nint(real(product(task%samples)/100, dp)) + 1
 
-    write (unit=stdout, fmt="(a)") "Starting BZ sampling subroutine."
-    write (unit=stdout, fmt="(a)") "Sampling task: "//trim(task%name)//" in the BZ for the system "//trim(system%name)//"."
-    write (unit=stdout, fmt="(a)") "The required memory for the sampling process is approximately,"
-    write (unit=stdout, fmt="(f15.3, a)") 16.0_dp*real(product(task%samples)*product(task%integer_indices)*&
+    start_time = omp_get_wtime() !Start timer.
+
+    write (unit=stdout, fmt="(a)") "          Starting BZ sampling subroutine."
+   write (unit=stdout, fmt="(a)") "          Sampling task: "//trim(task%name)//" in the BZ for the system "//trim(system%name)//"."
+    write (unit=stdout, fmt="(a)") "          The required memory for the sampling process is approximately,"
+    write (unit=stdout, fmt="(a, f15.3, a)") "          ", 16.0_dp*real(product(task%samples)*product(task%integer_indices)*&
     & product(task%continuous_indices), dp)/1024.0_dp**2, "MB."
-    write (unit=stdout, fmt="(a)") "Some computers limit the maximum memory an array can allocate."
-    write (unit=stdout, fmt="(a)") "If this is your case and SIGSEGV triggers try using the next command before execution:"
-    write (unit=stdout, fmt="(a)") "ulimit -s unlimited"
+    write (unit=stdout, fmt="(a)") "          Some computers limit the maximum memory an array can allocate."
+   write (unit=stdout, fmt="(a)") "          If this is your case and SIGSEGV triggers try using the next command before execution:"
+    write (unit=stdout, fmt="(a)") "          ulimit -s unlimited"
 
 !$OMP       PARALLEL DEFAULT(SHARED) PRIVATE(k)
 
@@ -169,8 +172,8 @@ contains
           endif
 
           if (error) then
-            write (unit=stderr, fmt="(a, 3e18.8e3)") "Error when sampling k-point", k
-            write (unit=stderr, fmt="(a)") "Stopping..."
+            write (unit=stderr, fmt="(a, 3e18.8e3)") "          Error when sampling k-point", k
+            write (unit=stderr, fmt="(a)") "          Stopping..."
             stop
           endif
 
@@ -178,7 +181,7 @@ contains
           progress = progress + 1
 
           if (modulo(progress, report_step) == report_step/2) then !Update progress every 1000 kpts.
-            write (unit=stdout, fmt="(a, i12, a, i12, a)") "Progress: ", progress, "/", product(task%samples), " kpts sampled."
+       write (unit=stdout, fmt="(a, i12, a, i12, a)") "          Progress: ", progress, "/", product(task%samples), " kpts sampled."
           endif
 
         enddo
@@ -188,7 +191,10 @@ contains
 !$OMP       END PARALLEL
     progress = 0
 
-    write (unit=stdout, fmt="(a)") "Sampling done."
+    end_time = omp_get_wtime() !End timer.
+
+    write (unit=stdout, fmt="(a)") "          Sampling done."
+    write (unit=stdout, fmt="(a, f15.3, a)") "          Total execution time: ", end_time - start_time, " s."
     write (unit=stdout, fmt="(a)") ""
 
   end subroutine SsTC_sample_sampling_task
@@ -208,7 +214,7 @@ contains
                           ik1, ik2, ik3
     integer            :: printunit
 
-    write (unit=stdout, fmt="(a)") "Printing sampling task: "//trim(task%name)//" for the system "//trim(system%name)//"."
+    write (unit=stdout, fmt="(a)") "          Printing sampling task: "//trim(task%name)//" for the system "//trim(system%name)//"."
 
     if (associated(task%local_calculator)) then
 
@@ -312,7 +318,7 @@ contains
 
     endif
 
-    write (unit=stdout, fmt="(a)") "Printing done."
+    write (unit=stdout, fmt="(a)") "          Printing done."
     write (unit=stdout, fmt="(a)") ""
 
   end subroutine SsTC_print_sampling

@@ -115,8 +115,8 @@ contains
     filename = trim(path_to_tb_file)//trim(name)//"_tb.dat"
     filename = trim(filename)
 
-    write (unit=stdout, fmt="(a)") "Initializing system "//trim(name)//"."
-    write (unit=stdout, fmt="(a)") "Reading file"//filename//"."
+    write (unit=stdout, fmt="(a)") "          Initializing system "//trim(name)//"."
+    write (unit=stdout, fmt="(a)") "          Reading file"//filename//"."
 
     open (newunit=stdin, action="read", file=filename)
     read (unit=stdin, fmt=*)
@@ -161,7 +161,7 @@ contains
 
     read (unit=stdin, fmt=*)
     allocate (dummyR(2))
-    write (unit=stdout, fmt="(A)") "Reading Hamiltonian..."
+    write (unit=stdout, fmt="(A)") "          Reading Hamiltonian..."
 
     do irpts = 1, nrpts
       read (unit=stdin, fmt=*) (system%R_point(irpts, i), i=1, 3)
@@ -177,10 +177,10 @@ contains
     enddo
 
     deallocate (dummyR)
-    write (unit=stdout, fmt="(a)") "Done."
+    write (unit=stdout, fmt="(a)") "          Done."
 
     allocate (dummyR(6))
-    write (unit=stdout, fmt="(a)") "Reading position operator..."
+    write (unit=stdout, fmt="(a)") "          Reading position operator..."
 
     do irpts = 1, nrpts
       read (unit=stdin, fmt=*) dummy1, dummy2, dummy3
@@ -201,11 +201,11 @@ contains
     enddo
 
     deallocate (dummyR)
-    write (unit=stdout, fmt="(a)") "Done."
+    write (unit=stdout, fmt="(a)") "          Done."
 
     close (unit=stdin)
 
-    write (unit=stdout, fmt="(a)") "System loaded sucessfully."
+    write (unit=stdout, fmt="(a)") "          System loaded sucessfully."
     write (unit=stdout, fmt="(a)") ""
 
   end function SsTC_sys_constructor

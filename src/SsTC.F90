@@ -129,7 +129,21 @@ contains
       open (newunit=stderr, action="write", file="SsTC_exec.err")
     endif
 
-    write (unit=stdout, fmt="(a)") "Initializing SsTC..."
+    call date_and_time(values=timing)
+
+    write (unit=stdout, fmt="(a)") "            /$$$$$$            /$$$$$$$$  /$$$$$$  "
+    write (unit=stdout, fmt="(a)") "           /$$__  $$          |__  $$__/ /$$__  $$ "
+    write (unit=stdout, fmt="(a)") "          | $$  \__/  /$$$$$$$   | $$   | $$  \__/ "
+    write (unit=stdout, fmt="(a)") "          |  $$$$$$  /$$_____/   | $$   | $$       "
+    write (unit=stdout, fmt="(a)") "           \____  $$|  $$$$$$    | $$   | $$       "
+    write (unit=stdout, fmt="(a)") "           /$$  \ $$ \____  $$   | $$   | $$    $$ "
+    write (unit=stdout, fmt="(a)") "          |  $$$$$$/ /$$$$$$$/   | $$   |  $$$$$$/ "
+    write (unit=stdout, fmt="(a)") "           \______/ |_______/    |__/    \______/  "
+    write (unit=stdout, fmt="(a)") ""
+
+    write (unit=stdout, fmt="(a, i2, a, i2, a, i4, a, i2, a, i2, a, i2, a)") "          SsTC library initializing at ", timing(2), "/", timing(3), "/", timing(1), &
+      ", ", timing(5), ":", timing(6), ":", timing(7), "."
+    write (unit=stdout, fmt="(a)") "          Initializing SsTC..."
 
     if (present(nThreads) .and. (nThreads > 0)) then
       call OMP_SET_NUM_THREADS(nThreads)
@@ -139,18 +153,19 @@ contains
       selThreads = OMP_GET_MAX_THREADS()
     endif
 
-    write (unit=stdout, fmt="(a, i5, a)") "Paralell regions will run in ", selThreads, " threads."
+    write (unit=stdout, fmt="(a, i5, a)") "         Paralell regions will run in ", selThreads, " threads."
 
     if (present(nNested) .and. (nNested > 1)) then
       call OMP_SET_MAX_ACTIVE_LEVELS(nNested)
-      write (unit=stdout, fmt="(a, i2, a)") "Warning: the number of nested active parallel regions&
-      & has been set to ", nNested, ". Beware of overhead."
+      write (unit=stdout, fmt="(a, i2, a)") "         Warning: the number of nested active parallel regions"
+      write (unit=stdout, fmt="(a)") "         has been set to ", nNested, ". Beware of overhead."
     else
       call OMP_SET_MAX_ACTIVE_LEVELS(1)
-      write (unit=stdout, fmt="(a)") "The number of nested active parallel regions has been set to 1."
+      write (unit=stdout, fmt="(a)") "          The number of nested active parallel regions has been"
+      write (unit=stdout, fmt="(a)") "          set to 1."
     endif
 
-    write (unit=stdout, fmt="(a)") "SsTC initialized."
+    write (unit=stdout, fmt="(a)") "          SsTC initialized."
     write (unit=stdout, fmt="(a)") ""
 
   end subroutine SsTC_init

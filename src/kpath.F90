@@ -63,7 +63,7 @@ contains
     !Set name.
     task%name = name
 
-    write (unit=stdout, fmt="(a)") "Creating kpath task "//trim(task%name)//"."
+    write (unit=stdout, fmt="(a)") "          Creating kpath task "//trim(task%name)//"."
 
     !Set vector info
     allocate (task%vectors(Nvec, 3), task%number_of_pts(Nvec - 1))
@@ -114,7 +114,7 @@ contains
     if (present(part_int_comp)) task%particular_integer_component = &
       SsTC_integer_array_element_to_memory_element(task, part_int_comp)
 
-    write (unit=stdout, fmt="(a)") "Done."
+    write (unit=stdout, fmt="(a)") "          Done."
     write (unit=stdout, fmt="(a)") ""
 
   end subroutine SsTC_kpath_constructor
@@ -131,12 +131,15 @@ contains
 
     integer :: report_step
     integer :: progress = 0
+    real(kind=dp) :: start_time, end_time
 
     logical :: error = .false.
 
+    start_time = omp_get_wtime() !Start timer.
+
     allocate (temp_res(product(task%integer_indices), product(task%continuous_indices), sum(task%number_of_pts)))
 
-    write (unit=stdout, fmt="(a)") "Sampling kpath task: "//trim(task%name)//" for the system "//trim(system%name)//"."
+    write (unit=stdout, fmt="(a)") "          Sampling kpath task: "//trim(task%name)//" for the system "//trim(system%name)//"."
 
     !Sampling.
     do ivec = 1, size(task%vectors(:, 1)) - 1 !For each considered vector except the last one.
@@ -162,16 +165,16 @@ contains
         endif
 
         if (error) then
-          write (unit=stderr, fmt="(a, 3e18.8e3)") "Error when sampling k-point", k
-          write (unit=stderr, fmt="(a)") "Stopping..."
+          write (unit=stderr, fmt="(a, 3e18.8e3)") "          Error when sampling k-point", k
+          write (unit=stderr, fmt="(a)") "          Stopping..."
           stop
         endif
 
 !$OMP         ATOMIC UPDATE
         progress = progress + 1
 
-        if (modulo(progress, report_step) == report_step/2) then !Update progress every 1000 kpts.
-          write (unit=stdout, fmt="(a, i3, a, i12, a, i12, a)") "Vector No. ", ivec, &
+        if (modulo(progress, report_step) == report_step/2) then !Update progress.
+          write (unit=stdout, fmt="(a, i3, a, i12, a, i12, a)") "         Vector No. ", ivec, &
             ". Progress: ", progress, "/", task%number_of_pts(ivec), " kpts sampled."
         endif
 
@@ -181,7 +184,10 @@ contains
       progress = 0
     enddo
 
-    write (unit=stdout, fmt="(a)") "Sampling done."
+    end_time = omp_get_wtime() !End timer.
+
+    write (unit=stdout, fmt="(a)") "          Sampling done."
+    write (unit=stdout, fmt="(a, f15.3, a)") "          Total execution time: ", end_time - start_time, " s."
     write (unit=stdout, fmt="(a)") ""
 
     task%kpath_data = temp_res
@@ -205,7 +211,7 @@ contains
 
     real(kind=dp) :: k(3)
 
-    write (unit=stdout, fmt="(a)") "Printing kpath task: "//trim(task%name)//" for the system "//trim(system%name)//"."
+    write (unit=stdout, fmt="(a)") "          Printing kpath task: "//trim(task%name)//" for the system "//trim(system%name)//"."
 
     if (associated(task%local_calculator)) then
 
@@ -290,7 +296,7 @@ contains
 
     endif
 
-    write (unit=stdout, fmt="(a)") "Printing done."
+    write (unit=stdout, fmt="(a)") "          Printing done."
     write (unit=stdout, fmt="(a)") ""
 
   end subroutine SsTC_print_kpath
