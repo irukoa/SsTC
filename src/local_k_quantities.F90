@@ -351,7 +351,6 @@ contains
                         rot_A_a(system%num_bands, system%num_bands, 3), &
                         rot_A_a_b(system%num_bands, system%num_bands, 3, 3), &
                         D_a(system%num_bands, system%num_bands, 3), &
-                        r(system%num_bands, system%num_bands, 3), &
                         sum_AD(system%num_bands, system%num_bands, 3, 3), &
                         sum_HD(system%num_bands, system%num_bands, 3, 3)
 
@@ -360,11 +359,10 @@ contains
     !Get non-abelian D matrix.
     D_a = SsTC_non_abelian_d(system, eig, rot, HW_a)
 
-    !Get rotated quantities and dipole.
+    !Get rotated quantities.
     do i = 1, 3
       rot_H_a(:, :, i) = matmul(matmul(transpose(conjg(rot)), HW_a(:, :, i)), rot)
       rot_A_a(:, :, i) = matmul(matmul(transpose(conjg(rot)), AW_a(:, :, i)), rot)
-      r(:, :, i) = rot_A_a(:, :, i) + cmplx_i*D_a(:, :, i)
       do j = 1, 3
         rot_H_a_b(:, :, i, j) = matmul(matmul(transpose(conjg(rot)), HW_a_b(:, :, i, j)), rot)
         rot_A_a_b(:, :, i, j) = matmul(matmul(transpose(conjg(rot)), AW_a_b(:, :, i, j)), rot)
@@ -384,6 +382,8 @@ contains
 
     do n = 1, system%num_bands
       do m = 1, system%num_bands
+        if (n == m) cycle
+        if (abs(eig(n) - eig(m)) .le. system%deg_thr) cycle
         do i = 1, 3
 
           do j = 1, 3
@@ -404,19 +404,19 @@ contains
                                              D_a(n, m, i)*(vels(n, n, :) - vels(n, n, :)))) &
                                /(eig(m) - eig(n)))
 
-          do p = 1, system%num_bands
-            if (p == n .or. p == m) cycle
-            cov_r(n, m, i, :) = cov_r(n, m, i, :) &
-                                - system%deg_offset**2/((eig(p) - eig(m))**2 &
-                                                        + system%deg_offset**2)/(eig(n) - eig(m)) &
-                                *(rot_A_a(n, p, :)*rot_H_a(p, m, i) &
-                                  - (rot_H_a(n, p, :) + cmplx_i*(eig(n) &
-                                                                 - eig(p))*rot_A_a(n, p, :))*rot_A_a(p, m, i)) &
-                                + system%deg_offset**2/((eig(n) - eig(p))**2 &
-                                                        + system%deg_offset**2)/(eig(n) - eig(m)) &
-                                *(rot_H_a(n, p, i)*rot_A_a(p, m, :) &
-                                  - rot_A_a(n, p, i)*(rot_H_a(p, m, :) + cmplx_i*(eig(p) - eig(m))*rot_A_a(p, m, :)))
-          enddo!p
+!          do p = 1, system%num_bands
+!            if (p == n .or. p == m) cycle
+!            cov_r(n, m, i, :) = cov_r(n, m, i, :) &
+!                                - system%deg_offset**2/((eig(p) - eig(m))**2 &
+!                                                        + system%deg_offset**2)/(eig(n) - eig(m)) &
+!                                *(rot_A_a(n, p, :)*rot_H_a(p, m, i) &
+!                                  - (rot_H_a(n, p, :) + cmplx_i*(eig(n) &
+!                                                                 - eig(p))*rot_A_a(n, p, :))*rot_A_a(p, m, i)) &
+!                                + system%deg_offset**2/((eig(n) - eig(p))**2 &
+!                                                        + system%deg_offset**2)/(eig(n) - eig(m)) &
+!                                *(rot_H_a(n, p, i)*rot_A_a(p, m, :) &
+!                                  - rot_A_a(n, p, i)*(rot_H_a(p, m, :) + cmplx_i*(eig(p) - eig(m))*rot_A_a(p, m, :)))
+!          enddo!p
 
         enddo!i
       enddo!m

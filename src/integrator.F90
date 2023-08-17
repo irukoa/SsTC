@@ -256,7 +256,7 @@ write (unit=stdout, fmt="(a)") "          Integrating task: "//trim(task%name)//
       write (unit=stdout, fmt="(a)") "          Starting BZ sampling and integration subroutine with rectangle method."
 write (unit=stdout, fmt="(a)") "          Integrating task: "//trim(task%name)//" in the BZ for the system "//trim(system%name)//"."
       write (unit=stdout, fmt="(a)") "          The required memory for the integration process is approximately,"
-      write (unit=stdout, fmt="(a, f15.3, a)") "          ", 16.0_dp*real(product(task%samples)*product(task%integer_indices)*&
+      write (unit=stdout, fmt="(a, f15.3, a)") "          ", 16.0_dp*real(product(task%integer_indices)*&
       & product(task%continuous_indices), dp)/1024.0_dp**2, "MB."
 
       allocate (temp_res(product(task%integer_indices), product(task%continuous_indices)))
@@ -266,7 +266,7 @@ write (unit=stdout, fmt="(a)") "          Integrating task: "//trim(task%name)//
 
       TID = OMP_GET_THREAD_NUM()
       IF (TID .EQ. 0) THEN
-        write (unit=stdout, fmt="(a, I5, a)") "Running on ", OMP_GET_NUM_THREADS(), " threads."
+        write (unit=stdout, fmt="(a, I5, a)") "         Running on ", OMP_GET_NUM_THREADS(), " threads."
       ENDIF
 
 !$OMP       DO COLLAPSE(3)
