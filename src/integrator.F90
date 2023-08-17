@@ -162,12 +162,14 @@ contains
     if (task%method == "extrapolation") then !Extraplation case. Requires large RAM.
 
       write (unit=stdout, fmt="(a)") "          Starting BZ sampling and integration subroutine with extrapolation method."
-write (unit=stdout, fmt="(a)") "          Integrating task: "//trim(task%name)//" in the BZ for the system "//trim(system%name)//"."
+      write (unit=stdout, fmt="(a)") "          Integrating task: "//trim(task%name)//" in the BZ for the system "&
+        &//trim(system%name)//"."
       write (unit=stdout, fmt="(a)") "          The required memory for the integration process is approximately,"
       write (unit=stdout, fmt="(a, f15.3, a)") "          ", 16.0_dp*real(product(task%samples)*product(task%integer_indices)*&
       & product(task%continuous_indices), dp)/1024.0_dp**2, "MB."
       write (unit=stdout, fmt="(a)") "          Some computers limit the maximum memory an array can allocate."
-   write (unit=stdout, fmt="(a)") "          If this is your case and SIGSEGV triggers try using the next command before execution:"
+      write (unit=stdout, fmt="(a)") "          If this is your case and SIGSEGV triggers&
+      & try using the next command before execution:"
       write (unit=stdout, fmt="(a)") "          ulimit -s unlimited"
 
       allocate (data_k(task%samples(1), task%samples(2), task%samples(3), &
@@ -220,7 +222,9 @@ write (unit=stdout, fmt="(a)") "          Integrating task: "//trim(task%name)//
             progress = progress + 1
 
             if (modulo(progress, report_step) == report_step/2) then !Update progress every 1000 kpts.
-       write (unit=stdout, fmt="(a, i12, a, i12, a)") "          Progress: ", progress, "/", product(task%samples), " kpts sampled."
+              write (unit=stdout, fmt="(a, i12, a, i12, a)") &
+              & "          Progress: ", progress, "/", product(task%samples),&
+              & " kpts sampled."
             endif
 
           enddo
@@ -254,7 +258,8 @@ write (unit=stdout, fmt="(a)") "          Integrating task: "//trim(task%name)//
     elseif (task%method == "rectangle") then !Rectangle method approximation case.
 
       write (unit=stdout, fmt="(a)") "          Starting BZ sampling and integration subroutine with rectangle method."
-write (unit=stdout, fmt="(a)") "          Integrating task: "//trim(task%name)//" in the BZ for the system "//trim(system%name)//"."
+      write (unit=stdout, fmt="(a)") "          Integrating task: "//trim(task%name)//" in the BZ for the system "&
+      &//trim(system%name)//"."
       write (unit=stdout, fmt="(a)") "          The required memory for the integration process is approximately,"
       write (unit=stdout, fmt="(a, f15.3, a)") "          ", 16.0_dp*real(product(task%integer_indices)*&
       & product(task%continuous_indices), dp)/1024.0_dp**2, "MB."
@@ -307,7 +312,9 @@ write (unit=stdout, fmt="(a)") "          Integrating task: "//trim(task%name)//
             progress = progress + 1
 
             if (modulo(progress, report_step) == report_step/2) then !Update progress every 1000 kpts.
-       write (unit=stdout, fmt="(a, i12, a, i12, a)") "          Progress: ", progress, "/", product(task%samples), " kpts sampled."
+              write (unit=stdout, fmt="(a, i12, a, i12, a)") &
+              &"          Progress: ", progress, "/", product(task%samples), &
+              &" kpts sampled."
             endif
 
           enddo
