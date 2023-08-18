@@ -221,7 +221,7 @@ contains
 !$OMP             ATOMIC UPDATE
             progress = progress + 1
 
-            if (modulo(progress, report_step) == report_step/2) then !Update progress every 1000 kpts.
+            if (modulo(progress, report_step) == report_step/2) then !Update progress.
               write (unit=stdout, fmt="(a, i12, a, i12, a)") &
               & "          Progress: ", progress, "/", product(task%samples),&
               & " kpts sampled."
@@ -311,7 +311,7 @@ contains
 !$OMP             ATOMIC UPDATE
             progress = progress + 1
 
-            if (modulo(progress, report_step) == report_step/2) then !Update progress every 1000 kpts.
+            if (modulo(progress, report_step) == report_step/2) then !Update progress.
               write (unit=stdout, fmt="(a, i12, a, i12, a)") &
               &"          Progress: ", progress, "/", product(task%samples), &
               &" kpts sampled."
