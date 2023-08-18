@@ -103,7 +103,6 @@ module SsTC
   public :: SsTC_non_abelian_d
   public :: SsTC_velocities
   public :: SsTC_inverse_effective_mass
-  public :: SsTC_cov_deriv_of_dipole
 
   public :: SsTC_get_hamiltonian
   public :: SsTC_get_position

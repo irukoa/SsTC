@@ -16,7 +16,6 @@ module SsTC_local_k_quantities
   public :: SsTC_non_abelian_d
   public :: SsTC_velocities
   public :: SsTC_inverse_effective_mass
-  public :: SsTC_cov_deriv_of_dipole !<---- TODO: fixme.
 
   public :: SsTC_get_hamiltonian
   public :: SsTC_get_position
@@ -332,97 +331,6 @@ contains
     endif
 
   end function SsTC_inverse_effective_mass
-
-  function SsTC_cov_deriv_of_dipole(system, HW_a_b, HW_a, AW_a, AW_a_b, eig, rot, error) result(cov_r)
-    type(SsTC_sys), intent(in)   :: system
-    real(kind=dp), intent(in)    :: eig(system%num_bands)
-    complex(kind=dp), intent(in) :: rot(system%num_bands, system%num_bands)
-    complex(kind=dp), intent(in) :: HW_a_b(system%num_bands, system%num_bands, 3, 3)
-    complex(kind=dp), intent(in) :: HW_a(system%num_bands, system%num_bands, 3)
-    complex(kind=dp), intent(in) :: AW_a(system%num_bands, system%num_bands, 3)
-    complex(kind=dp), intent(in) :: AW_a_b(system%num_bands, system%num_bands, 3, 3)
-    logical, intent(inout)       :: error
-
-    complex(kind=dp) :: cov_r(system%num_bands, system%num_bands, 3, 3)
-
-    complex(kind=dp) :: rot_H_a(system%num_bands, system%num_bands, 3), &
-                        rot_H_a_b(system%num_bands, system%num_bands, 3, 3), &
-                        vels(system%num_bands, system%num_bands, 3), &
-                        rot_A_a(system%num_bands, system%num_bands, 3), &
-                        rot_A_a_b(system%num_bands, system%num_bands, 3, 3), &
-                        D_a(system%num_bands, system%num_bands, 3), &
-                        sum_AD(system%num_bands, system%num_bands, 3, 3), &
-                        sum_HD(system%num_bands, system%num_bands, 3, 3)
-
-    integer :: i, j, n, m, p
-
-    !Get non-abelian D matrix.
-    D_a = SsTC_non_abelian_d(system, eig, rot, HW_a)
-
-    !Get rotated quantities.
-    do i = 1, 3
-      rot_H_a(:, :, i) = matmul(matmul(transpose(conjg(rot)), HW_a(:, :, i)), rot)
-      rot_A_a(:, :, i) = matmul(matmul(transpose(conjg(rot)), AW_a(:, :, i)), rot)
-      do j = 1, 3
-        rot_H_a_b(:, :, i, j) = matmul(matmul(transpose(conjg(rot)), HW_a_b(:, :, i, j)), rot)
-        rot_A_a_b(:, :, i, j) = matmul(matmul(transpose(conjg(rot)), AW_a_b(:, :, i, j)), rot)
-      enddo
-    enddo
-
-    !Get velocities.
-    vels = SsTC_velocities(system, HW_a, eig, rot, error)
-    if (error) then
-      write (unit=stderr, fmt="(a)") "          Error in function cov_deriv_of_dipole when computing the velocities."
-      return
-    endif
-
-    sum_AD = cmplx_0
-    sum_HD = cmplx_0
-    cov_r = cmplx_0
-
-    do n = 1, system%num_bands
-      do m = 1, system%num_bands
-        if (n == m) cycle
-        if (abs(eig(n) - eig(m)) .le. system%deg_thr) cycle
-        do i = 1, 3
-
-          do j = 1, 3
-            sum_AD(n, m, j, i) = (sum(rot_A_a(n, :, j)*D_a(:, m, i)) - rot_A_a(n, n, j)*D_a(n, m, i)) &
-                                 - (sum(D_a(n, :, i)*rot_A_a(:, m, j)) - D_a(n, m, i)*rot_A_a(m, m, j))
-            sum_HD(n, m, j, i) = (sum(rot_H_a(n, :, j)*D_a(:, m, i)) - rot_H_a(n, n, j)*D_a(n, m, i)) &
-                                 - (sum(D_a(n, :, i)*rot_H_a(:, m, j)) - D_a(n, m, i)*rot_H_a(m, m, j))
-          enddo!j
-
-          cov_r(n, m, i, :) = (rot_A_a_b(n, m, :, i) &
-                               + ((rot_A_a(n, n, :) - rot_A_a(m, m, :))*D_a(n, m, i) + &
-                                  (rot_A_a(n, n, i) - rot_A_a(m, m, i))*D_a(n, m, :)) &
-                               - cmplx_i*rot_A_a(n, m, :)*(rot_A_a(n, n, i) - rot_A_a(m, m, i)) &
-                               + sum_AD(n, m, :, i) &
-                               + cmplx_i*(rot_H_a_b(n, m, :, i) &
-                                          + sum_HD(n, m, :, i) &
-                                          + (D_a(n, m, :)*(vels(n, n, i) - vels(m, m, i)) + &
-                                             D_a(n, m, i)*(vels(n, n, :) - vels(n, n, :)))) &
-                               /(eig(m) - eig(n)))
-
-          do p = 1, system%num_bands
-            if (p == n .or. p == m) cycle
-            cov_r(n, m, i, :) = cov_r(n, m, i, :) &
-                                - system%deg_offset**2/((eig(p) - eig(m))**2 &
-                                                        + system%deg_offset**2)/(eig(n) - eig(m)) &
-                                *(rot_A_a(n, p, :)*rot_H_a(p, m, i) &
-                                  - (rot_H_a(n, p, :) + cmplx_i*(eig(n) &
-                                                                 - eig(p))*rot_A_a(n, p, :))*rot_A_a(p, m, i)) &
-                                + system%deg_offset**2/((eig(n) - eig(p))**2 &
-                                                        + system%deg_offset**2)/(eig(n) - eig(m)) &
-                                *(rot_H_a(n, p, i)*rot_A_a(p, m, :) &
-                                  - rot_A_a(n, p, i)*(rot_H_a(p, m, :) + cmplx_i*(eig(p) - eig(m))*rot_A_a(p, m, :)))
-          enddo!p
-
-        enddo!i
-      enddo!m
-    enddo!n
-
-  end function SsTC_cov_deriv_of_dipole
 
   !====CORE ROUTINES====!
 
