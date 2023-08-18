@@ -1,3 +1,4 @@
+#include 'cond_comp.h'
 module SsTC_kpath
 
   USE OMP_LIB
@@ -144,8 +145,8 @@ contains
     !Sampling.
     do ivec = 1, size(task%vectors(:, 1)) - 1 !For each considered vector except the last one.
       report_step = nint(real(task%number_of_pts(ivec)/100, dp)) + 1
-!$OMP       PARALLEL SHARED(temp_res) PRIVATE(isampling, k)
-!$OMP       DO
+      !_OMPTGT_(PARALLEL SHARED(temp_res) PRIVATE(isampling, k))
+      !_OMPTGT_(DO)
       do isampling = 1, task%number_of_pts(ivec)
         !Define a local vector from ivec-th vector to ivec+1-th vector discretized in task%number_of_pts(ivec) steps.
 
@@ -170,7 +171,7 @@ contains
           stop
         endif
 
-!$OMP         ATOMIC UPDATE
+        !_OMPTGT_(ATOMIC UPDATE)
         progress = progress + 1
 
         if (modulo(progress, report_step) == report_step/2) then !Update progress.
@@ -179,8 +180,8 @@ contains
         endif
 
       enddo
-!$OMP       END DO
-!$OMP       END PARALLEL
+      !_OMPTGT_(END DO)
+      !_OMPTGT_(END PARALLEL)
       progress = 0
     enddo
 

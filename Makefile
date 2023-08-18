@@ -1,7 +1,7 @@
 default: main
 
 F90 = ifort
-F90FLAGS = -fPIE -g -warn all -check bounds -O2 -qopenmp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread
+F90FLAGS = -fPIE -g -warn all -check bounds -O2 -qopenmp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -fpp
 
 PY = python3
 

@@ -1,3 +1,4 @@
+#include 'cond_comp.h'
 module SsTC_data_structures
 
   use SsTC_utility

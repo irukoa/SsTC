@@ -1,3 +1,4 @@
+#include 'cond_comp.h'
 module SsTC
 
   USE OMP_LIB
@@ -138,6 +139,15 @@ contains
     write (unit=stdout, fmt="(a)") "           /$$  \ $$ \____  $$   | $$   | $$    $$ "
     write (unit=stdout, fmt="(a)") "          |  $$$$$$/ /$$$$$$$/   | $$   |  $$$$$$/ "
     write (unit=stdout, fmt="(a)") "           \______/ |_______/    |__/    \______/  "
+
+    write (unit=stdout, fmt="(a)") ""
+    if (using_OMP) then
+      write (unit=stdout, fmt="(a)") "         Using OpenMP for parallelization."
+    elseif (using_ACC) then
+      write (unit=stdout, fmt="(a)") "         Using OpenACC for parallelization." !Not yet supported.
+    else
+      write (unit=stdout, fmt="(a)") "         Code running in serial."
+    endif
     write (unit=stdout, fmt="(a)") ""
 
     write (unit=stdout, fmt="(a, i2, a, i2, a, i4, a, i2, a, i2, a, i2, a)") "          SsTC library initializing at ", timing(2), "/", timing(3), "/", timing(1), &

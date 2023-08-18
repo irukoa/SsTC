@@ -1,3 +1,4 @@
+#include 'cond_comp.h'
 module SsTC_sampler
 
   USE OMP_LIB
@@ -136,14 +137,14 @@ contains
    write (unit=stdout, fmt="(a)") "          If this is your case and SIGSEGV triggers try using the next command before execution:"
     write (unit=stdout, fmt="(a)") "          ulimit -s unlimited"
 
-!$OMP       PARALLEL DEFAULT(SHARED) PRIVATE(k)
+    !_OMPTGT_(PARALLEL DEFAULT(SHARED) PRIVATE(k))
 
     TID = OMP_GET_THREAD_NUM()
     IF (TID .EQ. 0) THEN
       write (unit=stdout, fmt="(a, i5, a)") "Running on ", OMP_GET_NUM_THREADS(), " threads."
     ENDIF
 
-!$OMP         DO COLLAPSE(3)
+    !_OMPTGT_(DO COLLAPSE(3))
     do ik1 = 1, task%samples(1)
       do ik2 = 1, task%samples(2)
         do ik3 = 1, task%samples(3)
@@ -177,7 +178,7 @@ contains
             stop
           endif
 
-!$OMP             ATOMIC UPDATE
+          !_OMPTGT_(ATOMIC UPDATE)
           progress = progress + 1
 
           if (modulo(progress, report_step) == report_step/2) then !Update progress.
@@ -187,8 +188,8 @@ contains
         enddo
       enddo
     enddo
-!$OMP       END DO
-!$OMP       END PARALLEL
+    !_OMPTGT_(END DO)
+    !_OMPTGT_(END PARALLEL)
     progress = 0
 
     end_time = omp_get_wtime() !End timer.

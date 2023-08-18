@@ -1,3 +1,4 @@
+#include 'cond_comp.h'
 module SsTC_utility
 
   use, intrinsic :: iso_fortran_env, only: input_unit, &
