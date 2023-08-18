@@ -150,8 +150,9 @@ contains
     endif
     write (unit=stdout, fmt="(a)") ""
 
-    write (unit=stdout, fmt="(a, i2, a, i2, a, i4, a, i2, a, i2, a, i2, a)") "          SsTC library initializing at ", timing(2), "/", timing(3), "/", timing(1), &
-      ", ", timing(5), ":", timing(6), ":", timing(7), "."
+    write (unit=stdout, fmt="(a, i2, a, i2, a, i4, a, i2, a, i2, a, i2, a)") "          SsTC library initializing at ", &
+      &timing(2), "/", timing(3), "/", timing(1), &
+      &", ", timing(5), ":", timing(6), ":", timing(7), "."
     write (unit=stdout, fmt="(a)") "          Initializing SsTC..."
 
     if (present(nThreads) .and. (nThreads > 0)) then

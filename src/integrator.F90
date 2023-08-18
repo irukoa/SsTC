@@ -350,7 +350,8 @@ contains
     integer            :: i_mem, r_mem, count
     integer            :: printunit
 
- write (unit=stdout, fmt="(a)") "          Printing BZ integral task: "//trim(task%name)//" for the system "//trim(system%name)//"."
+    write (unit=stdout, fmt="(a)") "          Printing BZ integral task: "&
+    &//trim(task%name)//" for the system "//trim(system%name)//"."
 
     if (associated(task%local_calculator)) then
 

@@ -77,8 +77,9 @@ contains
       !get SVD decomp,
       call SsTC_utility_SVD(lindep, sigma, error)
       if (error) then
-    write (unit=stderr, fmt="(a)") "Error in function kslice_task_constructor when checking linear dependence of vectors."
-    write (unit=stdout, fmt="(a)") "          Error in function kslice_task_constructor when checking linear dependence of vectors."
+        write (unit=stderr, fmt="(a)") "Error in function kslice_task_constructor when checking linear dependence of vectors."
+        write (unit=stdout, fmt="(a)") "          Error in function kslice_task_constructor&
+        & when checking linear dependence of vectors."
         write (unit=stdout, fmt="(a)") "Supposing linearly dependent input vectors."
         dep = .True.
         goto 2
@@ -174,12 +175,14 @@ contains
     report_step = nint(real(product(task%samples)/100, dp)) + 1
 
     write (unit=stdout, fmt="(a)") "          Starting BZ sampling subroutine kslice."
-   write (unit=stdout, fmt="(a)") "          Sampling task: "//trim(task%name)//" in the BZ for the system "//trim(system%name)//"."
+    write (unit=stdout, fmt="(a)") "          Sampling task: "//trim(task%name)//&
+    &" in the BZ for the system "//trim(system%name)//"."
     write (unit=stdout, fmt="(a)") "          The required memory for the sampling process is approximately,"
     write (unit=stdout, fmt="(a, f15.3, a)") "          ", 16.0_dp*real(product(task%samples)*product(task%integer_indices)*&
     & product(task%continuous_indices), dp)/1024.0_dp**2, "MB."
     write (unit=stdout, fmt="(a)") "          Some computers limit the maximum memory an array can allocate."
-   write (unit=stdout, fmt="(a)") "          If this is your case and SIGSEGV triggers try using the next command before execution:"
+    write (unit=stdout, fmt="(a)") "          If this is your case and SIGSEGV triggers &
+    &try using the next command before execution:"
     write (unit=stdout, fmt="(a)") "          ulimit -s unlimited"
 
     !_OMPTGT_(PARALLEL DEFAULT(SHARED) PRIVATE(k))
@@ -214,7 +217,8 @@ contains
         progress = progress + 1
 
         if (modulo(progress, report_step) == report_step/2) then !Update progress.
-       write (unit=stdout, fmt="(a, i12, a, i12, a)") "          Progress: ", progress, "/", product(task%samples), " kpts sampled."
+          write (unit=stdout, fmt="(a, i12, a, i12, a)") "          Progress: ",&
+          & progress, "/", product(task%samples), " kpts sampled."
         endif
 
       enddo
