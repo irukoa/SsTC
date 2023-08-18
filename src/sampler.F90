@@ -172,8 +172,8 @@ contains
           endif
 
           if (error) then
-            write (unit=stderr, fmt="(a, 3e18.8e3)") "          Error when sampling k-point", k
-            write (unit=stderr, fmt="(a)") "          Stopping..."
+            write (unit=stderr, fmt="(a, 3e18.8e3)") "Error when sampling k-point", k
+            write (unit=stderr, fmt="(a)") "Stopping..."
             stop
           endif
 

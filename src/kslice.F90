@@ -76,9 +76,9 @@ contains
       !get SVD decomp,
       call SsTC_utility_SVD(lindep, sigma, error)
       if (error) then
-    write (unit=stderr, fmt="(a)") "          Error in function kslice_task_constructor when checking linear dependence of vectors."
+    write (unit=stderr, fmt="(a)") "Error in function kslice_task_constructor when checking linear dependence of vectors."
     write (unit=stdout, fmt="(a)") "          Error in function kslice_task_constructor when checking linear dependence of vectors."
-        write (unit=stdout, fmt="(a)") "          Supposing linearly dependent input vectors."
+        write (unit=stdout, fmt="(a)") "Supposing linearly dependent input vectors."
         dep = .True.
         goto 2
       endif
@@ -204,8 +204,8 @@ contains
         endif
 
         if (error) then
-          write (unit=stderr, fmt="(a, 3e18.8e3)") "          Error when sampling k-point", k
-          write (unit=stderr, fmt="(a)") "          Stopping..."
+          write (unit=stderr, fmt="(a, 3e18.8e3)") "Error when sampling k-point", k
+          write (unit=stderr, fmt="(a)") "Stopping..."
           stop
         endif
 
