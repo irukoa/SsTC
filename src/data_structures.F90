@@ -161,7 +161,7 @@ contains
 
     read (unit=stdin, fmt=*)
     allocate (dummyR(2))
-    write (unit=stdout, fmt="(A)") "          Reading Hamiltonian..."
+    write (unit=stdout, fmt="(a)") "          Reading Hamiltonian..."
 
     do irpts = 1, nrpts
       read (unit=stdin, fmt=*) (system%R_point(irpts, i), i=1, 3)
