@@ -43,7 +43,7 @@ module SsTC_data_structures
   end type SsTC_global_k_data
 
   !Interfaces for the generic functions returning k dependent quantities.
-  abstract interface
+  abstract interface !nvfortran: remove abstract to avoid error.
     function SsTC_local_calculator(k_data, system, k, error) result(u)
       import :: SsTC_local_k_data, SsTC_sys, SsTC_external_vars, dp
 
@@ -56,7 +56,7 @@ module SsTC_data_structures
     end function SsTC_local_calculator
   end interface
 
-  abstract interface
+  abstract interface !nvfortran: remove abstract to avoid error.
     function SsTC_global_calculator(task, system, k, error) result(u)
       import :: SsTC_global_k_data, SsTC_sys, SsTC_external_vars, dp
 

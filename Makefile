@@ -2,8 +2,8 @@ default: main
 
 F90 = ifx
 F90FLAGS = -fPIE -fopenmp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -cpp
-F90FLAGS += -g -traceback -warn unused -warn all -check bounds -diag-disable 5462 -diag-disable 10440#Debug flags.
-F90FLAGS += -O2 #Optimization flags.
+F90FLAGS += -g -traceback -warn unused -warn all -check bounds -diag-disable 5462 -diag-disable 10440 #Debug flags.
+F90FLAGS += -O0 #Optimization flags.
 
 PY = python3
 
