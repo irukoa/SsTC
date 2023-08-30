@@ -1,4 +1,4 @@
-#include 'cond_comp.h'
+#include "cond_comp.h"
 module SsTC
 
   USE OMP_LIB
