@@ -1,3 +1,5 @@
 *.o
 *.mod
 *.x
+src/calculators/*
+!src/calculators/Makefile
