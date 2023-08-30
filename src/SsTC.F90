@@ -143,8 +143,6 @@ contains
     write (unit=stdout, fmt="(a)") ""
     if (using_OMP) then
       write (unit=stdout, fmt="(a)") "         Using OpenMP for parallelization."
-    elseif (using_ACC) then
-      write (unit=stdout, fmt="(a)") "         Using OpenACC for parallelization." !Not yet supported.
     else
       write (unit=stdout, fmt="(a)") "         Code running in serial."
     endif
@@ -155,20 +153,23 @@ contains
       &", ", timing(5), ":", timing(6), ":", timing(7), "."
     write (unit=stdout, fmt="(a)") "          Initializing SsTC..."
 
-    if (present(nThreads) .and. (nThreads > 0)) then
-      call OMP_SET_NUM_THREADS(nThreads)
-      selThreads = nThreads
+    if (present(nThreads)) then
+      if ((nThreads > 0)) then
+        call OMP_SET_NUM_THREADS(nThreads)
+        selThreads = nThreads
+      endif
     else
       call OMP_SET_NUM_THREADS(OMP_GET_MAX_THREADS())
       selThreads = OMP_GET_MAX_THREADS()
     endif
-
     write (unit=stdout, fmt="(a, i5, a)") "         Paralell regions will run in ", selThreads, " threads."
 
-    if (present(nNested) .and. (nNested > 1)) then
-      call OMP_SET_MAX_ACTIVE_LEVELS(nNested)
-      write (unit=stdout, fmt="(a, i2, a)") "         Warning: the number of nested active parallel regions"
-      write (unit=stdout, fmt="(a)") "         has been set to ", nNested, ". Beware of overhead."
+    if (present(nNested)) then
+      if ((nNested > 1)) then
+        call OMP_SET_MAX_ACTIVE_LEVELS(nNested)
+        write (unit=stdout, fmt="(a, i2, a)") "         Warning: the number of nested active parallel regions"
+        write (unit=stdout, fmt="(a)") "         has been set to ", nNested, ". Beware of overhead."
+      endif
     else
       call OMP_SET_MAX_ACTIVE_LEVELS(1)
       write (unit=stdout, fmt="(a)") "          The number of nested active parallel regions has been"

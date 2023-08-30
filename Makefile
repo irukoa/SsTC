@@ -1,7 +1,9 @@
 default: main
 
-F90 = ifort
-F90FLAGS = -fPIE -g -warn all -check bounds -O2 -qopenmp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -fpp
+F90 = ifx
+F90FLAGS = -fPIE -fopenmp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -cpp
+F90FLAGS += -g -traceback -warn unused -warn all -check bounds -diag-disable 5462 -diag-disable 10440#Debug flags.
+F90FLAGS += -O2 #Optimization flags.
 
 PY = python3
 
@@ -10,7 +12,8 @@ OBJ = ./src/obj
 BIN = ./bin
 CALC = ./src/calculators
 
-DEPS = utility.o extrapolation_integration.o data_structures.o kpath.o kslice.o sampler.o integrator.o local_k_quantities.o #Base deps of SsTC.o, these get updated if mods are detected.
+#Base deps of SsTC.o, these get updated if mods are detected.
+DEPS = utility.o extrapolation_integration.o data_structures.o kpath.o kslice.o sampler.o integrator.o local_k_quantities.o
 
 include ./src/calculators/Makefile #Checks for mods.
 

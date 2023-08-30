@@ -23,6 +23,10 @@ module SsTC_data_structures
     real(kind=dp)                 :: deg_offset = 0.04_dp                     !Offset for regularization in case of deeneracies in eV.
   end type SsTC_sys
 
+  type SsTC_external_vars
+    real(kind=dp), allocatable :: data(:) !External variable data array.
+  end type SsTC_external_vars
+
   type SsTC_local_k_data
     character(len=120)                                :: name
     integer, allocatable                              :: integer_indices(:)               !Each entry contains the range of each of the integer indices.
@@ -37,10 +41,6 @@ module SsTC_data_structures
     procedure(SsTC_global_calculator), pointer, nopass :: global_calculator     !Pointer to the global calculator.
     integer, allocatable                               :: iterables(:, :)       !Iterable dictionary.
   end type SsTC_global_k_data
-
-  type SsTC_external_vars
-    real(kind=dp), allocatable :: data(:) !External variable data array.
-  end type SsTC_external_vars
 
   !Interfaces for the generic functions returning k dependent quantities.
   abstract interface
