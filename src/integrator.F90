@@ -178,7 +178,7 @@ contains
                 sdata_k(product(task%samples), &
                         product(task%integer_indices), product(task%continuous_indices)))
 
-      !_OMPTGT_(PARALLEL DEFAULT(SHARED) PRIVATE(k))
+      !_OMPTGT_(PARALLEL DEFAULT(SHARED) PRIVATE(k, TID))
 
       TID = OMP_GET_THREAD_NUM()
       IF (TID .EQ. 0) THEN
@@ -268,7 +268,7 @@ contains
       allocate (temp_res(product(task%integer_indices), product(task%continuous_indices)))
       temp_res = cmplx(0.0_dp, 0.0_dp, dp)
 
-      !_OMPTGT_(PARALLEL DEFAULT (SHARED) PRIVATE (k) REDUCTION (+: temp_res))
+      !_OMPTGT_(PARALLEL DEFAULT (SHARED) PRIVATE (k, TID) REDUCTION (+: temp_res))
 
       TID = OMP_GET_THREAD_NUM()
       IF (TID .EQ. 0) THEN

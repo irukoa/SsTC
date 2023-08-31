@@ -185,7 +185,7 @@ contains
     &try using the next command before execution:"
     write (unit=stdout, fmt="(a)") "          ulimit -s unlimited"
 
-    !_OMPTGT_(PARALLEL DEFAULT(SHARED) PRIVATE(k))
+    !_OMPTGT_(PARALLEL DEFAULT(SHARED) PRIVATE(k, TID))
 
     TID = OMP_GET_THREAD_NUM()
     IF (TID .EQ. 0) THEN
