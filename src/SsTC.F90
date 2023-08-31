@@ -20,6 +20,8 @@ module SsTC
 
   !###MOD HEADERS
 
+  implicit none
+
   private
 
   !Core Procedures:
