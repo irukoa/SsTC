@@ -2,8 +2,10 @@
 module SsTC_integrator
 
   USE OMP_LIB
+  USE MPI_F08
 
   use SsTC_utility
+  use SsTC_mpi_comms
   use SsTC_data_structures
   use extrapolation_integration
 
@@ -60,7 +62,7 @@ contains
     !Set name.
     task%name = name
 
-    write (unit=stdout, fmt="(a)") "          Creating BZ integral task "//trim(task%name)//"."
+    if (rank == 0) write (unit=stdout, fmt="(a)") "          Creating BZ integral task "//trim(task%name)//"."
 
     !Set integer index data.
     if (((N_int_ind) .ge. 1) .and. (present(int_ind_range))) then
@@ -110,13 +112,13 @@ contains
     if (present(method)) then
       if (method == "extrapolation") then
         task%method = "extrapolation"
-        write (unit=stdout, fmt="(a)") "          Warning: To employ the extrapolation method &
+        if (rank == 0) write (unit=stdout, fmt="(a)") "          Warning: To employ the extrapolation method &
           & all the elements of the array 'samples' must be expressible as either 1 &
           & or 2^n + 1 for n = 0, 1, ..."
       elseif (method == "rectangle") then
         task%method = "rectangle"
       else
-        write (unit=stdout, fmt="(a)") "          Integration method not recognized. Setting up rectangle method"
+        if (rank == 0) write (unit=stdout, fmt="(a)") "          Integration method not recognized. Setting up rectangle method"
         task%method = "rectangle"
       endif
     else
@@ -130,8 +132,8 @@ contains
       task%samples = (/10, 10, 10/)
     endif
 
-    write (unit=stdout, fmt="(a)") "          Done."
-    write (unit=stdout, fmt="(a)") ""
+    if (rank == 0) write (unit=stdout, fmt="(a)") "          Done."
+    if (rank == 0) write (unit=stdout, fmt="(a)") ""
 
   end subroutine SsTC_BZ_integral_task_constructor
 
@@ -140,202 +142,206 @@ contains
     class(SsTC_BZ_integral_task), intent(inout) :: task
     type(SsTC_sys), intent(in)                  :: system
 
-    complex(kind=dp), allocatable :: data_k(:, :, :, :, :), &
-                                     sdata_k(:, :, :), &
-                                     temp_res(:, :)
+    complex(kind=dp), allocatable :: data_k(:, :, :), &
+                                     local_data_k(:, :, :), &
+                                     temp_res(:, :), res(:, :)
 
     real(kind=dp) :: k(3)
 
-    integer :: ik1, ik2, ik3, &
+    integer :: ik, k_ind(3), ik1, ik2, ik3, &
                info, &
                i, r
 
-    integer :: TID, report_step
-    integer :: progress = 0
+    integer :: TID
     real(kind=dp) :: start_time, end_time
 
     logical :: error = .false.
 
-    report_step = nint(real(product(task%samples)/100, dp)) + 1
+    type(SsTC_local_k_data) :: sampling_info
 
-    start_time = omp_get_wtime() !Start timer.
+    integer, allocatable :: counts(:), displs(:)
+
+    start_time = MPI_WTIME()
+
+    allocate (sampling_info%integer_indices(3))
+    sampling_info%integer_indices = task%samples
+
+    allocate (counts(0:nProcs - 1), displs(0:nProcs - 1))
+    call get_MPI_task_partition(product(task%samples), nProcs, counts, displs)
 
     if (task%method == "extrapolation") then !Extraplation case. Requires large RAM.
 
-      write (unit=stdout, fmt="(a)") "          Starting BZ sampling and integration subroutine with extrapolation method."
-      write (unit=stdout, fmt="(a)") "          Integrating task: "//trim(task%name)//" in the BZ for the system "&
-        &//trim(system%name)//"."
-      write (unit=stdout, fmt="(a)") "          The required memory for the integration process is approximately,"
-      write (unit=stdout, fmt="(a, f15.3, a)") "          ", 16.0_dp*real(product(task%samples)*product(task%integer_indices)*&
-      & product(task%continuous_indices), dp)/1024.0_dp**2, "MB."
-      write (unit=stdout, fmt="(a)") "          Some computers limit the maximum memory an array can allocate."
-      write (unit=stdout, fmt="(a)") "          If this is your case and SIGSEGV triggers&
-      & try using the next command before execution:"
-      write (unit=stdout, fmt="(a)") "          ulimit -s unlimited"
+      if (rank == 0) write (unit=stdout, fmt="(a)") &
+        "          Starting BZ sampling and integration subroutine with extrapolation method."
+      if (rank == 0) write (unit=stdout, fmt="(a)") "          Integrating task: "//trim(task%name)//" in the BZ for the system " &
+        //trim(system%name)//"."
+      if (rank == 0) write (unit=stdout, fmt="(a)") "          The required memory for the integration process is approximately,"
+      if (rank == 0) write (unit=stdout, fmt="(a, f15.3, a)") &
+        "          ", 16.0_dp*real(product(task%samples)*product(task%integer_indices)* &
+                                   product(task%continuous_indices), dp)/1024.0_dp**2, &
+        "MB in each MPI process."
 
-      allocate (data_k(task%samples(1), task%samples(2), task%samples(3), &
-                       product(task%integer_indices), product(task%continuous_indices)), &
-                sdata_k(product(task%samples), &
-                        product(task%integer_indices), product(task%continuous_indices)))
+      allocate (local_data_k(displs(rank) + 1:displs(rank) + counts(rank), &
+                             product(task%integer_indices), product(task%continuous_indices)), &
+                data_k(product(task%samples), &
+                       product(task%integer_indices), product(task%continuous_indices)))
 
-      !_OMPTGT_(PARALLEL DEFAULT(SHARED) PRIVATE(k, TID))
+      !_OMPTGT_(PARALLEL DEFAULT(SHARED) PRIVATE(ik, k_ind, ik1, ik2, ik3, k, TID))
 
       TID = OMP_GET_THREAD_NUM()
-      IF (TID .EQ. 0) THEN
-        write (unit=stdout, fmt="(a, i5, a)") "         Running on ", OMP_GET_NUM_THREADS(), " threads."
+      IF ((TID .EQ. 0) .and. (rank .EQ. 0)) THEN
+        write (unit=stdout, fmt="(a, i5, a, i5, a)") &
+        &"         Running on ", nProcs, " process(es) each using ", OMP_GET_NUM_THREADS(), " threads."
       ENDIF
 
-      !_OMPTGT_(DO COLLAPSE(3))
-      do ik1 = 1, task%samples(1)
-        do ik2 = 1, task%samples(2)
-          do ik3 = 1, task%samples(3)
+      !_OMPTGT_(DO)
+      do ik = displs(rank) + 1, displs(rank) + counts(rank)
 
-            if (task%samples(1) == 1) then
-              k(1) = 0.0_dp
-            else
-              k(1) = -0.5_dp + real(ik1 - 1, dp)/real(task%samples(1) - 1, dp)
-            endif
-            if (task%samples(2) == 1) then
-              k(2) = 0.0_dp
-            else
-              k(2) = -0.5_dp + real(ik2 - 1, dp)/real(task%samples(2) - 1, dp)
-            endif
-            if (task%samples(3) == 1) then
-              k(3) = 0.0_dp
-            else
-              k(3) = -0.5_dp + real(ik3 - 1, dp)/real(task%samples(3) - 1, dp)
-            endif
+        k_ind = SsTC_integer_memory_element_to_array_element(sampling_info, ik)
+        ik1 = k_ind(1)
+        ik2 = k_ind(2)
+        ik3 = k_ind(3)
 
-            !Gather data.
-            if (associated(task%local_calculator)) then
-              data_k(ik1, ik2, ik3, :, 1) = task%local_calculator(task, system, k, error)
-            elseif (associated(task%global_calculator)) then
-              data_k(ik1, ik2, ik3, :, :) = task%global_calculator(task, system, k, error)
-            endif
+        if (task%samples(1) == 1) then
+          k(1) = 0.0_dp
+        else
+          k(1) = -0.5_dp + real(ik1 - 1, dp)/real(task%samples(1) - 1, dp)
+        endif
+        if (task%samples(2) == 1) then
+          k(2) = 0.0_dp
+        else
+          k(2) = -0.5_dp + real(ik2 - 1, dp)/real(task%samples(2) - 1, dp)
+        endif
+        if (task%samples(3) == 1) then
+          k(3) = 0.0_dp
+        else
+          k(3) = -0.5_dp + real(ik3 - 1, dp)/real(task%samples(3) - 1, dp)
+        endif
 
-            if (error) then
-              write (unit=stderr, fmt="(a, 3e18.8e3)") "Error when sampling k-point", k
-              write (unit=stderr, fmt="(a)") "Stopping..."
-              stop
-            endif
+        !Gather data.
+        if (associated(task%local_calculator)) then
+          local_data_k(ik, :, 1) = task%local_calculator(task, system, k, error)
+        elseif (associated(task%global_calculator)) then
+          local_data_k(ik, :, :) = task%global_calculator(task, system, k, error)
+        endif
 
-            !_OMPTGT_(ATOMIC UPDATE)
-            progress = progress + 1
+        if (error) then
+          if (rank == 0) write (unit=stderr, fmt="(a, 3e18.8e3)") "Error when sampling k-point", k
+          if (rank == 0) write (unit=stderr, fmt="(a)") "Stopping..."
+          stop
+        endif
 
-            if (modulo(progress, report_step) == report_step/2) then !Update progress.
-              write (unit=stdout, fmt="(a, i12, a, i12, a)") &
-              & "          Progress: ", progress, "/", product(task%samples),&
-              & " kpts sampled."
-            endif
-
-          enddo
-        enddo
       enddo
       !_OMPTGT_(END DO)
       !_OMPTGT_(END PARALLEL)
-      progress = 0
-
-      write (unit=stdout, fmt="(a)") "          Sampling done. Starting integration with extrapolation method."
 
       do i = 1, product(task%integer_indices) !For each integer index.
         do r = 1, product(task%continuous_indices) !For each continuous index.
-          !Pass data array to memory layout.
-          call shrink_array(data_k(:, :, :, i, r), sdata_k(:, i, r), info)
+          call MPI_ALLGATHERV(local_data_k(:, i, r), size(local_data_k(:, i, r)), MPI_COMPLEX16, data_k(:, i, r), &
+                              counts, &
+                              displs, &
+                              MPI_COMPLEX16, MPI_COMM_WORLD, ierror)
+        enddo
+      enddo
+
+      if (rank == 0) write (unit=stdout, fmt="(a)") "          Sampling done. Starting integration with extrapolation method."
+
+      do i = 1, product(task%integer_indices) !For each integer index.
+        do r = 1, product(task%continuous_indices) !For each continuous index.
           !Integrate, if possible extrapolation method.
-          call integral_extrapolation(sdata_k(:, i, r), task%samples, &
+          call integral_extrapolation(data_k(:, i, r), task%samples, &
                                       (/-0.5_dp, 0.5_dp, -0.5_dp, 0.5_dp, -0.5_dp, 0.5_dp/), task%result(i, r), info)
         enddo
       enddo
 
       if (info == 1) then
-        write (unit=stdout, fmt="(a)") "          Integral done. Extrapolation sucessfull."
+        if (rank == 0) write (unit=stdout, fmt="(a)") &
+        &"          Integral done. Extrapolation sucessfull."
       else
-        write (unit=stdout, fmt="(a)") "          Integral done. Extrapolation failed. Returning rectangle approximation."
+        if (rank == 0) write (unit=stdout, fmt="(a)") &
+        &"          Integral done. Extrapolation failed. Returning rectangle approximation."
       endif
-      write (unit=stdout, fmt="(a)") ""
+      if (rank == 0) write (unit=stdout, fmt="(a)") ""
 
-      deallocate (data_k, sdata_k)
+      deallocate (local_data_k, data_k)
 
     elseif (task%method == "rectangle") then !Rectangle method approximation case.
 
-      write (unit=stdout, fmt="(a)") "          Starting BZ sampling and integration subroutine with rectangle method."
-      write (unit=stdout, fmt="(a)") "          Integrating task: "//trim(task%name)//" in the BZ for the system "&
+      if (rank == 0) write (unit=stdout, fmt="(a)") &
+        "          Starting BZ sampling and integration subroutine with rectangle method."
+      if (rank == 0) write (unit=stdout, fmt="(a)") "          Integrating task: "//trim(task%name)//" in the BZ for the system "&
       &//trim(system%name)//"."
-      write (unit=stdout, fmt="(a)") "          The required memory for the integration process is approximately,"
-      write (unit=stdout, fmt="(a, f15.3, a)") "          ", 16.0_dp*real(product(task%integer_indices)*&
-      & product(task%continuous_indices), dp)/1024.0_dp**2, "MB."
+      if (rank == 0) write (unit=stdout, fmt="(a)") "          The required memory for the integration process is approximately,"
+      if (rank == 0) write (unit=stdout, fmt="(a, f15.3, a)") "          ", 16.0_dp*real(product(task%integer_indices)*&
+      & product(task%continuous_indices), dp)/1024.0_dp**2, "MB in each MPI process."
 
-      allocate (temp_res(product(task%integer_indices), product(task%continuous_indices)))
+      allocate (temp_res(product(task%integer_indices), product(task%continuous_indices)), &
+                res(product(task%integer_indices), product(task%continuous_indices)))
       temp_res = cmplx(0.0_dp, 0.0_dp, dp)
+      res = cmplx(0.0_dp, 0.0_dp, dp)
 
-      !_OMPTGT_(PARALLEL DEFAULT (SHARED) PRIVATE (k, TID) REDUCTION (+: temp_res))
+      !_OMPTGT_(PARALLEL DEFAULT (SHARED) PRIVATE(ik, k_ind, ik1, ik2, ik3, k, TID) REDUCTION (+: temp_res))
 
       TID = OMP_GET_THREAD_NUM()
-      IF (TID .EQ. 0) THEN
-        write (unit=stdout, fmt="(a, I5, a)") "         Running on ", OMP_GET_NUM_THREADS(), " threads."
+      IF ((TID .EQ. 0) .and. (rank .EQ. 0)) THEN
+        write (unit=stdout, fmt="(a, i5, a, i5, a)") &
+          "         Running on ", nProcs, " process(es) each using ", OMP_GET_NUM_THREADS(), " threads."
       ENDIF
 
-      !_OMPTGT_(DO COLLAPSE(3))
-      do ik1 = 1, task%samples(1)
-        do ik2 = 1, task%samples(2)
-          do ik3 = 1, task%samples(3)
+      !_OMPTGT_(DO)
+      do ik = displs(rank) + 1, displs(rank) + counts(rank)
 
-            if (task%samples(1) == 1) then
-              k(1) = 0.0_dp
-            else
-              k(1) = -0.5_dp + real(ik1 - 1, dp)/real(task%samples(1) - 1, dp)
-            endif
-            if (task%samples(2) == 1) then
-              k(2) = 0.0_dp
-            else
-              k(2) = -0.5_dp + real(ik2 - 1, dp)/real(task%samples(2) - 1, dp)
-            endif
-            if (task%samples(3) == 1) then
-              k(3) = 0.0_dp
-            else
-              k(3) = -0.5_dp + real(ik3 - 1, dp)/real(task%samples(3) - 1, dp)
-            endif
+        k_ind = SsTC_integer_memory_element_to_array_element(sampling_info, ik)
+        ik1 = k_ind(1)
+        ik2 = k_ind(2)
+        ik3 = k_ind(3)
 
-            !Gather data.
-            if (associated(task%local_calculator)) then
-              temp_res(:, 1) = temp_res(:, 1) + task%local_calculator(task, system, k, error)
-            elseif (associated(task%global_calculator)) then
-              temp_res = temp_res + task%global_calculator(task, system, k, error)
-            endif
+        if (task%samples(1) == 1) then
+          k(1) = 0.0_dp
+        else
+          k(1) = -0.5_dp + real(ik1 - 1, dp)/real(task%samples(1) - 1, dp)
+        endif
+        if (task%samples(2) == 1) then
+          k(2) = 0.0_dp
+        else
+          k(2) = -0.5_dp + real(ik2 - 1, dp)/real(task%samples(2) - 1, dp)
+        endif
+        if (task%samples(3) == 1) then
+          k(3) = 0.0_dp
+        else
+          k(3) = -0.5_dp + real(ik3 - 1, dp)/real(task%samples(3) - 1, dp)
+        endif
 
-            if (error) then
-              write (unit=stderr, fmt="(a, 3e18.8e3)") "Error when sampling k-point", k
-              write (unit=stderr, fmt="(a)") "Stopping..."
-              stop
-            endif
+        !Gather data.
+        if (associated(task%local_calculator)) then
+          temp_res(:, 1) = temp_res(:, 1) + task%local_calculator(task, system, k, error)
+        elseif (associated(task%global_calculator)) then
+          temp_res = temp_res + task%global_calculator(task, system, k, error)
+        endif
 
-            !_OMPTGT_(ATOMIC UPDATE)
-            progress = progress + 1
+        if (error) then
+          if (rank == 0) write (unit=stderr, fmt="(a, 3e18.8e3)") "Error when sampling k-point", k
+          if (rank == 0) write (unit=stderr, fmt="(a)") "Stopping..."
+          stop
+        endif
 
-            if (modulo(progress, report_step) == report_step/2) then !Update progress.
-              write (unit=stdout, fmt="(a, i12, a, i12, a)") &
-              &"          Progress: ", progress, "/", product(task%samples), &
-              &" kpts sampled."
-            endif
-
-          enddo
-        enddo
       enddo
       !_OMPTGT_(END DO)
       !_OMPTGT_(END PARALLEL)
-      progress = 0
 
-      end_time = omp_get_wtime() !End timer.
+      call MPI_ALLREDUCE(temp_res, res, size(temp_res), MPI_COMPLEX16, MPI_SUM, MPI_COMM_WORLD, ierror)
+      task%result = res/product(task%samples)
 
-      write (unit=stdout, fmt="(a)") "          Integral done."
-      write (unit=stdout, fmt="(a, f15.3, a)") "          Total execution time: ", end_time - start_time, " s."
+      if (rank == 0) write (unit=stdout, fmt="(a)") "          Integral done."
 
-      task%result = temp_res/product(task%samples)
+      deallocate (temp_res, res)
+      deallocate (sampling_info%integer_indices, counts, displs)
 
-      deallocate (temp_res)
-
-      write (unit=stdout, fmt="(a)") ""
+      if (rank == 0) write (unit=stdout, fmt="(a)") ""
     endif
+
+    end_time = MPI_WTIME() !End timer.
+    if (rank == 0) write (unit=stdout, fmt="(a, f15.3, a)") "          Total execution time: ", end_time - start_time, " s."
 
   end subroutine SsTC_sample_and_integrate_BZ_integral_task
 
@@ -350,7 +356,7 @@ contains
     integer            :: i_mem, r_mem, count
     integer            :: printunit
 
-    write (unit=stdout, fmt="(a)") "          Printing BZ integral task: "&
+    if (rank == 0) write (unit=stdout, fmt="(a)") "          Printing BZ integral task: "&
     &//trim(task%name)//" for the system "//trim(system%name)//"."
 
     if (associated(task%local_calculator)) then
@@ -365,9 +371,10 @@ contains
         enddo
         filename = trim(filename)//'.dat'
 
-        open (newunit=printunit, action="write", file=filename)
+        if (rank == 0) open (newunit=printunit, action="write", file=filename)
 
-        write (unit=printunit, fmt="(2e18.8e3)") real(task%result(i_mem, 1), dp), aimag(task%result(i_mem, 1))
+        if (rank == 0) write (unit=printunit, fmt="(2e18.8e3)") &
+        &real(task%result(i_mem, 1), dp), aimag(task%result(i_mem, 1))
 
         close (unit=printunit)
 
@@ -388,13 +395,14 @@ contains
         enddo
         filename = trim(filename)//'.dat'
 
-        open (newunit=printunit, action="write", file=filename)
+        if (rank == 0) open (newunit=printunit, action="write", file=filename)
 
         do r_mem = 1, product(task%continuous_indices) !For each continuous index.
 
           r_arr = SsTC_continuous_memory_element_to_array_element(task, r_mem) !Pass to array layout.
 
-          write (unit=printunit, fmt=fmtf) (task%ext_var_data(count)%data(r_arr(count)), count=1, size(task%continuous_indices)), &
+          if (rank == 0) write (unit=printunit, fmt=fmtf) &
+            (task%ext_var_data(count)%data(r_arr(count)), count=1, size(task%continuous_indices)), &
             real(task%result(i_mem, r_mem), dp), aimag(task%result(i_mem, r_mem))
 
         enddo
@@ -405,8 +413,8 @@ contains
 
     endif
 
-    write (unit=stdout, fmt="(a)") "          Printing done."
-    write (unit=stdout, fmt="(a)") ""
+    if (rank == 0) write (unit=stdout, fmt="(a)") "          Printing done."
+    if (rank == 0) write (unit=stdout, fmt="(a)") ""
 
   end subroutine SsTC_print_BZ_integral_task
 
