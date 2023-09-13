@@ -1,7 +1,11 @@
 #include "cond_comp.h"
 module SsTC_local_k_quantities
 
+  USE OMP_LIB
+  USE MPI_F08
+
   use SsTC_utility
+  use SsTC_mpi_comms
   use SsTC_data_structures
 
   implicit none
@@ -237,7 +241,7 @@ contains
             call SsTC_utility_diagonalize(v(n:n + deg(n) - 1, n:n + deg(n) - 1, i), &
                                           deg(n), degen_vels(n:n + deg(n) - 1), dummy_rot, error)
             if (error) then
-              write (unit=stderr, fmt="(a)") "Error in function velocities when computing&
+              write (unit=stderr, fmt="(a, i5, a)") "Rank", rank, ": Error in function velocities when computing&
               & the eigenvalues of the degenerate subspace."
               return
             endif
@@ -317,7 +321,7 @@ contains
             call SsTC_utility_diagonalize(mu(n:n + deg(n) - 1, n:n + deg(n) - 1, i, j), &
                                           deg(n), degen_mass(n:n + deg(n) - 1), dummy_rot, error)
             if (error) then
-              write (unit=stderr, fmt="(a)") "Error in function inverse_effective_mass&
+              write (unit=stderr, fmt="(a, i5, a)") "Rank", rank, ": Error in function inverse_effective_mass&
               & when computing the eigenvalues of the degenerate subspace."
               return
             endif

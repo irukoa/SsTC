@@ -37,14 +37,14 @@ kpath.o: $(SRC)/kpath.F90 utility.o  comms.o data_structures.o
 kslice.o: $(SRC)/kslice.F90 utility.o comms.o data_structures.o
 				  $(F90) $(F90FLAGS) -c $(SRC)/kslice.F90 -o "$(OBJ)/kslice.o"
 
-sampler.o: $(SRC)/sampler.F90 utility.o  comms.o extrapolation_integration.o data_structures.o
+sampler.o: $(SRC)/sampler.F90 utility.o comms.o extrapolation_integration.o data_structures.o
 				  $(F90) $(F90FLAGS) -c $(SRC)/sampler.F90 -o "$(OBJ)/sampler.o"
 
-integrator.o : $(SRC)/integrator.F90 utility.o  comms.o extrapolation_integration.o data_structures.o
+integrator.o : $(SRC)/integrator.F90 utility.o comms.o extrapolation_integration.o data_structures.o
 							 $(F90) $(F90FLAGS) -c $(SRC)/integrator.F90 -o "$(OBJ)/integrator.o"
 
 
-local_k_quantities.o: $(SRC)/local_k_quantities.F90 utility.o data_structures.o
+local_k_quantities.o: $(SRC)/local_k_quantities.F90 utility.o comms.o data_structures.o
 											$(F90) $(F90FLAGS) -c $(SRC)/local_k_quantities.F90 -o "$(OBJ)/local_k_quantities.o"
 
 
