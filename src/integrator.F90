@@ -376,7 +376,7 @@ contains
         if (rank == 0) write (unit=printunit, fmt="(2e18.8e3)") &
         &real(task%result(i_mem, 1), dp), aimag(task%result(i_mem, 1))
 
-        close (unit=printunit)
+        if (rank == 0) close (unit=printunit)
 
       enddo
 
@@ -407,7 +407,7 @@ contains
 
         enddo
 
-        close (unit=printunit)
+        if (rank == 0) close (unit=printunit)
 
       enddo
 

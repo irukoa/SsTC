@@ -20,7 +20,7 @@ module SsTC_data_structures
     complex(kind=dp), allocatable :: real_space_position_elements(:, :, :, :) !Position operator matrix elements (1st and 2nd indexes), cartesian coordinate (3rd index) and memory layout id of the R-point (4th index) in A.
     real(kind=dp)                 :: e_fermi = 0.0_dp                         !Fermi energy.
     real(kind=dp)                 :: deg_thr = 1.0E-4_dp                      !Degeneracy threshold in eV.
-    real(kind=dp)                 :: deg_offset = 0.04_dp                     !Offset for regularization in case of deeneracies in eV.
+    real(kind=dp)                 :: deg_offset = 0.04_dp                     !Offset for regularization in case of degeneracies, in eV.
   end type SsTC_sys
 
   type SsTC_external_vars
@@ -31,15 +31,15 @@ module SsTC_data_structures
     character(len=120)                                :: name
     integer, allocatable                              :: integer_indices(:)               !Each entry contains the range of each of the integer indices.
     complex(kind=dp), allocatable                     :: k_data(:)                        !Data local for each k with integer index in memory array,
-    procedure(SsTC_local_calculator), pointer, nopass :: local_calculator                 !Pointer to the local calculator.
+    procedure(SsTC_local_calculator), pointer, nopass :: local_calculator => null()       !Pointer to the local calculator.
     integer                                           :: particular_integer_component = 0 !Specification of some integer component.
   end type SsTC_local_k_data
 
   type, extends(SsTC_local_k_data) :: SsTC_global_k_data
-    integer, allocatable                               :: continuous_indices(:) !Each entry contains the range of each continuous indices.
-    type(SsTC_external_vars), allocatable              :: ext_var_data(:)       !External variable data.
-    procedure(SsTC_global_calculator), pointer, nopass :: global_calculator     !Pointer to the global calculator.
-    integer, allocatable                               :: iterables(:, :)       !Iterable dictionary.
+    integer, allocatable                               :: continuous_indices(:)           !Each entry contains the range of each continuous indices.
+    type(SsTC_external_vars), allocatable              :: ext_var_data(:)                 !External variable data.
+    procedure(SsTC_global_calculator), pointer, nopass :: global_calculator => null()     !Pointer to the global calculator.
+    integer, allocatable                               :: iterables(:, :)                 !Iterable dictionary.
   end type SsTC_global_k_data
 
   !Interfaces for the generic functions returning k dependent quantities.
