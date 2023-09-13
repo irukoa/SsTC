@@ -2,20 +2,22 @@
 module SsTC_kslice
 
   USE OMP_LIB
+  USE MPI_F08
 
   use SsTC_utility
+  use SsTC_mpi_comms
   use SsTC_data_structures
+  use extrapolation_integration
 
   implicit none
 
   private
 
   type, extends(SsTC_global_k_data) :: SsTC_kslice_task
-    !Default: sample k_z = 0 slice in a 100x100 samples.
+    !Default: sample k_z = 0 slice in a 100x100 mesh.
     real(kind=dp) :: corner(3) = (/-0.5_dp, -0.5_dp, 0.0_dp/), &
                      vector(2, 3) = reshape((/1.0_dp, 0.0_dp, 0.0_dp, 1.0_dp, 0.0_dp, 0.0_dp/), (/2, 3/))
     integer       :: samples(2) = (/100, 100/)
-
     !Integer index, continuous index and kpt index 1 and 2 respectively.
     complex(kind=dp), allocatable :: kslice_data(:, :, :, :)
   end type SsTC_kslice_task
@@ -34,6 +36,8 @@ contains
                                           N_int_ind, int_ind_range, &
                                           N_ext_vars, ext_vars_start, ext_vars_end, ext_vars_steps, &
                                           part_int_comp)
+
+    implicit none
 
     character(len=*) :: name
 
@@ -64,7 +68,7 @@ contains
     !Set name.
     task%name = name
 
-    write (unit=stdout, fmt="(a)") "          Creating kpath task "//trim(task%name)//"."
+    if (rank == 0) write (unit=stdout, fmt="(a)") "          Creating kpath task "//trim(task%name)//"."
 
     !Set kslice info.
     if (present(corner)) task%corner = corner
@@ -77,10 +81,11 @@ contains
       !get SVD decomp,
       call SsTC_utility_SVD(lindep, sigma, error)
       if (error) then
-        write (unit=stderr, fmt="(a)") "Error in function kslice_task_constructor when checking linear dependence of vectors."
-        write (unit=stdout, fmt="(a)") "          Error in function kslice_task_constructor&
+        write (unit=stderr, fmt="(a, i5, a)") "          Rank ", rank, &
+          ": Error in function kslice_task_constructor when checking linear dependence of vectors."
+        write (unit=stderr, fmt="(a, i5, a)") "          Rank ", rank, ": Error in function kslice_task_constructor&
         & when checking linear dependence of vectors."
-        write (unit=stdout, fmt="(a)") "Supposing linearly dependent input vectors."
+        if (rank == 0) write (unit=stdout, fmt="(a)") "Supposing linearly dependent input vectors."
         dep = .True.
         goto 2
       endif
@@ -92,8 +97,8 @@ contains
 
 2     continue
       if (dep) then
-        write (unit=stdout, fmt="(a)") "          Selected vectors are not linearly independent."
-        write (unit=stdout, fmt="(a)") "          Keeping default vectors (1, 0, 0), (0, 1, 0)."
+        if (rank == 0) write (unit=stdout, fmt="(a)") "          Selected vectors are not linearly independent."
+        if (rank == 0) write (unit=stdout, fmt="(a)") "          Keeping default vectors (1, 0, 0), (0, 1, 0)."
       else
         task%vector(1, :) = vector_a
         task%vector(2, :) = vector_b
@@ -150,94 +155,123 @@ contains
     if (present(part_int_comp)) task%particular_integer_component = &
       SsTC_integer_array_element_to_memory_element(task, part_int_comp)
 
-    write (unit=stdout, fmt="(a)") "          Done."
-    write (unit=stdout, fmt="(a)") ""
+    if (rank == 0) write (unit=stdout, fmt="(a)") "          Done."
+    if (rank == 0) write (unit=stdout, fmt="(a)") ""
 
   end subroutine SsTC_kslice_task_constructor
 
   subroutine SsTC_sample_kslice_task(task, system)
 
+    implicit none
+
     class(SsTC_kslice_task), intent(inout) :: task
     type(SsTC_sys), intent(in)             :: system
 
+    complex(kind=dp), allocatable :: data_k(:, :, :), &
+                                     local_data_k(:, :, :)
+
     real(kind=dp) :: k(3)
 
-    integer :: ik1, ik2
+    integer :: ik, k_ind(2), &
+               ik1, ik2, &
+               i, r, info
 
-    integer :: TID, report_step
-    integer :: progress = 0
+    integer :: TID
     real(kind=dp) :: start_time, end_time
 
     logical :: error = .false.
 
-    start_time = omp_get_wtime() !Start timer.
+    type(SsTC_local_k_data) :: sampling_info
 
-    report_step = nint(real(product(task%samples)/100, dp)) + 1
+    integer, allocatable :: counts(:), displs(:)
 
-    write (unit=stdout, fmt="(a)") "          Starting BZ sampling subroutine kslice."
-    write (unit=stdout, fmt="(a)") "          Sampling task: "//trim(task%name)//&
+    start_time = MPI_WTIME() !Start timer.
+
+    allocate (sampling_info%integer_indices(2))
+    sampling_info%integer_indices = task%samples
+
+    allocate (counts(0:nProcs - 1), displs(0:nProcs - 1))
+    call get_MPI_task_partition(product(task%samples), nProcs, counts, displs)
+
+    if (rank == 0) write (unit=stdout, fmt="(a)") "          Starting BZ sampling subroutine kslice."
+    if (rank == 0) write (unit=stdout, fmt="(a)") "          Sampling task: "//trim(task%name)//&
     &" in the BZ for the system "//trim(system%name)//"."
-    write (unit=stdout, fmt="(a)") "          The required memory for the sampling process is approximately,"
-    write (unit=stdout, fmt="(a, f15.3, a)") "          ", 16.0_dp*real(product(task%samples)*product(task%integer_indices)*&
-    & product(task%continuous_indices), dp)/1024.0_dp**2, "MB."
-    write (unit=stdout, fmt="(a)") "          Some computers limit the maximum memory an array can allocate."
-    write (unit=stdout, fmt="(a)") "          If this is your case and SIGSEGV triggers &
-    &try using the next command before execution:"
-    write (unit=stdout, fmt="(a)") "          ulimit -s unlimited"
+    if (rank == 0) write (unit=stdout, fmt="(a)") "          The required memory for the sampling process is approximately,"
+    if (rank == 0) write (unit=stdout, fmt="(a, f15.3, a)") "          ", &
+    16.0_dp*real(product(task%samples)*product(task%integer_indices)*&
+    & product(task%continuous_indices), dp)/1024.0_dp**2, "MB in each MPI process."
 
-    !_OMPTGT_(PARALLEL DEFAULT(SHARED) PRIVATE(k, TID))
+    allocate (local_data_k(displs(rank) + 1:displs(rank) + counts(rank), &
+                           product(task%integer_indices), product(task%continuous_indices)), &
+              data_k(product(task%samples), &
+                     product(task%integer_indices), product(task%continuous_indices)))
+
+    !_OMPTGT_(PARALLEL DEFAULT(SHARED) PRIVATE(ik, k_ind, ik1, ik2, k, TID))
 
     TID = OMP_GET_THREAD_NUM()
-    IF (TID .EQ. 0) THEN
-      write (unit=stdout, fmt="(a, i5, a)") "         Running on ", OMP_GET_NUM_THREADS(), " threads."
+    IF ((TID .EQ. 0) .and. (rank .EQ. 0)) THEN
+      write (unit=stdout, fmt="(a, i5, a, i5, a)") &
+      &"         Running on ", nProcs, " process(es) each using ", OMP_GET_NUM_THREADS(), " threads."
     ENDIF
 
-    !_OMPTGT_(DO COLLAPSE(2))
-    do ik1 = 1, task%samples(1)
-      do ik2 = 1, task%samples(2)
+    !_OMPTGT_(DO)
+    do ik = displs(rank) + 1, displs(rank) + counts(rank)
 
-        k = task%corner + &
-            task%vector(1, :)*real(ik1 - 1, dp)/real(task%samples(1) - 1, dp) + &
-            task%vector(2, :)*real(ik2 - 1, dp)/real(task%samples(2) - 1, dp)
+      k_ind = SsTC_integer_memory_element_to_array_element(sampling_info, ik)
+      ik1 = k_ind(1)
+      ik2 = k_ind(2)
 
-        !Gather data.
-        if (associated(task%local_calculator)) then
-          task%kslice_data(:, 1, ik1, ik2) = task%local_calculator(task, system, k, error)
-        elseif (associated(task%global_calculator)) then
-          task%kslice_data(:, :, ik1, ik2) = task%global_calculator(task, system, k, error)
-        endif
+      k = task%corner + &
+          task%vector(1, :)*real(ik1 - 1, dp)/real(task%samples(1) - 1, dp) + &
+          task%vector(2, :)*real(ik2 - 1, dp)/real(task%samples(2) - 1, dp)
 
-        if (error) then
-          write (unit=stderr, fmt="(a, 3e18.8e3)") "Error when sampling k-point", k
-          write (unit=stderr, fmt="(a)") "Stopping..."
-          stop
-        endif
+      !Gather data.
+      if (associated(task%local_calculator)) then
+        local_data_k(ik, :, 1) = task%local_calculator(task, system, k, error)
+      elseif (associated(task%global_calculator)) then
+        local_data_k(ik, :, :) = task%global_calculator(task, system, k, error)
+      endif
 
-        !_OMPTGT_(ATOMIC UPDATE)
-        progress = progress + 1
+      if (error) then
+        write (unit=stderr, fmt="(a, i5, a, 3e18.8e3)") "Rank ", rank, ": Error when sampling k-point", k
+        write (unit=stderr, fmt="(a)") "Stopping..."
+        stop
+      endif
 
-        if (modulo(progress, report_step) == report_step/2) then !Update progress.
-          write (unit=stdout, fmt="(a, i12, a, i12, a)") "          Progress: ",&
-          & progress, "/", product(task%samples), " kpts sampled."
-        endif
-
-      enddo
     enddo
 
     !_OMPTGT_(END DO)
     !_OMPTGT_(END PARALLEL)
-    progress = 0
 
-    end_time = omp_get_wtime() !End timer.
+    do i = 1, product(task%integer_indices) !For each integer index.
+      do r = 1, product(task%continuous_indices) !For each continuous index.
+        call MPI_ALLGATHERV(local_data_k(:, i, r), size(local_data_k(:, i, r)), MPI_COMPLEX16, data_k(:, i, r), &
+                            counts, &
+                            displs, &
+                            MPI_COMPLEX16, MPI_COMM_WORLD, ierror)
+      enddo
+    enddo
 
-    write (unit=stdout, fmt="(a)") "          Sampling done."
-    write (unit=stdout, fmt="(a, f15.3, a)") "          Total execution time: ", end_time - start_time, " s."
-    write (unit=stdout, fmt="(a)") ""
+    do i = 1, product(task%integer_indices) !For each integer index.
+      do r = 1, product(task%continuous_indices) !For each continuous index.
+        call expand_array(data_k(:, i, r), task%kslice_data(i, r, :, :), info)
+      enddo
+    enddo
+
+    end_time = MPI_WTIME() !End timer.
+
+    deallocate (local_data_k, data_k)
+
+    if (rank == 0) write (unit=stdout, fmt="(a)") "          Sampling done."
+    if (rank == 0) write (unit=stdout, fmt="(a, f15.3, a)") "          Total execution time: ", end_time - start_time, " s."
+    if (rank == 0) write (unit=stdout, fmt="(a)") ""
 
   end subroutine SsTC_sample_kslice_task
 
   subroutine SsTC_print_kslice(task, system)
     !Subroutine to format and output files related to the result of the task "task".
+    implicit none
+
     class(SsTC_kslice_task), intent(in) :: task
     type(SsTC_sys), intent(in)          :: system
 
@@ -251,7 +285,9 @@ contains
                           ik1, ik2
     integer            :: printunit
 
-    write (unit=stdout, fmt="(a)") "          Printing kslice task: "//trim(task%name)//" for the system "//trim(system%name)//"."
+    if (rank == 0) write (unit=stdout, fmt="(a)") &
+      "          Printing kslice task: "//trim(task%name)// &
+      " for the system "//trim(system%name)//"."
 
     if (associated(task%local_calculator)) then
 
@@ -265,7 +301,7 @@ contains
         enddo
         filename = trim(filename)//'.dat'
 
-        open (newunit=printunit, action="write", file=filename)
+        if (rank == 0) open (newunit=printunit, action="write", file=filename)
 
         do ik1 = 1, task%samples(1)
           do ik2 = 1, task%samples(2)
@@ -274,13 +310,13 @@ contains
                 task%vector(1, :)*real(ik1 - 1, dp)/real(task%samples(1) - 1, dp) + &
                 task%vector(2, :)*real(ik2 - 1, dp)/real(task%samples(2) - 1, dp)
 
-            write (unit=printunit, fmt="(5e18.8e3)") k, real(task%kslice_data(i_mem, 1, ik1, ik2), dp), &
+            if (rank == 0) write (unit=printunit, fmt="(5e18.8e3)") k, real(task%kslice_data(i_mem, 1, ik1, ik2), dp), &
               aimag(task%kslice_data(i_mem, 1, ik1, ik2))
 
           enddo
         enddo
 
-        close (unit=printunit)
+        if (rank == 0) close (unit=printunit)
 
       enddo
     elseif (associated(task%global_calculator)) then
@@ -298,7 +334,7 @@ contains
         enddo
         filename = trim(filename)//'.dat'
 
-        open (newunit=printunit, action="write", file=filename)
+        if (rank == 0) open (newunit=printunit, action="write", file=filename)
 
         do r_mem = 1, product(task%continuous_indices) !For each continuous index.
 
@@ -311,7 +347,7 @@ contains
                   task%vector(1, :)*real(ik1 - 1, dp)/real(task%samples(1) - 1, dp) + &
                   task%vector(2, :)*real(ik2 - 1, dp)/real(task%samples(2) - 1, dp)
 
-              write (unit=printunit, fmt=fmtf) k, &
+              if (rank == 0) write (unit=printunit, fmt=fmtf) k, &
                 (task%ext_var_data(count)%data(r_arr(count)), count=1, size(task%continuous_indices)), &
                 real(task%kslice_data(i_mem, r_mem, ik1, ik2), dp), aimag(task%kslice_data(i_mem, r_mem, ik1, ik2))
 
@@ -320,13 +356,13 @@ contains
 
         enddo
 
-        close (unit=printunit)
+        if (rank == 0) close (unit=printunit)
 
       enddo
     endif
 
-    write (unit=stdout, fmt="(a)") "          Printing done."
-    write (unit=stdout, fmt="(a)") ""
+    if (rank == 0) write (unit=stdout, fmt="(a)") "          Printing done."
+    if (rank == 0) write (unit=stdout, fmt="(a)") ""
 
   end subroutine SsTC_print_kslice
 
