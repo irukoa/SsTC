@@ -31,16 +31,16 @@ data_structures.o: $(SRC)/data_structures.F90 utility.o comms.o
 									 $(F90) $(F90FLAGS) -c $(SRC)/data_structures.F90 -o "$(OBJ)/data_structures.o"
 
 
-kpath.o: $(SRC)/kpath.F90 utility.o data_structures.o comms.o
+kpath.o: $(SRC)/kpath.F90 utility.o  comms.o data_structures.o
 				 $(F90) $(F90FLAGS) -c $(SRC)/kpath.F90 -o "$(OBJ)/kpath.o"
 
-kslice.o: $(SRC)/kslice.F90 utility.o data_structures.o comms.o
+kslice.o: $(SRC)/kslice.F90 utility.o comms.o data_structures.o
 				  $(F90) $(F90FLAGS) -c $(SRC)/kslice.F90 -o "$(OBJ)/kslice.o"
 
-sampler.o: $(SRC)/sampler.F90 utility.o data_structures.o comms.o
+sampler.o: $(SRC)/sampler.F90 utility.o  comms.o extrapolation_integration.o data_structures.o
 				  $(F90) $(F90FLAGS) -c $(SRC)/sampler.F90 -o "$(OBJ)/sampler.o"
 
-integrator.o : $(SRC)/integrator.F90 utility.o extrapolation_integration.o data_structures.o comms.o
+integrator.o : $(SRC)/integrator.F90 utility.o  comms.o extrapolation_integration.o data_structures.o
 							 $(F90) $(F90FLAGS) -c $(SRC)/integrator.F90 -o "$(OBJ)/integrator.o"
 
 
