@@ -132,7 +132,7 @@ contains
     call MPI_FINALIZED(is_mpi_finalized, ierror)
 
     if (.not. ((is_mpi_initialized) .and. ((.not. is_mpi_finalized)))) then
-      write (unit=stdout, fmt="(a)") "         MPI has not bee initialized or has been finalized. Stopping..."
+      write (unit=stdout, fmt="(a)") "         SsTC: MPI has not bee initialized or has been finalized. Stopping..."
       stop
     endif
 

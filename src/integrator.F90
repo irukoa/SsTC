@@ -226,8 +226,8 @@ contains
         endif
 
         if (error) then
-          if (rank == 0) write (unit=stderr, fmt="(a, 3e18.8e3)") "Error when sampling k-point", k
-          if (rank == 0) write (unit=stderr, fmt="(a)") "Stopping..."
+          write (unit=stderr, fmt="(a, i5, a, 3e18.8e3)") "Rank ", rank, ": Error when sampling k-point", k
+          write (unit=stderr, fmt="(a)") "Stopping..."
           stop
         endif
 
@@ -320,8 +320,8 @@ contains
         endif
 
         if (error) then
-          if (rank == 0) write (unit=stderr, fmt="(a, 3e18.8e3)") "Error when sampling k-point", k
-          if (rank == 0) write (unit=stderr, fmt="(a)") "Stopping..."
+          write (unit=stderr, fmt="(a, i5, a, 3e18.8e3)") "Rank ", rank, ": Error when sampling k-point", k
+          write (unit=stderr, fmt="(a)") "Stopping..."
           stop
         endif
 
