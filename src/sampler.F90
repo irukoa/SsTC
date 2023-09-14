@@ -2,9 +2,12 @@
 module SsTC_sampler
 
   USE OMP_LIB
+  USE MPI_F08
 
   use SsTC_utility
+  use SsTC_mpi_comms
   use SsTC_data_structures
+  use extrapolation_integration
 
   implicit none
 
@@ -31,6 +34,8 @@ contains
                                             N_ext_vars, ext_vars_start, ext_vars_end, ext_vars_steps, &
                                             part_int_comp)
 
+    implicit none
+
     character(len=*) :: name
 
     procedure(SsTC_local_calculator), optional  :: l_calculator
@@ -54,7 +59,7 @@ contains
     !Set name.
     task%name = name
 
-    write (unit=stdout, fmt="(a)") "          Creating BZ sampling task "//trim(task%name)//"."
+    if (rank == 0) write (unit=stdout, fmt="(a)") "          Creating BZ sampling task "//trim(task%name)//"."
 
     !Set integer index data.
     if (((N_int_ind) .ge. 1) .and. (present(int_ind_range))) then
@@ -104,106 +109,137 @@ contains
     if (present(part_int_comp)) task%particular_integer_component = &
       SsTC_integer_array_element_to_memory_element(task, part_int_comp)
 
-    write (unit=stdout, fmt="(a)") "          Done."
-    write (unit=stdout, fmt="(a)") ""
+    if (rank == 0) write (unit=stdout, fmt="(a)") "          Done."
+    if (rank == 0) write (unit=stdout, fmt="(a)") ""
 
   end subroutine SsTC_sampling_task_constructor
 
   subroutine SsTC_sample_sampling_task(task, system)
 
+    implicit none
+
     class(SsTC_sampling_task), intent(inout) :: task
     type(SsTC_sys), intent(in)               :: system
 
+    complex(kind=dp), allocatable :: data_k(:, :, :), &
+                                     local_data_k(:, :, :)
+
     real(kind=dp) :: k(3)
 
-    integer :: ik1, ik2, ik3
+    integer :: ik, k_ind(3), &
+               ik1, ik2, ik3, &
+               i, r, info
 
-    integer :: TID, report_step
-    integer :: progress = 0
+    integer :: TID
     real(kind=dp) :: start_time, end_time
 
     logical :: error = .false.
 
-    report_step = nint(real(product(task%samples)/100, dp)) + 1
+    type(SsTC_local_k_data) :: sampling_info
 
-    start_time = omp_get_wtime() !Start timer.
+    integer, allocatable :: counts(:), displs(:)
 
-    write (unit=stdout, fmt="(a)") "          Starting BZ sampling subroutine."
-    write (unit=stdout, fmt="(a)") "          Sampling task: "//trim(task%name)//&
-    &" in the BZ for the system "//trim(system%name)//"."
-    write (unit=stdout, fmt="(a)") "          The required memory for the sampling process is approximately,"
-    write (unit=stdout, fmt="(a, f15.3, a)") "          ", 16.0_dp*real(product(task%samples)*product(task%integer_indices)*&
-    & product(task%continuous_indices), dp)/1024.0_dp**2, "MB."
-    write (unit=stdout, fmt="(a)") "          Some computers limit the maximum memory an array can allocate."
-    write (unit=stdout, fmt="(a)") "          If this is your case and SIGSEGV triggers &
-    &try using the next command before execution:"
-    write (unit=stdout, fmt="(a)") "          ulimit -s unlimited"
+    start_time = MPI_WTIME() !Start timer.
 
-    !_OMPTGT_(PARALLEL DEFAULT(SHARED) PRIVATE(k, TID))
+    allocate (sampling_info%integer_indices(3))
+    sampling_info%integer_indices = task%samples
+
+    allocate (counts(0:nProcs - 1), displs(0:nProcs - 1))
+    call get_MPI_task_partition(product(task%samples), nProcs, counts, displs)
+
+    if (rank == 0) write (unit=stdout, fmt="(a)") "          Starting BZ sampling subroutine."
+    if (rank == 0) write (unit=stdout, fmt="(a, a, a, a, a)") "          Sampling task: "//trim(task%name)// &
+      " in the BZ for the system "//trim(system%name)//"."
+    if (rank == 0) write (unit=stdout, fmt="(a)") &
+      "          The required memory for the sampling process is approximately,"
+    if (rank == 0) write (unit=stdout, fmt="(a, f15.3, a)") "          ", &
+      16.0_dp*real(product(task%samples)*product(task%integer_indices)* &
+                   product(task%continuous_indices), dp)/1024.0_dp**2, &
+      "MB in each MPI process."
+
+    allocate (local_data_k(displs(rank) + 1:displs(rank) + counts(rank), &
+                           product(task%integer_indices), product(task%continuous_indices)), &
+              data_k(product(task%samples), &
+                     product(task%integer_indices), product(task%continuous_indices)))
+
+    !_OMPTGT_(PARALLEL DEFAULT(SHARED) PRIVATE(ik, k_ind, ik1, ik2, ik3, k, TID))
 
     TID = OMP_GET_THREAD_NUM()
-    IF (TID .EQ. 0) THEN
-      write (unit=stdout, fmt="(a, i5, a)") "Running on ", OMP_GET_NUM_THREADS(), " threads."
+    IF ((TID .EQ. 0) .and. (rank .EQ. 0)) THEN
+      write (unit=stdout, fmt="(a, i5, a, i5, a)") &
+      &"         Running on ", nProcs, " process(es) each using ", OMP_GET_NUM_THREADS(), " threads."
     ENDIF
 
-    !_OMPTGT_(DO COLLAPSE(3))
-    do ik1 = 1, task%samples(1)
-      do ik2 = 1, task%samples(2)
-        do ik3 = 1, task%samples(3)
+    !_OMPTGT_(DO)
+    do ik = displs(rank) + 1, displs(rank) + counts(rank)
 
-          if (task%samples(1) == 1) then
-            k(1) = 0.0_dp
-          else
-            k(1) = -0.5_dp + real(ik1 - 1, dp)/real(task%samples(1) - 1, dp)
-          endif
-          if (task%samples(2) == 1) then
-            k(2) = 0.0_dp
-          else
-            k(2) = -0.5_dp + real(ik2 - 1, dp)/real(task%samples(2) - 1, dp)
-          endif
-          if (task%samples(3) == 1) then
-            k(3) = 0.0_dp
-          else
-            k(3) = -0.5_dp + real(ik3 - 1, dp)/real(task%samples(3) - 1, dp)
-          endif
+      k_ind = SsTC_integer_memory_element_to_array_element(sampling_info, ik)
+      ik1 = k_ind(1)
+      ik2 = k_ind(2)
+      ik3 = k_ind(3)
 
-          !Gather data.
-          if (associated(task%local_calculator)) then
-            task%BZ_data(:, 1, ik1, ik2, ik3) = task%local_calculator(task, system, k, error)
-          elseif (associated(task%global_calculator)) then
-            task%BZ_data(:, :, ik1, ik2, ik3) = task%global_calculator(task, system, k, error)
-          endif
+      if (task%samples(1) == 1) then
+        k(1) = 0.0_dp
+      else
+        k(1) = -0.5_dp + real(ik1 - 1, dp)/real(task%samples(1) - 1, dp)
+      endif
+      if (task%samples(2) == 1) then
+        k(2) = 0.0_dp
+      else
+        k(2) = -0.5_dp + real(ik2 - 1, dp)/real(task%samples(2) - 1, dp)
+      endif
+      if (task%samples(3) == 1) then
+        k(3) = 0.0_dp
+      else
+        k(3) = -0.5_dp + real(ik3 - 1, dp)/real(task%samples(3) - 1, dp)
+      endif
 
-          if (error) then
-            write (unit=stderr, fmt="(a, 3e18.8e3)") "Error when sampling k-point", k
-            write (unit=stderr, fmt="(a)") "Stopping..."
-            stop
-          endif
+      !Gather data.
+      if (associated(task%local_calculator)) then
+        local_data_k(ik, :, 1) = task%local_calculator(task, system, k, error)
+      elseif (associated(task%global_calculator)) then
+        local_data_k(ik, :, :) = task%global_calculator(task, system, k, error)
+      endif
 
-          !_OMPTGT_(ATOMIC UPDATE)
-          progress = progress + 1
+      if (error) then
+        write (unit=stderr, fmt="(a, i5, a, 3e18.8e3)") "Rank ", rank, ": Error when sampling k-point", k
+        write (unit=stderr, fmt="(a)") "Stopping..."
+        stop
+      endif
 
-          if (modulo(progress, report_step) == report_step/2) then !Update progress.
-            write (unit=stdout, fmt="(a, i12, a, i12, a)") "          Progress: ",&
-            & progress, "/", product(task%samples), " kpts sampled."
-          endif
-
-        enddo
-      enddo
     enddo
     !_OMPTGT_(END DO)
     !_OMPTGT_(END PARALLEL)
-    progress = 0
 
-    end_time = omp_get_wtime() !End timer.
+    do i = 1, product(task%integer_indices) !For each integer index.
+      do r = 1, product(task%continuous_indices) !For each continuous index.
+        call MPI_ALLGATHERV(local_data_k(:, i, r), size(local_data_k(:, i, r)), MPI_COMPLEX16, data_k(:, i, r), &
+                            counts, &
+                            displs, &
+                            MPI_COMPLEX16, MPI_COMM_WORLD, ierror)
+      enddo
+    enddo
 
-    write (unit=stdout, fmt="(a)") "          Sampling done."
-    write (unit=stdout, fmt="(a, f15.3, a)") "          Total execution time: ", end_time - start_time, " s."
-    write (unit=stdout, fmt="(a)") ""
+    do i = 1, product(task%integer_indices) !For each integer index.
+      do r = 1, product(task%continuous_indices) !For each continuous index.
+        call expand_array(data_k(:, i, r), task%BZ_data(i, r, :, :, :), info)
+      enddo
+    enddo
+
+    end_time = MPI_WTIME() !End timer.
+
+    deallocate (local_data_k, data_k)
+
+    if (rank == 0) write (unit=stdout, fmt="(a)") "          Sampling done."
+    if (rank == 0) write (unit=stdout, fmt="(a, f15.3, a)") "          Total execution time: ", end_time - start_time, " s."
+    if (rank == 0) write (unit=stdout, fmt="(a)") ""
 
   end subroutine SsTC_sample_sampling_task
 
   subroutine SsTC_print_sampling(task, system)
+
+    implicit none
+
     !Subroutine to format and output files related to the result of the task "task".
     class(SsTC_sampling_task), intent(in) :: task
     type(SsTC_sys), intent(in)            :: system
@@ -218,7 +254,8 @@ contains
                           ik1, ik2, ik3
     integer            :: printunit
 
-    write (unit=stdout, fmt="(a)") "          Printing sampling task: "//trim(task%name)//" for the system "//trim(system%name)//"."
+    if (rank == 0) write (unit=stdout, fmt="(a)") &
+      "          Printing sampling task: "//trim(task%name)//" for the system "//trim(system%name)//"."
 
     if (associated(task%local_calculator)) then
 
@@ -232,7 +269,7 @@ contains
         enddo
         filename = trim(filename)//'.dat'
 
-        open (newunit=printunit, action="write", file=filename)
+        if (rank == 0) open (newunit=printunit, action="write", file=filename)
 
         do ik1 = 1, task%samples(1)
           do ik2 = 1, task%samples(2)
@@ -254,14 +291,14 @@ contains
                 k(3) = -0.5_dp + real(ik3 - 1, dp)/real(task%samples(3) - 1, dp)
               endif
 
-              write (unit=printunit, fmt="(5e18.8e3)") k, real(task%BZ_data(i_mem, 1, ik1, ik2, ik3), dp), &
+              if (rank == 0) write (unit=printunit, fmt="(5e18.8e3)") k, real(task%BZ_data(i_mem, 1, ik1, ik2, ik3), dp), &
                 aimag(task%BZ_data(i_mem, 1, ik1, ik2, ik3))
 
             enddo
           enddo
         enddo
 
-        close (unit=printunit)
+        if (rank == 0) close (unit=printunit)
 
       enddo
 
@@ -280,7 +317,7 @@ contains
         enddo
         filename = trim(filename)//'.dat'
 
-        open (newunit=printunit, action="write", file=filename)
+        if (rank == 0) open (newunit=printunit, action="write", file=filename)
 
         do r_mem = 1, product(task%continuous_indices) !For each continuous index.
 
@@ -306,7 +343,7 @@ contains
                   k(3) = -0.5_dp + real(ik3 - 1, dp)/real(task%samples(3) - 1, dp)
                 endif
 
-                write (unit=printunit, fmt=fmtf) k, &
+                if (rank == 0) write (unit=printunit, fmt=fmtf) k, &
                   (task%ext_var_data(count)%data(r_arr(count)), count=1, size(task%continuous_indices)), &
                   real(task%BZ_data(i_mem, r_mem, ik1, ik2, ik3), dp), aimag(task%BZ_data(i_mem, r_mem, ik1, ik2, ik3))
 
@@ -316,14 +353,14 @@ contains
 
         enddo
 
-        close (unit=printunit)
+        if (rank == 0) close (unit=printunit)
 
       enddo
 
     endif
 
-    write (unit=stdout, fmt="(a)") "          Printing done."
-    write (unit=stdout, fmt="(a)") ""
+    if (rank == 0) write (unit=stdout, fmt="(a)") "          Printing done."
+    if (rank == 0) write (unit=stdout, fmt="(a)") ""
 
   end subroutine SsTC_print_sampling
 

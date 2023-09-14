@@ -2,8 +2,11 @@
 module SsTC
 
   USE OMP_LIB
+  USE MPI_F08
 
   use SsTC_utility
+
+  use SsTC_mpi_comms
 
   use extrapolation_integration, only: SsTC_integral_extrapolation => integral_extrapolation, &
     SsTC_shrink_array => shrink_array, &
@@ -117,43 +120,55 @@ contains
 
   subroutine SsTC_init(nThreads, nNested, exec_label)
 
+    implicit none
+
     integer, intent(in), optional :: nThreads
     integer, intent(in), optional :: nNested
     character(len=*), intent(in), optional :: exec_label
 
     integer :: selThreads
 
+    call MPI_INITIALIZED(is_mpi_initialized, ierror)
+    call MPI_FINALIZED(is_mpi_finalized, ierror)
+
+    if (.not. ((is_mpi_initialized) .and. ((.not. is_mpi_finalized)))) then
+      write (unit=stdout, fmt="(a)") "          SsTC: MPI has not bee initialized or has been finalized. Stopping..."
+      stop
+    endif
+
+    call MPI_COMM_SIZE(MPI_COMM_WORLD, nProcs, ierror)
+    call MPI_COMM_RANK(MPI_COMM_WORLD, rank, ierror)
+
     if (present(exec_label)) then
-      open (newunit=stdout, action="write", file=trim(exec_label//".out"))
-      open (newunit=stderr, action="write", file=trim(exec_label//".err"))
+      if (rank == 0) open (newunit=stdout, action="write", file=trim(exec_label//".out"))
+      if (rank == 0) open (newunit=stderr, action="write", file=trim(exec_label//".err"))
     else
-      open (newunit=stdout, action="write", file="SsTC_exec.out")
-      open (newunit=stderr, action="write", file="SsTC_exec.err")
+      if (rank == 0) open (newunit=stdout, action="write", file="SsTC_exec.out")
+      if (rank == 0) open (newunit=stderr, action="write", file="SsTC_exec.err")
     endif
 
     call date_and_time(values=timing)
 
-    write (unit=stdout, fmt="(a)") "            /$$$$$$            /$$$$$$$$  /$$$$$$  "
-    write (unit=stdout, fmt="(a)") "           /$$__  $$          |__  $$__/ /$$__  $$ "
-    write (unit=stdout, fmt="(a)") "          | $$  \__/  /$$$$$$$   | $$   | $$  \__/ "
-    write (unit=stdout, fmt="(a)") "          |  $$$$$$  /$$_____/   | $$   | $$       "
-    write (unit=stdout, fmt="(a)") "           \____  $$|  $$$$$$    | $$   | $$       "
-    write (unit=stdout, fmt="(a)") "           /$$  \ $$ \____  $$   | $$   | $$    $$ "
-    write (unit=stdout, fmt="(a)") "          |  $$$$$$/ /$$$$$$$/   | $$   |  $$$$$$/ "
-    write (unit=stdout, fmt="(a)") "           \______/ |_______/    |__/    \______/  "
+    if (rank == 0) write (unit=stdout, fmt="(a)") "            /$$$$$$            /$$$$$$$$  /$$$$$$  "
+    if (rank == 0) write (unit=stdout, fmt="(a)") "           /$$__  $$          |__  $$__/ /$$__  $$ "
+    if (rank == 0) write (unit=stdout, fmt="(a)") "          | $$  \__/  /$$$$$$$   | $$   | $$  \__/ "
+    if (rank == 0) write (unit=stdout, fmt="(a)") "          |  $$$$$$  /$$_____/   | $$   | $$       "
+    if (rank == 0) write (unit=stdout, fmt="(a)") "           \____  $$|  $$$$$$    | $$   | $$       "
+    if (rank == 0) write (unit=stdout, fmt="(a)") "           /$$  \ $$ \____  $$   | $$   | $$    $$ "
+    if (rank == 0) write (unit=stdout, fmt="(a)") "          |  $$$$$$/ /$$$$$$$/   | $$   |  $$$$$$/ "
+    if (rank == 0) write (unit=stdout, fmt="(a)") "           \______/ |_______/    |__/    \______/  "
 
-    write (unit=stdout, fmt="(a)") ""
-    if (using_OMP) then
-      write (unit=stdout, fmt="(a)") "         Using OpenMP for parallelization."
-    else
-      write (unit=stdout, fmt="(a)") "         Code running in serial."
-    endif
-    write (unit=stdout, fmt="(a)") ""
+    if (rank == 0) write (unit=stdout, fmt="(a)") ""
+    if (rank == 0) write (unit=stdout, fmt="(a, a, a)") "          Version: ", trim(_VERSION)//"."
+    if (rank == 0) write (unit=stdout, fmt="(a)") ""
 
-    write (unit=stdout, fmt="(a, i2, a, i2, a, i4, a, i2, a, i2, a, i2, a)") "          SsTC library initializing at ", &
-      &timing(2), "/", timing(3), "/", timing(1), &
-      &", ", timing(5), ":", timing(6), ":", timing(7), "."
-    write (unit=stdout, fmt="(a)") "          Initializing SsTC..."
+    if (rank == 0) write (unit=stdout, &
+                          fmt="(a, i2, a, i2, a, i4, a, i2, a, i2, a, i2, a)") &
+      "          SsTC library initializing at ", &
+      timing(2), "/", timing(3), "/", timing(1), &
+      ", ", timing(5), ":", timing(6), &
+      ":", timing(7), "."
+    if (rank == 0) write (unit=stdout, fmt="(a, i5, a)") "          Running ", nProcs, " MPI processes."
 
     if (present(nThreads)) then
       if ((nThreads > 0)) then
@@ -164,22 +179,22 @@ contains
       call OMP_SET_NUM_THREADS(OMP_GET_MAX_THREADS())
       selThreads = OMP_GET_MAX_THREADS()
     endif
-    write (unit=stdout, fmt="(a, i5, a)") "         Paralell regions will run in ", selThreads, " threads."
+    if (rank == 0) write (unit=stdout, fmt="(a, i5, a)") "          Paralell regions will run in ", selThreads, " threads."
 
     if (present(nNested)) then
       if ((nNested > 1)) then
         call OMP_SET_MAX_ACTIVE_LEVELS(nNested)
-        write (unit=stdout, fmt="(a, i2, a)") "         Warning: the number of nested active parallel regions"
-        write (unit=stdout, fmt="(a)") "         has been set to ", nNested, ". Beware of overhead."
+        if (rank == 0) write (unit=stdout, fmt="(a)") "          The number of nested active parallel regions"
+        if (rank == 0) write (unit=stdout, fmt="(a, i2, a)") "          has been set to ", nNested, "."
       endif
     else
       call OMP_SET_MAX_ACTIVE_LEVELS(1)
-      write (unit=stdout, fmt="(a)") "          The number of nested active parallel regions has been"
-      write (unit=stdout, fmt="(a)") "          set to 1."
+      if (rank == 0) write (unit=stdout, fmt="(a)") "          The number of nested active parallel regions"
+      if (rank == 0) write (unit=stdout, fmt="(a)") "          has been set to 1."
     endif
 
-    write (unit=stdout, fmt="(a)") "          SsTC initialized."
-    write (unit=stdout, fmt="(a)") ""
+    if (rank == 0) write (unit=stdout, fmt="(a)") "          SsTC initialized."
+    if (rank == 0) write (unit=stdout, fmt="(a)") ""
 
   end subroutine SsTC_init
 

@@ -1,8 +1,8 @@
 default: main
 
-F90 = ifx
-F90FLAGS = -fPIE -fopenmp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -cpp
-F90FLAGS += -g -traceback -warn unused -warn all -check bounds -diag-disable 5462 -diag-disable 10440 #Debug flags.
+F90 = mpiifort
+F90FLAGS = -fPIE -qopenmp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -fpp
+F90FLAGS += -g -traceback -warn unused -warn all -check bounds -implicitnone -diag-disable 5462 -diag-disable 10440 #Debug flags.
 F90FLAGS += -O2 #Optimization flags.
 
 PY = python3
@@ -13,35 +13,44 @@ BIN = ./bin
 CALC = ./src/calculators
 
 #Base deps of SsTC.o, these get updated if mods are detected.
-DEPS = utility.o extrapolation_integration.o data_structures.o kpath.o kslice.o sampler.o integrator.o local_k_quantities.o
+DEPS = utility.o extrapolation_integration.o data_structures.o kpath.o kslice.o sampler.o integrator.o local_k_quantities.o comms.o
+
+#Version
+MAYOR = 0
+MINOR = 1
+REVISION = 1
+F90FLAGS += -D_VERSION="'$(MAYOR).$(MINOR).$(REVISION)'"
 
 include ./src/calculators/Makefile #Checks for mods.
 
 utility.o: $(SRC)/utility.F90
 					 $(F90) $(F90FLAGS) -c $(SRC)/utility.F90 -o "$(OBJ)/utility.o"
 
+comms.o: $(SRC)/comms.F90
+				 $(F90) $(F90FLAGS) -c $(SRC)/comms.F90 -o "$(OBJ)/comms.o"
+
 extrapolation_integration.o: $(SRC)/F90-Extrapolation-Integration/integration.F90
 														 $(F90) $(F90FLAGS) -c $(SRC)/F90-Extrapolation-Integration/integration.F90 -o "$(OBJ)/extrapolation_integration.o"
 
 
-data_structures.o: $(SRC)/data_structures.F90 utility.o
+data_structures.o: $(SRC)/data_structures.F90 utility.o comms.o
 									 $(F90) $(F90FLAGS) -c $(SRC)/data_structures.F90 -o "$(OBJ)/data_structures.o"
 
 
-kpath.o: $(SRC)/kpath.F90 utility.o data_structures.o
+kpath.o: $(SRC)/kpath.F90 utility.o comms.o data_structures.o
 				 $(F90) $(F90FLAGS) -c $(SRC)/kpath.F90 -o "$(OBJ)/kpath.o"
 
-kslice.o: $(SRC)/kslice.F90 utility.o data_structures.o
+kslice.o: $(SRC)/kslice.F90 utility.o comms.o extrapolation_integration.o data_structures.o
 				  $(F90) $(F90FLAGS) -c $(SRC)/kslice.F90 -o "$(OBJ)/kslice.o"
 
-sampler.o: $(SRC)/sampler.F90 utility.o data_structures.o
+sampler.o: $(SRC)/sampler.F90 utility.o comms.o extrapolation_integration.o data_structures.o
 				  $(F90) $(F90FLAGS) -c $(SRC)/sampler.F90 -o "$(OBJ)/sampler.o"
 
-integrator.o : $(SRC)/integrator.F90 utility.o extrapolation_integration.o data_structures.o
+integrator.o : $(SRC)/integrator.F90 utility.o comms.o extrapolation_integration.o data_structures.o
 							 $(F90) $(F90FLAGS) -c $(SRC)/integrator.F90 -o "$(OBJ)/integrator.o"
 
 
-local_k_quantities.o: $(SRC)/local_k_quantities.F90 utility.o data_structures.o
+local_k_quantities.o: $(SRC)/local_k_quantities.F90 utility.o comms.o data_structures.o
 											$(F90) $(F90FLAGS) -c $(SRC)/local_k_quantities.F90 -o "$(OBJ)/local_k_quantities.o"
 
 
