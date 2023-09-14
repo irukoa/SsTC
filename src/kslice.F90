@@ -316,6 +316,7 @@ contains
               aimag(task%kslice_data(i_mem, 1, ik1, ik2))
 
           enddo
+          if (rank == 0) write (unit=printunit, fmt=*) ""
         enddo
 
         if (rank == 0) close (unit=printunit)
@@ -354,6 +355,7 @@ contains
                 real(task%kslice_data(i_mem, r_mem, ik1, ik2), dp), aimag(task%kslice_data(i_mem, r_mem, ik1, ik2))
 
             enddo
+            if (rank == 0) write (unit=printunit, fmt=*) ""
           enddo
 
         enddo
