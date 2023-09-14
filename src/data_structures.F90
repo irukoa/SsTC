@@ -194,9 +194,9 @@ contains
           system%real_space_position_elements(i, j, 1, irpts) = &
             system%real_space_position_elements(i, j, 1, irpts) + cmplx(dummyR(1), dummyR(2), dp)
           system%real_space_position_elements(i, j, 2, irpts) = &
-            system%real_space_position_elements(i, j, 1, irpts) + cmplx(dummyR(3), dummyR(4), dp)
+            system%real_space_position_elements(i, j, 2, irpts) + cmplx(dummyR(3), dummyR(4), dp)
           system%real_space_position_elements(i, j, 3, irpts) = &
-            system%real_space_position_elements(i, j, 1, irpts) + cmplx(dummyR(5), dummyR(6), dp)
+            system%real_space_position_elements(i, j, 3, irpts) + cmplx(dummyR(5), dummyR(6), dp)
         enddo
       enddo
       if (irpts == nrpts) cycle
