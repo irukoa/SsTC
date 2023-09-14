@@ -15,6 +15,12 @@ CALC = ./src/calculators
 #Base deps of SsTC.o, these get updated if mods are detected.
 DEPS = utility.o extrapolation_integration.o data_structures.o kpath.o kslice.o sampler.o integrator.o local_k_quantities.o comms.o
 
+#Version
+MAYOR = 0
+MINOR = 1
+REVISION = 1
+F90FLAGS += -D_VERSION="'$(MAYOR).$(MINOR).$(REVISION)'"
+
 include ./src/calculators/Makefile #Checks for mods.
 
 utility.o: $(SRC)/utility.F90

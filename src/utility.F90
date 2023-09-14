@@ -150,6 +150,8 @@ contains
     !                                                                  !
     !==================================================================!
 
+    implicit none
+
     integer, intent(in)     :: dim
     complex*16, intent(in)  :: mat(dim, dim)
     real(8), intent(out)    :: eig(dim)      !Eigenvalues.
@@ -202,6 +204,8 @@ contains
     !involves a diagonal Schur form S, S_nm = delta_nm T_n.            !
     !                                                                  !
     !==================================================================!
+
+    implicit none
 
     integer, intent(in)               :: dim
     complex*16, intent(in)            :: mat(dim, dim)
@@ -256,6 +260,8 @@ contains
     !decomposition mat = U*sigma*V^dagger.                             !
     !                                                                  !
     !==================================================================!
+
+    implicit none
 
     complex*16, intent(in)            :: mat(:, :)
     real(8), intent(out)              :: sigma(size(mat(:, 1)), size(mat(1, :)))
@@ -325,6 +331,8 @@ contains
     !                                                                  !
     !==================================================================!
 
+    implicit none
+
     integer, intent(in)          :: dim
     complex(kind=dp), intent(in) :: mat(dim, dim)
     logical, intent(in)          :: skew
@@ -380,6 +388,8 @@ contains
     !dim x dim matrix logu such that logu = log(mat).                  !
     !                                                                  !
     !==================================================================!
+
+    implicit none
 
     integer, intent(in)          :: dim
     complex(kind=dp), intent(in) :: mat(dim, dim)

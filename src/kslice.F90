@@ -211,7 +211,7 @@ contains
     TID = OMP_GET_THREAD_NUM()
     IF ((TID .EQ. 0) .and. (rank .EQ. 0)) THEN
       write (unit=stdout, fmt="(a, i5, a, i5, a)") &
-      &"         Running on ", nProcs, " process(es) each using ", OMP_GET_NUM_THREADS(), " threads."
+      &"          Running on ", nProcs, " process(es) each using ", OMP_GET_NUM_THREADS(), " threads."
     ENDIF
 
     !_OMPTGT_(DO)
@@ -269,8 +269,10 @@ contains
   end subroutine SsTC_sample_kslice_task
 
   subroutine SsTC_print_kslice(task, system)
-    !Subroutine to format and output files related to the result of the task "task".
+
     implicit none
+
+    !Subroutine to format and output files related to the result of the task "task".
 
     class(SsTC_kslice_task), intent(in) :: task
     type(SsTC_sys), intent(in)          :: system
@@ -285,7 +287,7 @@ contains
                           ik1, ik2
     integer            :: printunit
 
-    if (rank == 0) write (unit=stdout, fmt="(a)") &
+    if (rank == 0) write (unit=stdout, fmt="(a, a, a, a, a)") &
       "          Printing kslice task: "//trim(task%name)// &
       " for the system "//trim(system%name)//"."
 

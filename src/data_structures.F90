@@ -89,8 +89,10 @@ module SsTC_data_structures
 
 contains
 
-  function SsTC_sys_constructor(name, path_to_tb_file, efermi, deg_thr, deg_offset &
-                                ) result(system)
+  function SsTC_sys_constructor(name, path_to_tb_file, efermi, deg_thr, deg_offset) &
+    result(system)
+
+    implicit none
 
     character(len=*), intent(in)        :: name
     character(len=*), intent(in)        :: path_to_tb_file
@@ -116,8 +118,8 @@ contains
     filename = trim(path_to_tb_file)//trim(name)//"_tb.dat"
     filename = trim(filename)
 
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          Initializing system "//trim(name)//"."
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          Reading file"//filename//"."
+    if (rank == 0) write (unit=stdout, fmt="(a, a, a)") "          Initializing system "//trim(name)//"."
+    if (rank == 0) write (unit=stdout, fmt="(a, a, a)") "          Reading file "//trim(filename)//"."
 
     open (newunit=stdin, action="read", file=filename)
     read (unit=stdin, fmt=*)
@@ -212,6 +214,9 @@ contains
   end function SsTC_sys_constructor
 
   function SsTC_external_variable_constructor(start, end, steps) result(vars)
+
+    implicit none
+
     !Function to set external variable data.
     real(kind=dp), intent(in) :: start, end
     integer, intent(in)       :: steps
@@ -236,6 +241,9 @@ contains
   !See discussion at https://eli.thegreenplace.net/2015/memory-layout-of-multi-dimensional-arrays
 
   function SsTC_integer_array_element_to_memory_element(data_k, i_arr) result(i_mem)
+
+    implicit none
+
     !Get integer indices from array layout to memory layout.
     class(SsTC_local_k_data), intent(in) :: data_k
     integer, intent(in)                  :: i_arr(size(data_k%integer_indices))
@@ -251,6 +259,9 @@ contains
   end function SsTC_integer_array_element_to_memory_element
 
   function SsTC_integer_memory_element_to_array_element(data_k, i_mem) result(i_arr)
+
+    implicit none
+
     !Get integer indices from memory layout to array layout.
     class(SsTC_local_k_data), intent(in) :: data_k
     integer, intent(in)                  :: i_mem
@@ -272,6 +283,9 @@ contains
   end function SsTC_integer_memory_element_to_array_element
 
   function SsTC_continuous_array_element_to_memory_element(task, r_arr) result(r_mem)
+
+    implicit none
+
     !Get continuous indices from array layout to memory layout.
     class(SsTC_global_k_data), intent(in) :: task
     integer, intent(in)                   :: r_arr(size(task%continuous_indices))
@@ -287,6 +301,9 @@ contains
   end function SsTC_continuous_array_element_to_memory_element
 
   function SsTC_continuous_memory_element_to_array_element(task, r_mem) result(r_arr)
+
+    implicit none
+
     !Get continuous indices from memory layout to array layout.
     class(SsTC_global_k_data), intent(in) :: task
     integer, intent(in)                   :: r_mem
@@ -308,6 +325,9 @@ contains
   end function SsTC_continuous_memory_element_to_array_element
 
   subroutine SsTC_construct_iterable(global, vars)
+
+    implicit none
+
     !Creates a dictionaty with all the possible permutations of the
     !considered variation of the continuous variables specified
     !in the array elements of "vars".

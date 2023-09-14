@@ -30,6 +30,9 @@ contains
   !====AUXILIARY ROUTINES====!
 
   function SsTC_wannier_hamiltonian(system, k) result(HW)
+
+    implicit none
+
     !Output: Wannier basis Hamiltonian.
     !1st and 2nd indexes: bands.
     type(SsTC_sys), intent(in) :: system
@@ -55,6 +58,9 @@ contains
   end function SsTC_wannier_hamiltonian
 
   function SsTC_wannier_berry_connection(system, k) result(AW)
+
+    implicit none
+
     !Output: Wannier basis Berry connection.
     !1st and 2nd indexes: bands, 3rd index: cartesian comp.
     type(SsTC_sys), intent(in) :: system
@@ -80,6 +86,9 @@ contains
   end function SsTC_wannier_berry_connection
 
   function SsTC_wannier_dhamiltonian_dk(system, k) result(DHW)
+
+    implicit none
+
     !Output: 1st k-derivative of the Wannier Hamiltonian.
     !1st and 2nd indexes: bands, 3rd index: derivative comp.
     type(SsTC_sys), intent(in) :: system
@@ -105,6 +114,9 @@ contains
   end function SsTC_wannier_dhamiltonian_dk
 
   function SsTC_wannier_d2hamiltonian_dk2(system, k) result(DDHW)
+
+    implicit none
+
     !Output: 2nd k-derivative of the Wannier Hamiltonian.
     !1st and 2nd indexes: bands,
     !3rd and 4th indexes: derivative directions.
@@ -131,6 +143,9 @@ contains
   end function SsTC_wannier_d2hamiltonian_dk2
 
   function SsTC_wannier_dberry_connection_dk(system, k) result(DAW)
+
+    implicit none
+
     !Output: 1st k-derivative of the Wannier Berry connection.
     !1st and 2nd indexes: bands, 3rd index: cartesian comp.
     !4th index : derivative direction
@@ -157,6 +172,9 @@ contains
   end function SsTC_wannier_dberry_connection_dk
 
   function SsTC_hamiltonian_occ_matrix(system, eig) result(rho)
+
+    implicit none
+
     !Output: Fermi occupation matrix in the Hamiltonian basis.
     !1st and 2nd indexes: bands.
     type(SsTC_sys), intent(in) :: system
@@ -175,6 +193,9 @@ contains
   end function SsTC_hamiltonian_occ_matrix
 
   function SsTC_non_abelian_d(system, eig, rot, HW_a) result(DH)
+
+    implicit none
+
     !Output: Vector valued matrix D in Eq. (32) in
     !10.1103/PhysRevB.75.195121 .
     !1st and 2nd indexes: bands, 3rd index: cartesian comp.
@@ -202,6 +223,9 @@ contains
   end function SsTC_non_abelian_d
 
   function SsTC_velocities(system, HW_a, eig, rot, error) result(v)
+
+    implicit none
+
     !Output: Velocities v_{nm, a} in Eq. (18) in
     !10.1103/PhysRevB.75.195121 .
     !1st and 2nd indexes: bands, 3rd index: cartesian comp.
@@ -256,6 +280,9 @@ contains
   end function SsTC_velocities
 
   function SsTC_inverse_effective_mass(system, HW_a_b, HW_a, eig, rot, error) result(mu)
+
+    implicit none
+
     !Output: Inverse effective mass \mu_{nm, ab} with analogous def to velocities in Eq. (18) in
     !10.1103/PhysRevB.75.195121 .
     !1st and 2nd indexes: bands, 3rd and 4th index: cartesian comp.
@@ -340,6 +367,9 @@ contains
   !====CORE ROUTINES====!
 
   subroutine SsTC_get_hamiltonian(system, k, H, Nder_i, only_i)
+
+    implicit none
+
     type(SsTC_sys), intent(in)                        :: system
     real(kind=dp), intent(in)                         :: k(3)
     type(SsTC_local_k_data), allocatable, intent(out) :: H(:)
@@ -490,6 +520,9 @@ contains
   end subroutine SsTC_get_hamiltonian
 
   subroutine SsTC_get_position(system, k, A, Nder_i, only_i)
+
+    implicit none
+
     type(SsTC_sys), intent(in)                        :: system
     real(kind=dp), intent(in)                         :: k(3)
     type(SsTC_local_k_data), allocatable, intent(out) :: A(:)

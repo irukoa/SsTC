@@ -38,6 +38,8 @@ contains
                                                N_ext_vars, ext_vars_start, ext_vars_end, ext_vars_steps, &
                                                part_int_comp)
 
+    implicit none
+
     character(len=*) :: name
 
     procedure(SsTC_local_calculator), optional  :: l_calculator
@@ -139,6 +141,8 @@ contains
 
   subroutine SsTC_sample_and_integrate_BZ_integral_task(task, system)
 
+    implicit none
+
     class(SsTC_BZ_integral_task), intent(inout) :: task
     type(SsTC_sys), intent(in)                  :: system
 
@@ -191,7 +195,7 @@ contains
       TID = OMP_GET_THREAD_NUM()
       IF ((TID .EQ. 0) .and. (rank .EQ. 0)) THEN
         write (unit=stdout, fmt="(a, i5, a, i5, a)") &
-        &"         Running on ", nProcs, " process(es) each using ", OMP_GET_NUM_THREADS(), " threads."
+        &"          Running on ", nProcs, " process(es) each using ", OMP_GET_NUM_THREADS(), " threads."
       ENDIF
 
       !_OMPTGT_(DO)
@@ -285,7 +289,7 @@ contains
       TID = OMP_GET_THREAD_NUM()
       IF ((TID .EQ. 0) .and. (rank .EQ. 0)) THEN
         write (unit=stdout, fmt="(a, i5, a, i5, a)") &
-          "         Running on ", nProcs, " process(es) each using ", OMP_GET_NUM_THREADS(), " threads."
+          "          Running on ", nProcs, " process(es) each using ", OMP_GET_NUM_THREADS(), " threads."
       ENDIF
 
       !_OMPTGT_(DO)
@@ -346,6 +350,9 @@ contains
   end subroutine SsTC_sample_and_integrate_BZ_integral_task
 
   subroutine SsTC_print_BZ_integral_task(task, system)
+
+    implicit none
+
     !Subroutine to format and output files related to the result of the task "task".
     class(SsTC_BZ_integral_task), intent(in) :: task
     type(SsTC_sys), intent(in)               :: system

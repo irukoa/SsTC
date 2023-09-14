@@ -34,6 +34,8 @@ contains
                                             N_ext_vars, ext_vars_start, ext_vars_end, ext_vars_steps, &
                                             part_int_comp)
 
+    implicit none
+
     character(len=*) :: name
 
     procedure(SsTC_local_calculator), optional  :: l_calculator
@@ -114,6 +116,8 @@ contains
 
   subroutine SsTC_sample_sampling_task(task, system)
 
+    implicit none
+
     class(SsTC_sampling_task), intent(inout) :: task
     type(SsTC_sys), intent(in)               :: system
 
@@ -144,7 +148,7 @@ contains
     call get_MPI_task_partition(product(task%samples), nProcs, counts, displs)
 
     if (rank == 0) write (unit=stdout, fmt="(a)") "          Starting BZ sampling subroutine."
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          Sampling task: "//trim(task%name)// &
+    if (rank == 0) write (unit=stdout, fmt="(a, a, a, a, a)") "          Sampling task: "//trim(task%name)// &
       " in the BZ for the system "//trim(system%name)//"."
     if (rank == 0) write (unit=stdout, fmt="(a)") &
       "          The required memory for the sampling process is approximately,"
@@ -233,6 +237,9 @@ contains
   end subroutine SsTC_sample_sampling_task
 
   subroutine SsTC_print_sampling(task, system)
+
+    implicit none
+
     !Subroutine to format and output files related to the result of the task "task".
     class(SsTC_sampling_task), intent(in) :: task
     type(SsTC_sys), intent(in)            :: system

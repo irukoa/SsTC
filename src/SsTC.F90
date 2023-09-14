@@ -132,7 +132,7 @@ contains
     call MPI_FINALIZED(is_mpi_finalized, ierror)
 
     if (.not. ((is_mpi_initialized) .and. ((.not. is_mpi_finalized)))) then
-      write (unit=stdout, fmt="(a)") "         SsTC: MPI has not bee initialized or has been finalized. Stopping..."
+      write (unit=stdout, fmt="(a)") "          SsTC: MPI has not bee initialized or has been finalized. Stopping..."
       stop
     endif
 
@@ -159,15 +159,16 @@ contains
     if (rank == 0) write (unit=stdout, fmt="(a)") "           \______/ |_______/    |__/    \______/  "
 
     if (rank == 0) write (unit=stdout, fmt="(a)") ""
+    if (rank == 0) write (unit=stdout, fmt="(a, a, a)") "          Version: ", trim(_VERSION)//"."
+    if (rank == 0) write (unit=stdout, fmt="(a)") ""
 
     if (rank == 0) write (unit=stdout, &
                           fmt="(a, i2, a, i2, a, i4, a, i2, a, i2, a, i2, a)") &
-                              &"          SsTC library initializing at ", &
-                              &timing(2), "/", timing(3), "/", timing(1), &
-                              &", ", timing(5), ":", timing(6), &
-                              &":", timing(7), "."
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          Initializing SsTC..."
-    if (rank == 0) write (unit=stdout, fmt="(a, i5, a)") "         Running ", nProcs, " MPI processes."
+      "          SsTC library initializing at ", &
+      timing(2), "/", timing(3), "/", timing(1), &
+      ", ", timing(5), ":", timing(6), &
+      ":", timing(7), "."
+    if (rank == 0) write (unit=stdout, fmt="(a, i5, a)") "          Running ", nProcs, " MPI processes."
 
     if (present(nThreads)) then
       if ((nThreads > 0)) then
@@ -178,18 +179,18 @@ contains
       call OMP_SET_NUM_THREADS(OMP_GET_MAX_THREADS())
       selThreads = OMP_GET_MAX_THREADS()
     endif
-    if (rank == 0) write (unit=stdout, fmt="(a, i5, a)") "         Paralell regions will run in ", selThreads, " threads."
+    if (rank == 0) write (unit=stdout, fmt="(a, i5, a)") "          Paralell regions will run in ", selThreads, " threads."
 
     if (present(nNested)) then
       if ((nNested > 1)) then
         call OMP_SET_MAX_ACTIVE_LEVELS(nNested)
-        if (rank == 0) write (unit=stdout, fmt="(a)") "         The number of nested active parallel regions"
-        if (rank == 0) write (unit=stdout, fmt="(a, i2, a)") "         has been set to ", nNested, "."
+        if (rank == 0) write (unit=stdout, fmt="(a)") "          The number of nested active parallel regions"
+        if (rank == 0) write (unit=stdout, fmt="(a, i2, a)") "          has been set to ", nNested, "."
       endif
     else
       call OMP_SET_MAX_ACTIVE_LEVELS(1)
-      if (rank == 0) write (unit=stdout, fmt="(a)") "          The number of nested active parallel regions has been"
-      if (rank == 0) write (unit=stdout, fmt="(a)") "          set to 1."
+      if (rank == 0) write (unit=stdout, fmt="(a)") "          The number of nested active parallel regions"
+      if (rank == 0) write (unit=stdout, fmt="(a)") "          has been set to 1."
     endif
 
     if (rank == 0) write (unit=stdout, fmt="(a)") "          SsTC initialized."

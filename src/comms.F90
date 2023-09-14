@@ -14,6 +14,8 @@ contains
 
   subroutine get_MPI_task_partition(task_size, nodes, counts, displs)
 
+    implicit none
+
     integer, intent(in) :: task_size, nodes
     integer, intent(out) :: counts(0:nodes - 1), &
                             displs(0:nodes - 1)

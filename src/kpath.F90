@@ -41,6 +41,8 @@ contains
                                     N_ext_vars, ext_vars_start, ext_vars_end, ext_vars_steps, &
                                     part_int_comp)
 
+    implicit none
+
     character(len=*) :: name
 
     procedure(SsTC_local_calculator), optional  :: l_calculator
@@ -125,6 +127,8 @@ contains
 
   subroutine SsTC_kpath_sampler(task, system)
 
+    implicit none
+
     class(SsTC_kpath_task), intent(inout) :: task
     type(SsTC_sys), intent(in)            :: system
 
@@ -151,7 +155,7 @@ contains
     allocate (counts(0:nProcs - 1), displs(0:nProcs - 1))
     call get_MPI_task_partition(sum(task%number_of_pts) - (size(task%vectors(:, 1)) - 2), nProcs, counts, displs)
 
-    if (rank == 0) write (unit=stdout, fmt="(a)") &
+    if (rank == 0) write (unit=stdout, fmt="(a, a, a, a)") &
       "          Sampling kpath task: "//trim(task%name)// &
       " for the system "//trim(system%name)//"."
 
@@ -165,7 +169,7 @@ contains
     TID = OMP_GET_THREAD_NUM()
     IF ((TID .EQ. 0) .and. (rank .EQ. 0)) THEN
       write (unit=stdout, fmt="(a, i5, a, i5, a)") &
-      &"         Running on ", nProcs, " process(es) each using ", OMP_GET_NUM_THREADS(), " threads."
+      &"          Running on ", nProcs, " process(es) each using ", OMP_GET_NUM_THREADS(), " threads."
     ENDIF
 
     !_OMPTGT_(DO)
@@ -245,6 +249,9 @@ contains
   end subroutine SsTC_kpath_sampler
 
   subroutine SsTC_print_kpath(task, system)
+
+    implicit none
+
     !Subroutine to format and output files related to the result of the task "task".
     class(SsTC_kpath_task), intent(in) :: task
     type(SsTC_sys), intent(in)         :: system
