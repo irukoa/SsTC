@@ -152,16 +152,16 @@ contains
 
     implicit none
 
-    integer, intent(in)     :: dim
-    complex*16, intent(in)  :: mat(dim, dim)
-    real(8), intent(out)    :: eig(dim)      !Eigenvalues.
-    complex*16, intent(out) :: rot(dim, dim) !Eigenvectors.
-    logical, intent(inout)  :: error
+    integer, intent(in)           :: dim
+    complex(kind=dp), intent(in)  :: mat(dim, dim)
+    real(kind=dp), intent(out)    :: eig(dim)      !Eigenvalues.
+    complex(kind=dp), intent(out) :: rot(dim, dim) !Eigenvectors.
+    logical, intent(inout)        :: error
 
-    complex*16, allocatable :: work(:)
-    real(8)                 :: rwork(3*dim - 2)
-    integer                 :: info, lwork
-    external                :: zheev
+    complex(kind=dp), allocatable :: work(:)
+    real(kind=dp)                 :: rwork(3*dim - 2)
+    integer                       :: info, lwork
+    external                      :: zheev
 
     !Initialization.
     rot = mat
@@ -207,19 +207,19 @@ contains
 
     implicit none
 
-    integer, intent(in)               :: dim
-    complex*16, intent(in)            :: mat(dim, dim)
-    complex*16, intent(out)           :: T(dim)      !Eigenvalues (diagonal elements of B).
-    complex*16, intent(out)           :: Z(dim, dim) !Eigenvectors.
-    logical, intent(inout)            :: error
-    complex*16, intent(out), optional :: S(dim, dim) !Schur Form.
+    integer, intent(in)                     :: dim
+    complex(kind=dp), intent(in)            :: mat(dim, dim)
+    complex(kind=dp), intent(out)           :: T(dim)      !Eigenvalues (diagonal elements of B).
+    complex(kind=dp), intent(out)           :: Z(dim, dim) !Eigenvectors.
+    logical, intent(inout)                  :: error
+    complex(kind=dp), intent(out), optional :: S(dim, dim) !Schur Form.
 
-    complex*16              :: B(dim, dim)
-    complex*16, allocatable :: work(:)
-    real(8)                 :: rwork(dim)
-    integer                 :: info, lwork, sdim
-    logical                 :: bwork(dim), select
-    external                :: zgees
+    complex(kind=dp)              :: B(dim, dim)
+    complex(kind=dp), allocatable :: work(:)
+    real(8)                       :: rwork(dim)
+    integer                       :: info, lwork, sdim
+    logical                       :: bwork(dim), select
+    external                      :: zgees
 
     !Initialization.
     B = mat
@@ -263,19 +263,19 @@ contains
 
     implicit none
 
-    complex*16, intent(in)            :: mat(:, :)
-    real(8), intent(out)              :: sigma(size(mat(:, 1)), size(mat(1, :)))
-    logical, intent(inout)            :: error
-    complex*16, intent(out), optional :: U(size(mat(:, 1)), size(mat(:, 1))), &
-                                         V(size(mat(1, :)), size(mat(1, :)))
+    complex(kind=dp), intent(in)            :: mat(:, :)
+    real(kind=dp), intent(out)              :: sigma(size(mat(:, 1)), size(mat(1, :)))
+    logical, intent(inout)                  :: error
+    complex(kind=dp), intent(out), optional :: U(size(mat(:, 1)), size(mat(:, 1))), &
+                                               V(size(mat(1, :)), size(mat(1, :)))
 
-    complex*16              :: B(size(mat(:, 1)), size(mat(1, :)))
-    real(8)                 :: sigmaw(min(size(mat(:, 1)), size(mat(1, :))))
-    complex*16              :: Uw(size(mat(:, 1)), size(mat(:, 1))), &
-                               Vw(size(mat(1, :)), size(mat(1, :)))
-    complex*16, allocatable :: work(:)
-    real(8)                 :: rwork(5*min(size(mat(1, :)), size(mat(:, 1))))
-    external                :: zgesvd
+    complex(kind=dp)              :: B(size(mat(:, 1)), size(mat(1, :)))
+    real(kind=dp)                 :: sigmaw(min(size(mat(:, 1)), size(mat(1, :))))
+    complex(kind=dp)              :: Uw(size(mat(:, 1)), size(mat(:, 1))), &
+                                     Vw(size(mat(1, :)), size(mat(1, :)))
+    complex(kind=dp), allocatable :: work(:)
+    real(kind=dp)                 :: rwork(5*min(size(mat(1, :)), size(mat(:, 1))))
+    external                      :: zgesvd
 
     integer :: m, n
     integer :: info, lwork
@@ -298,7 +298,9 @@ contains
     !Calculation.
     allocate (work(lwork))
     call zgesvd('A', 'A', m, n, B, m, sigmaw, Uw, m, Vw, n, work, lwork, rwork, info)
-    forall (i=1:size(sigmaw)) sigma(i, i) = sigmaw(i)
+    do i = 1, size(sigmaw)
+      sigma(i, i) = sigmaw(i)
+    enddo
     if (present(U)) U = Uw
     if (present(V)) V = conjg(transpose(Vw))
     deallocate (work)

@@ -75,8 +75,10 @@ contains
 
     if (present(vector_a) .and. present(vector_b)) then
       !Check linear depenbdence:
-      forall (i=1:3) lindep(1, i) = cmplx(vector_a(i), 0.0_dp, dp)
-      forall (i=1:3) lindep(2, i) = cmplx(vector_b(i), 0.0_dp, dp)
+      do i = 1, 3
+        lindep(1, i) = cmplx(vector_a(i), 0.0_dp, dp)
+        lindep(2, i) = cmplx(vector_b(i), 0.0_dp, dp)
+      enddo
 
       !get SVD decomp,
       call SsTC_utility_SVD(lindep, sigma, error)
@@ -279,7 +281,7 @@ contains
 
     real(kind=dp) :: k(3)
 
-    character(len=400) :: filename, fmtf
+    character(len=400) :: filename, fmtf, num_label
     integer            :: i_arr(size(task%integer_indices)), &
                           r_arr(size(task%continuous_indices))
     integer            :: i_mem, r_mem, &
@@ -299,7 +301,8 @@ contains
 
         filename = trim(system%name)//'-'//trim(task%name)//'_'
         do count = 1, size(task%integer_indices)
-          filename = trim(filename)//achar(48 + i_arr(count))
+          write (num_label, fmt="(i0)") i_arr(count)
+          filename = trim(filename)//trim(num_label)
         enddo
         filename = trim(filename)//'.dat'
 
@@ -333,7 +336,8 @@ contains
 
         filename = trim(system%name)//'-'//trim(task%name)//'_'
         do count = 1, size(task%integer_indices)
-          filename = trim(filename)//achar(48 + i_arr(count))
+          write (num_label, fmt="(i0)") i_arr(count)
+          filename = trim(filename)//trim(num_label)
         enddo
         filename = trim(filename)//'.dat'
 

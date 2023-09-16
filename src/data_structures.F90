@@ -10,17 +10,26 @@ module SsTC_data_structures
   type SsTC_sys
     character(len=120)            :: name
     integer                       :: num_bands                                !Number of bands.
-    real(kind=dp)                 :: direct_lattice_basis(3, 3)               !Direct lattice basis vectors in A. 1st index is vector label, 2nd index is vector component.
+    real(kind=dp)                 :: direct_lattice_basis(3, 3)               !Direct lattice basis vectors in A.
+    !1st index is vector label, 2nd index is vector component.
     real(kind=dp)                 :: metric_tensor(3, 3)                      !Metric tensor of the direct lattice basis.
     real(kind=dp)                 :: cell_volume                              !Cell volume.
     integer                       :: num_R_points                             !Number of R points given in the *_tb.dat file.
-    integer, allocatable          :: R_point(:, :)                            !Memory layout id of the R-point (1st index) and R-vector coords. relative to the direct lattice basis vectors (2nd index).
-    integer, allocatable          :: deg_R_point(:)                           !Degeneracy of the R-point specified by its memory layout id.
-    complex(kind=dp), allocatable :: real_space_hamiltonian_elements(:, :, :) !Hamiltonian matrix elements (1st and 2nd indexes) and memory layout id of the R-point (3rd index) in eV.
-    complex(kind=dp), allocatable :: real_space_position_elements(:, :, :, :) !Position operator matrix elements (1st and 2nd indexes), cartesian coordinate (3rd index) and memory layout id of the R-point (4th index) in A.
+    integer, allocatable          :: R_point(:, :)                            !Memory layout id of the R-point (1st index) and
+    !R-vector coords. relative to the direct lattice
+    !basis vectors (2nd index).
+    integer, allocatable          :: deg_R_point(:)                           !Degeneracy of the R-point specified by its
+    !memory layout id.
+    complex(kind=dp), allocatable :: real_space_hamiltonian_elements(:, :, :) !Hamiltonian matrix elements (1st and 2nd indexes)
+    !and memory layout id of the R-point (3rd index) in eV.
+    complex(kind=dp), allocatable :: real_space_position_elements(:, :, :, :) !Position operator matrix elements
+    !(1st and 2nd indexes),
+    !cartesian coordinate (3rd index) and memory layout id
+    !of the R-point (4th index) in A.
     real(kind=dp)                 :: e_fermi = 0.0_dp                         !Fermi energy.
     real(kind=dp)                 :: deg_thr = 1.0E-4_dp                      !Degeneracy threshold in eV.
-    real(kind=dp)                 :: deg_offset = 0.04_dp                     !Offset for regularization in case of degeneracies, in eV.
+    real(kind=dp)                 :: deg_offset = 0.04_dp                     !Offset for regularization in case of
+    !degeneracies, in eV.
   end type SsTC_sys
 
   type SsTC_external_vars
@@ -29,14 +38,17 @@ module SsTC_data_structures
 
   type SsTC_local_k_data
     character(len=120)                                :: name
-    integer, allocatable                              :: integer_indices(:)               !Each entry contains the range of each of the integer indices.
-    complex(kind=dp), allocatable                     :: k_data(:)                        !Data local for each k with integer index in memory array,
+    integer, allocatable                              :: integer_indices(:)               !Each entry contains the range
+    !of each of the integer indices.
+    complex(kind=dp), allocatable                     :: k_data(:)                        !Data local for each k with
+    !integer index in memory array,
     procedure(SsTC_local_calculator), pointer, nopass :: local_calculator => null()       !Pointer to the local calculator.
     integer                                           :: particular_integer_component = 0 !Specification of some integer component.
   end type SsTC_local_k_data
 
   type, extends(SsTC_local_k_data) :: SsTC_global_k_data
-    integer, allocatable                               :: continuous_indices(:)           !Each entry contains the range of each continuous indices.
+    integer, allocatable                               :: continuous_indices(:)           !Each entry contains the range
+    !of each continuous indices.
     type(SsTC_external_vars), allocatable              :: ext_var_data(:)                 !External variable data.
     procedure(SsTC_global_calculator), pointer, nopass :: global_calculator => null()     !Pointer to the global calculator.
     integer, allocatable                               :: iterables(:, :)                 !Iterable dictionary.
@@ -89,7 +101,8 @@ module SsTC_data_structures
 
 contains
 
-  function SsTC_sys_constructor(name, path_to_tb_file, efermi, deg_thr, deg_offset) &
+  function SsTC_sys_constructor(name, path_to_tb_file, &
+                                efermi, deg_thr, deg_offset) &
     result(system)
 
     implicit none
