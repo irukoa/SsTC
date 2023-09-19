@@ -246,7 +246,7 @@ contains
 
     real(kind=dp) :: k(3)
 
-    character(len=400) :: filename, fmtf
+    character(len=400) :: filename, fmtf, num_label
     integer            :: i_arr(size(task%integer_indices)), &
                           r_arr(size(task%continuous_indices))
     integer            :: i_mem, r_mem, &
@@ -265,7 +265,8 @@ contains
 
         filename = trim(system%name)//'-'//trim(task%name)//'_'
         do count = 1, size(task%integer_indices)
-          filename = trim(filename)//achar(48 + i_arr(count))
+          write (num_label, fmt="(i0)") i_arr(count)
+          filename = trim(filename)//trim(num_label)
         enddo
         filename = trim(filename)//'.dat'
 
@@ -313,7 +314,8 @@ contains
 
         filename = trim(system%name)//'-'//trim(task%name)//'_'
         do count = 1, size(task%integer_indices)
-          filename = trim(filename)//achar(48 + i_arr(count))
+          write (num_label, fmt="(i0)") i_arr(count)
+          filename = trim(filename)//trim(num_label)
         enddo
         filename = trim(filename)//'.dat'
 

@@ -254,7 +254,9 @@ contains
       !for each coordinate,
       do i = 1, 3
         !initialize degen_vels,
-        forall (n=1:system%num_bands) degen_vels(n) = real(v(n, n, i), dp)
+        do n = 1, system%num_bands
+          degen_vels(n) = real(v(n, n, i), dp)
+        enddo
         !and for each eigenvalue,
         do n = 1, system%num_bands
           !check degeneracy.
@@ -273,7 +275,9 @@ contains
           endif
         enddo
         !Overwrite to v.
-        forall (n=1:system%num_bands) v(n, n, i) = degen_vels(n)
+        do n = 1, system%num_bands
+          v(n, n, i) = degen_vels(n)
+        enddo
       enddo
     endif
 
@@ -337,7 +341,9 @@ contains
         i = SsTC_alpha_S(ij)
         j = SsTC_beta_S(ij)
         !initialize degen_mass,
-        forall (n=1:system%num_bands) degen_mass(n) = real(mu(n, n, i, j), dp)
+        do n = 1, system%num_bands
+          degen_mass(n) = real(mu(n, n, i, j), dp)
+        enddo
         !and for each eigenvalue,
         do n = 1, system%num_bands
           !check degeneracy.
@@ -356,7 +362,9 @@ contains
           endif
         enddo
         !Overwrite to mu.
-        forall (n=1:system%num_bands) mu(n, n, i, j) = degen_mass(n)
+        do n = 1, system%num_bands
+          mu(n, n, i, j) = degen_mass(n)
+        enddo
         !Symmetrization.
         mu(:, :, j, i) = mu(:, :, i, j)
       enddo
@@ -373,8 +381,10 @@ contains
     type(SsTC_sys), intent(in)                        :: system
     real(kind=dp), intent(in)                         :: k(3)
     type(SsTC_local_k_data), allocatable, intent(out) :: H(:)
-    integer, optional                                 :: Nder_i !Order of the derivative. Nder = 0 means normal Hamiltonian, Nder = 1, \partial H/\partial k^i...
-    logical, optional                                 :: only_i !Determine, in the case of Nder > 0, if all derivatives i with i < Nder are requested.
+    integer, optional                                 :: Nder_i !Order of the derivative. Nder = 0 means normal Hamiltonian,
+    !Nder = 1, \partial H/\partial k^i...
+    logical, optional                                 :: only_i !Determine, in the case of Nder > 0,
+    !if all derivatives i with i < Nder are requested.
 
     integer :: Nder
     logical :: only
@@ -526,8 +536,10 @@ contains
     type(SsTC_sys), intent(in)                        :: system
     real(kind=dp), intent(in)                         :: k(3)
     type(SsTC_local_k_data), allocatable, intent(out) :: A(:)
-    integer, optional                                 :: Nder_i !Order of the derivative. Nder = 0 means normal Berry connection, Nder = 1, \partial A^i/\partial k^j...
-    logical, optional                                 :: only_i !Determine, in the case of Nder > 0, if all derivatives i with i < Nder are requested.
+    integer, optional                                 :: Nder_i !Order of the derivative. Nder = 0 means normal Berry connection,
+    !Nder = 1, \partial A^i/\partial k^j...
+    logical, optional                                 :: only_i !Determine, in the case of Nder > 0,
+    !if all derivatives i with i < Nder are requested.
 
     integer :: Nder
     logical :: only

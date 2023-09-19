@@ -33,8 +33,7 @@ module SsTC_kpath
 
 contains
 
-  subroutine SsTC_kpath_constructor(task, &
-                                    name, &
+  subroutine SsTC_kpath_constructor(task, name, &
                                     l_calculator, g_calculator, &
                                     Nvec, vec_coord, nkpts, &
                                     N_int_ind, int_ind_range, &
@@ -185,9 +184,11 @@ contains
       endif
       count = 0
       do icount = 1, size(task%vectors(:, 1)) - 1
-        count = count + task%number_of_pts(icount) - 1 !<--With this mapping we will get isampling int the range [1, task%number_of_pts(icount)).
-        !However, since we are considering a task of size, sum(task%number_of_pts) - (size(task%vectors(:, 1)) - 2) (note the -2 instead of -1),
-        !we will consider one last vector, thus the last ik corresponds to the ivec = size(task%vectors(:, 1))th vector.
+        count = count + task%number_of_pts(icount) - 1 !With this mapping we will get isampling in
+        ! the range [1, task%number_of_pts(icount)). However, since we are considering a task
+        !of size, sum(task%number_of_pts) - (size(task%vectors(:, 1)) - 2) (note the -2 instead of -1),
+        !we will consider one last vector, thus the last ik corresponds to
+        !the ivec = size(task%vectors(:, 1))th vector.
         if (count .GE. ik) then
           ivec = icount
           isampling = ik - (count - (task%number_of_pts(icount) - 1))
@@ -256,7 +257,7 @@ contains
     class(SsTC_kpath_task), intent(in) :: task
     type(SsTC_sys), intent(in)         :: system
 
-    character(len=400) :: filename, fmtf
+    character(len=400) :: filename, fmtf, num_label
     integer            :: i_arr(size(task%integer_indices)), &
                           r_arr(size(task%continuous_indices))
     integer            :: i_mem, r_mem, &
@@ -279,7 +280,8 @@ contains
 
         filename = trim(system%name)//'-'//trim(task%name)//'_'
         do count_int = 1, size(task%integer_indices)
-          filename = trim(filename)//achar(48 + i_arr(count_int))
+          write (num_label, fmt="(i0)") i_arr(count_int)
+          filename = trim(filename)//trim(num_label)
         enddo
         filename = trim(filename)//'.dat'
 
@@ -297,9 +299,11 @@ contains
           endif
           count = 0
           do icount = 1, size(task%vectors(:, 1)) - 1
-            count = count + task%number_of_pts(icount) - 1 !<--With this mapping we will get isampling int the range [1, task%number_of_pts(icount)).
-            !However, since we are considering a task of size, sum(task%number_of_pts) - (size(task%vectors(:, 1)) - 2) (note the -2 instead of -1),
-            !we will consider one last vector, thus the last ik corresponds to the ivec = size(task%vectors(:, 1))th vector.
+            count = count + task%number_of_pts(icount) - 1 !With this mapping we will get isampling in
+            ! the range [1, task%number_of_pts(icount)). However, since we are considering a task
+            !of size, sum(task%number_of_pts) - (size(task%vectors(:, 1)) - 2) (note the -2 instead of -1),
+            !we will consider one last vector, thus the last ik corresponds to
+            !the ivec = size(task%vectors(:, 1))th vector.
             if (count .GE. ik) then
               ivec = icount
               isampling = ik - (count - (task%number_of_pts(icount) - 1))
@@ -337,7 +341,8 @@ contains
 
         filename = trim(system%name)//'-'//trim(task%name)//'_'
         do count_int = 1, size(task%integer_indices)
-          filename = trim(filename)//achar(48 + i_arr(count_int))
+          write (num_label, fmt="(i0)") i_arr(count_int)
+          filename = trim(filename)//trim(num_label)
         enddo
         filename = trim(filename)//'.dat'
 
@@ -359,9 +364,11 @@ contains
             endif
             count = 0
             do icount = 1, size(task%vectors(:, 1)) - 1
-              count = count + task%number_of_pts(icount) - 1 !<--With this mapping we will get isampling int the range [1, task%number_of_pts(icount)).
-              !However, since we are considering a task of size, sum(task%number_of_pts) - (size(task%vectors(:, 1)) - 2) (note the -2 instead of -1),
-              !we will consider one last vector, thus the last ik corresponds to the ivec = size(task%vectors(:, 1))th vector.
+              count = count + task%number_of_pts(icount) - 1 !With this mapping we will get isampling in
+              ! the range [1, task%number_of_pts(icount)). However, since we are considering a task
+              !of size, sum(task%number_of_pts) - (size(task%vectors(:, 1)) - 2) (note the -2 instead of -1),
+              !we will consider one last vector, thus the last ik corresponds to
+              !the ivec = size(task%vectors(:, 1))th vector.
               if (count .GE. ik) then
                 ivec = icount
                 isampling = ik - (count - (task%number_of_pts(icount) - 1))

@@ -159,7 +159,7 @@ contains
     if (rank == 0) write (unit=stdout, fmt="(a)") "           \______/ |_______/    |__/    \______/  "
 
     if (rank == 0) write (unit=stdout, fmt="(a)") ""
-    if (rank == 0) write (unit=stdout, fmt="(a, a, a)") "          Version: ", trim(_VERSION)//"."
+    if (rank == 0) write (unit=stdout, fmt="(a, a, a)") "          Version: ", trim(_VERSION)//". By Álvaro R. Puente-Uriona."
     if (rank == 0) write (unit=stdout, fmt="(a)") ""
 
     if (rank == 0) write (unit=stdout, &
