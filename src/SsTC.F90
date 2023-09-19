@@ -107,7 +107,8 @@ module SsTC
   public :: SsTC_wannier_dberry_connection_dk
   public :: SsTC_hamiltonian_occ_matrix
   public :: SsTC_non_abelian_d
-  public :: SsTC_velocities
+
+  public :: SsTC_deleig
   public :: SsTC_inverse_effective_mass
 
   public :: SsTC_get_hamiltonian

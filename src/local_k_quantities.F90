@@ -19,7 +19,8 @@ module SsTC_local_k_quantities
   public :: SsTC_wannier_dberry_connection_dk
   public :: SsTC_hamiltonian_occ_matrix
   public :: SsTC_non_abelian_d
-  public :: SsTC_velocities
+
+  public :: SsTC_deleig
   public :: SsTC_inverse_effective_mass
 
   public :: SsTC_get_hamiltonian
@@ -222,11 +223,11 @@ contains
     enddo
   end function SsTC_non_abelian_d
 
-  function SsTC_velocities(system, HW_a, eig, rot, error) result(v)
+  function SsTC_deleig(system, HW_a, eig, rot, error) result(v)
 
     implicit none
 
-    !Output: Velocities v_{nm, a} in Eq. (18) in
+    !Output: Velocities v_{nm, a} in Eq. (23) in
     !10.1103/PhysRevB.75.195121 .
     !1st and 2nd indexes: bands, 3rd index: cartesian comp.
     type(SsTC_sys), intent(in)   :: system
@@ -281,13 +282,13 @@ contains
       enddo
     endif
 
-  end function SsTC_velocities
+  end function SsTC_deleig
 
   function SsTC_inverse_effective_mass(system, HW_a_b, HW_a, eig, rot, error) result(mu)
 
     implicit none
 
-    !Output: Inverse effective mass \mu_{nm, ab} with analogous def to velocities in Eq. (18) in
+    !Output: Inverse effective mass \mu_{nm, ab} in Eq. (24) in
     !10.1103/PhysRevB.75.195121 .
     !1st and 2nd indexes: bands, 3rd and 4th index: cartesian comp.
     type(SsTC_sys), intent(in)   :: system
