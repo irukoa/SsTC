@@ -17,6 +17,7 @@ module SsTC_local_k_quantities
   public :: SsTC_wannier_dhamiltonian_dk
   public :: SsTC_wannier_d2hamiltonian_dk2
   public :: SsTC_wannier_dberry_connection_dk
+  public :: SsTC_wannier_momentum
   public :: SsTC_hamiltonian_occ_matrix
   public :: SsTC_non_abelian_d
 
@@ -171,6 +172,43 @@ contains
     deallocate (A_get, i_arr)
 
   end function SsTC_wannier_dberry_connection_dk
+
+  function SsTC_wannier_momentum(system, k) result(PW)
+
+    implicit none
+
+    !Output: Full momentum operator p_nm^a(k) in the Wannier gauge:
+    !p_nm^a(k) = \partial H_0_nm / \partial k^a - i*[A^a, H_0]_nm,
+    !i.e., the action of the covariant derivative on H_0.
+    !the units are eV*A.
+    !1st and 2nd indexes: bands, 3rd index: cartesian comp.
+
+    type(SsTC_sys), intent(in) :: system
+    real(kind=dp), intent(in)  :: k(3)
+
+    complex(kind=dp) :: PW(system%num_bands, system%num_bands, 3)
+
+    complex(kind=dp) :: HW(system%num_bands, system%num_bands), &
+                        DHW(system%num_bands, system%num_bands, 3), &
+                        AW(system%num_bands, system%num_bands, 3), &
+                        commutator(system%num_bands, system%num_bands, 3)
+
+    integer :: i
+
+    !Get Hamiltonian,
+    HW = SsTC_wannier_hamiltonian(system, k)
+    !it's k-derivative,
+    DHW = SsTC_wannier_dhamiltonian_dk(system, k)
+    !and the Berry connection.
+    AW = SsTC_wannier_berry_connection(system, k)
+
+    !Get commutator and set result.
+    do i = 1, 3
+      commutator(:, :, i) = matmul(AW(:, :, i), HW) - matmul(HW, AW(:, :, i))
+      PW(:, :, i) = DHW(:, :, i) - cmplx_i*commutator(:, :, i)
+    enddo
+
+  end function SsTC_wannier_momentum
 
   function SsTC_hamiltonian_occ_matrix(system, eig) result(rho)
 

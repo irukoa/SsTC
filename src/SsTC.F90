@@ -105,6 +105,7 @@ module SsTC
   public :: SsTC_wannier_dhamiltonian_dk
   public :: SsTC_wannier_d2hamiltonian_dk2
   public :: SsTC_wannier_dberry_connection_dk
+  public :: SsTC_wannier_momentum
   public :: SsTC_hamiltonian_occ_matrix
   public :: SsTC_non_abelian_d
 
