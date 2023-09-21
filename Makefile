@@ -17,8 +17,8 @@ DEPS = utility.o extrapolation_integration.o data_structures.o kpath.o kslice.o 
 
 #Version
 MAYOR = 0
-MINOR = 1
-REVISION = 1
+MINOR = 2
+REVISION = 0
 F90FLAGS += -D_VERSION="'$(MAYOR).$(MINOR).$(REVISION)'"
 
 include ./src/calculators/Makefile #Checks for mods.
