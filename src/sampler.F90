@@ -150,12 +150,6 @@ contains
     if (rank == 0) write (unit=stdout, fmt="(a)") "          Starting BZ sampling subroutine."
     if (rank == 0) write (unit=stdout, fmt="(a, a, a, a, a)") "          Sampling task: "//trim(task%name)// &
       " in the BZ for the system "//trim(system%name)//"."
-    if (rank == 0) write (unit=stdout, fmt="(a)") &
-      "          The required memory for the sampling process is approximately,"
-    if (rank == 0) write (unit=stdout, fmt="(a, f15.3, a)") "          ", &
-      16.0_dp*real(product(task%samples)*product(task%integer_indices)* &
-                   product(task%continuous_indices), dp)/1024.0_dp**2, &
-      "MB in each MPI process."
 
     allocate (local_data_k(displs(rank) + 1:displs(rank) + counts(rank), &
                            product(task%integer_indices), product(task%continuous_indices)), &
@@ -208,7 +202,7 @@ contains
     !_OMPOFFLOADTGT_(END TARGET)
 
     if (error) write (unit=stderr, fmt="(a, i5, a)") "Rank: ", rank, ". ERROR in subroutine &
-    & SsTC_sample_and_integrate_BZ_integral_task. Check error log."
+    & SsTC_sample_sampling_task. Check error log."
 
     do i = 1, product(task%integer_indices) !For each integer index.
       do r = 1, product(task%continuous_indices) !For each continuous index.
