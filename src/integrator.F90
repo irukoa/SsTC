@@ -274,7 +274,7 @@ contains
                 res(product(task%integer_indices), product(task%continuous_indices)), &
                 simd_tmp(product(task%integer_indices), product(task%continuous_indices)))
 
-      !_OMPOFFLOADTGT_(TARGET TEAMS DISTRIBUTE &)
+      !_OMPOFFLOADTGT_(TARGET TEAMS)
       !_OMPTGT_(PARALLEL DO REDUCTION (+: temp_res) REDUCTION (.or.: error) &)
       !_OMPTGT_(SHARED(task, system, displs, counts, rank, sampling_info) &)
       !_OMPTGT_(PRIVATE(ik, k_ind, ik1, ik2, ik3, k, simd_tmp))
