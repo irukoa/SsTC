@@ -190,7 +190,7 @@ contains
       data_k = cmplx(0.0_dp, 0.0_dp, dp)
       simd_tmp = cmplx(0.0_dp, 0.0_dp, dp)
 
-      !_OMPOFFLOADTGT_(TARGET TEAMS DISTRIBUTE &)
+      !_OMPOFFLOADTGT_(TARGET TEAMS)
       !_OMPTGT_(PARALLEL DO REDUCTION (.or.: error) &)
       !_OMPTGT_(SHARED(task, system, displs, counts, rank, sampling_info, local_data_k) &)
       !_OMPTGT_(PRIVATE(ik, k_ind, ik1, ik2, ik3, k, simd_tmp))
