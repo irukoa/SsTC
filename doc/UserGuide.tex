@@ -1,9 +1,16 @@
-\documentclass[10pt,a4paper,draft]{article}
+\documentclass[10pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{amssymb}
 \usepackage{graphicx}
+\usepackage{bm}
+\usepackage[%
+  colorlinks=true,
+  urlcolor=blue,
+  linkcolor=blue,
+  citecolor=blue
+]{hyperref}
 \title{SsTC library\\
 \large{User's Guide}\\
 \large{Version 0.2.0}}
@@ -13,8 +20,101 @@
 \maketitle
 \tableofcontents
 \section{Scope}
+Solid-state Task Constructor (SsTC) is a hight performance computing (HPC) oriented Fortran library which aims to aid programmers and researchers in the process of sampling and integration of functions in the first Brillouin zone (BZ) of a given crystalline system. The library is centred around the following concepts.
+\begin{itemize}
+\item The calculator: A general function of the form
+\begin{equation}\label{eq:calculator}
+C^{\bm{\alpha}}(\bm{k}; \bm{\beta}),
+\end{equation}
+where $\bm{k}$ is a vector in the BZ and $\bm{\alpha}, \bm{\beta}$ encompass \textit{all} other functional dependences of $C$. In the document we refer to $\bm{\alpha}$ as integer or discrete indices and seek to represent, for example, a set of Cartesian components $\{x, y, z\}$ or band indices. On the other side, $\bm{\beta}$ are referred as continuous indices and seek to represent the dependence of $C$ on non-intrinsic variables such as an externally controlled frequency $\omega$ or a variable range of Fermi energies $\varepsilon_F$.
+\item The task: An object containing a complete description of the calculator $C$ and the sampling or integration task that the programmer wants to make.
+\item The system: An object containing a complete description of a crystalline system given by its tight-binding \cite{marzariMaximallyLocalizedWannier2012} representation. This includes:
+\begin{itemize}
+\item Number of bands.
+\item Fermi energy.
+\item Unit cell description: the projection of vectors $\bm{a}_i$ in the $\{x, y, z\}$ axes in units of \r{A}.
+\item Resolution of the Hamiltonian operator $\hat{H}$ in the basis of the Wannier functions (WFs) \cite{marzariMaximallyLocalizedWannier2012} in units of eV, i.e., the on-site and tunnelling amplitudes.
+\item Resolution of the position operator $\hat{\bm{r}}$ in the basis of the WFs in units of \r{A}.
+\end{itemize}
+\end{itemize}
+The sampling and integration utilities contained in SsTC are the following.
+\begin{itemize}
+\item ``Kpath" sampling. 1-dimensional sampling of $C$ with specification of the path to sample.
+\item ``Kslice" sampling. 2-dimensional regular sampling of $C$ with specification of the slice to sample.
+\item ``Regular" sampling. 3-dimensional regular sampling of $C$ with specification of the number of samples in each dimension.
+\item Integration. 3-dimensional regular sampling of $C$ followed by an integration process. The integration process as for v0.2.0 amounts to the rectangle approximation in each dimension. There exists also an experimental integration method based on extrapolation methods.
+\end{itemize}
+All the concepts covered in this section are treated with greater detail in the specific sections in the document.
 \section{Installation \& linking to application}
-\section{Tasks \& calculators}
+As for v0.2.0, the library is only guaranteed to compile on Linux systems using the \verb|mpiifort| and \verb|mpiifx| compilers contained in the Intel\textregistered oneAPI HPC toolkit, \href{https://www.intel.com/content/www/us/en/developer/tools/oneapi/hpc-toolkit.html}{external link}. As such, the main application to be linked with must be compiled with \verb|mpiifort| or \verb|mpiifx|.
+
+The SsTC project is hosted on \href{https://github.com/irukoa/SsTC}{GitHub} and can be downloaded by running the command
+\begin{verbatim}
+git clone --recurse-submodules https://github.com/irukoa/SsTC.git
+\end{verbatim}
+or by downloading a compressed version of the source code on the \href{https://github.com/irukoa/SsTC/tags}{tag history}.
+
+To install the source code move the \verb|SsTC| folder to a path of your choice and run \verb|make|.
+\begin{verbatim}
+bash:/current/dir$ mv SsTC/ /path/of/your/choice/
+bash:/path/of/your/choice$ cd SsTC/
+bash:/path/of/your/choice/SsTC$ make
+\end{verbatim}
+These commands will compile the source code and install the library \verb|libSsTC.a| and the module header file \verb|sstc.mod| in \verb|/path/of/your/choice/SsTC/bin/|.
+
+To link to your Fortran application \verb|appl.F90|, add the line \verb|use SsTC| in your application preamble and compile with 
+\begin{verbatim}
+bash:/path/to/application/$ $(F90) $(F90FLAGS) appl.F90 
+-I/path/of/your/choice/SsTC/bin 
+/path/of/your/choice/SsTC/bin/libSsTC.a -o "appl.x"
+\end{verbatim}
+where \verb|F90 = mpiifort/mpiifx| and \verb|F90FLAGS| contains, at least,
+\begin{verbatim}
+F90FLAGS = -qopenmp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread 
+-pthread
+\end{verbatim}
+
+To make use of SsTC, the application preamble should contain also the lines 
+\begin{verbatim}
+use MPI_F08
+use OMP_LIB
+\end{verbatim}
+The application must contain also a call to the MPI \cite{messagepassinginterfaceforumMPIMessagePassingInterface2021} initialization routine \verb|call MPI_INIT(ierror)| and to the SsTC initialization routine \\ \verb|call SsTC_init()| \textit{before} any call to other SsTC routines.
+
+Note:  By default SsTC uses double precision \verb|dp, kind=8| numbers except for integers, which are the default \verb|kind=4|.
+\section{Calculators \& tasks}
+The calculator Eq. \eqref{eq:calculator} is the generic name for Fortran function with interface
+\begin{verbatim}
+abstract interface
+  function SsTC_global_calculator(task, system, k, error) &
+           result(u)
+    class(SsTC_global_k_data), intent(in) :: task
+    type(SsTC_sys), intent(in)            :: system
+    real(kind=dp), intent(in)             :: k(3)
+    logical, intent(inout)                :: error
+
+    complex(kind=dp) :: u(product(task%integer_indices), &
+                          product(task%continuous_indices))
+  end function SsTC_global_calculator
+end interface
+\end{verbatim}
+given by one of the SsTC modules, see Sec. \ref{sec:modularity}, or otherwise provided by the user in the scope of the main application using SsTC. The calculator must be interface conforming.
+
+The task is a Fortran object (derived type) specifying the \\ sampling/integration task to perform and contains a full description of the properties of the calculator. The generic properties which applies to every task \verb|class(SsTC_global_k_data) :: task| are the following,
+\begin{itemize}
+\item \verb|character(len=*) :: task%name|: The name given to the task.
+\item \verb|procedure(SsTC_global_calculator), &|\\
+	  \verb|pointer :: task%global_calculator|: Interface conforming procedure pointer to the selected calculator. The library's sampling routines will use the provided calculator to sample.
+\item \verb|integer :: task%integer_indices(N_int_ind)|: Each entry \verb|i| of the array contains the number of values the integer index $\alpha_i$ in Eq. \eqref{eq:calculator} can have. \verb|N_int_ind| is the total number of integer indices encompassed by $\bm{\alpha}$ and the total number of integer index combinations is given by \verb|product(task%integer_indices)|.
+\item \verb|integer :: task%continuous_indices(N_ext_vars)|: Each entry \verb|i| of the array contains the number \verb|ext_vars_steps(i)| of values the continuous index $\beta_i$ in Eq. \eqref{eq:calculator} can have. \verb|N_ext_vars| is the total number of external variables encompassed by $\bm{\beta}$ and the total number of continuous index combinations is given by \verb|product(task%continuous_indices)|.
+\item \verb|real(kind=dp) :: task%ext_var_data(N_ext_vars)%&|\\
+      \verb|data(ext_vars_steps(N_ext_vars))|: Each entry \verb|i, j| corresponding to \verb|task%ext_var_data(i)%data(j)| is a real number $\lambda_{ij}$ containing the particular value $\beta_{i}$ has, as given by
+\begin{equation}
+\lambda_{ij} = \lambda_{i1} + \left(\lambda_{i\;\verb|ext_vars_steps(i)|} - \lambda_{i1}\right)\times\left(j - 1\right)/\verb|ext_vars_steps(i)|
+\end{equation}
+where $\lambda_{i1}$ and $\lambda_{i\;\verb|ext_vars_steps(i)|}$ are the starting and ending points of the values given to $\beta_{i}$.
+\end{itemize}
+\section{Systems}
 \section{Sampling and integration routines}
 \subsection{Kpath module}
 \subsection{Kslice module}
@@ -27,7 +127,7 @@
 \subsection{Extrapolation integration module}
 \subsection{Data structures module}
 \subsection{Local k-quantities module}
-\section{Modularity}
+\section{Modularity}\label{sec:modularity}
 \section{Examples}
 \nocite{*}
 \bibliographystyle{unsrt}
