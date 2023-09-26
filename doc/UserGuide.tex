@@ -4,13 +4,27 @@
 \usepackage{amsfonts}
 \usepackage{amssymb}
 \usepackage{graphicx}
+\usepackage{braket}
 \usepackage{bm}
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily,
+  columns=fullflexible,
+  keepspaces=true,
+}
 \usepackage[%
   colorlinks=true,
   urlcolor=blue,
   linkcolor=blue,
   citecolor=blue
 ]{hyperref}
+\usepackage{geometry}
+\geometry{
+  a4paper,
+  total= {170mm,257mm},
+  left = 2cm,
+  top  = 2cm,
+}
 \title{SsTC library\\
 \large{User's Guide}\\
 \large{Version 0.2.0}}
@@ -22,7 +36,7 @@
 \section{Scope}
 Solid-state Task Constructor (SsTC) is a hight performance computing (HPC) oriented Fortran library which aims to aid programmers and researchers in the process of sampling and integration of functions in the first Brillouin zone (BZ) of a given crystalline system. The library is centred around the following concepts.
 \begin{itemize}
-\item The calculator: A general function of the form
+\item The calculator: A general function representing a physical quantity of interest to the programmer or researcher. It is of the form
 \begin{equation}\label{eq:calculator}
 C^{\bm{\alpha}}(\bm{k}; \bm{\beta}),
 \end{equation}
@@ -32,7 +46,7 @@ where $\bm{k}$ is a vector in the BZ and $\bm{\alpha}, \bm{\beta}$ encompass \te
 \begin{itemize}
 \item Number of bands.
 \item Fermi energy.
-\item Unit cell description: the projection of vectors $\bm{a}_i$ in the $\{x, y, z\}$ axes in units of \r{A}.
+\item Unit cell description: the projection of lattice vectors $\bm{a}_i$ in the $\{x, y, z\}$ axes in units of \r{A}.
 \item Resolution of the Hamiltonian operator $\hat{H}$ in the basis of the Wannier functions (WFs) \cite{marzariMaximallyLocalizedWannier2012} in units of eV, i.e., the on-site and tunnelling amplitudes.
 \item Resolution of the position operator $\hat{\bm{r}}$ in the basis of the WFs in units of \r{A}.
 \end{itemize}
@@ -46,7 +60,7 @@ The sampling and integration utilities contained in SsTC are the following.
 \end{itemize}
 All the concepts covered in this section are treated with greater detail in the specific sections in the document.
 \section{Installation \& linking to application}
-As for v0.2.0, the library is only guaranteed to compile on Linux systems using the \verb|mpiifort| and \verb|mpiifx| compilers contained in the Intel\textregistered oneAPI HPC toolkit, \href{https://www.intel.com/content/www/us/en/developer/tools/oneapi/hpc-toolkit.html}{external link}. As such, the main application to be linked with must be compiled with \verb|mpiifort| or \verb|mpiifx|.
+As for v0.2.0, the library is only guaranteed to compile on Linux systems using the \verb|mpiifort| and \verb|mpiifx| compilers contained in the \href{https://www.intel.com/content/www/us/en/developer/tools/oneapi/hpc-toolkit.html}{Intel\textregistered oneAPI HPC} toolkit. As such, the main application to be linked with must be compiled with \verb|mpiifort| or \verb|mpiifx|.
 
 The SsTC project is hosted on \href{https://github.com/irukoa/SsTC}{GitHub} and can be downloaded by running the command
 \begin{verbatim}
@@ -60,7 +74,7 @@ bash:/current/dir$ mv SsTC/ /path/of/your/choice/
 bash:/path/of/your/choice$ cd SsTC/
 bash:/path/of/your/choice/SsTC$ make
 \end{verbatim}
-These commands will compile the source code and install the library \verb|libSsTC.a| and the module header file \verb|sstc.mod| in \verb|/path/of/your/choice/SsTC/bin/|.
+These commands will compile the source code and install the library \verb|libSsTC.a| and the module header file \verb|sstc.mod| in the directory \verb|/path/of/your/choice/SsTC/bin/|.
 
 To link to your Fortran application \verb|appl.F90|, add the line \verb|use SsTC| in your application preamble and compile with 
 \begin{verbatim}
@@ -70,21 +84,22 @@ bash:/path/to/application/$ $(F90) $(F90FLAGS) appl.F90
 \end{verbatim}
 where \verb|F90 = mpiifort/mpiifx| and \verb|F90FLAGS| contains, at least,
 \begin{verbatim}
-F90FLAGS = -qopenmp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread 
--pthread
+F90FLAGS = -qopenmp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -pthread
 \end{verbatim}
 
-To make use of SsTC, the application preamble should contain also the lines 
+To make use of SsTC, the application preamble of \verb|appl.F90| should contain also the lines 
 \begin{verbatim}
 use MPI_F08
 use OMP_LIB
 \end{verbatim}
-The application must contain also a call to the MPI \cite{messagepassinginterfaceforumMPIMessagePassingInterface2021} initialization routine \verb|call MPI_INIT(ierror)| and to the SsTC initialization routine \\ \verb|call SsTC_init()| \textit{before} any call to other SsTC routines.
+The application must contain also a call to the MPI \cite{messagepassinginterfaceforumMPIMessagePassingInterface2021} initialization routine \verb|call MPI_INIT(ierror)| and to the SsTC initialization routine \verb|call SsTC_init()| \textit{before} any call to other SsTC routines. The programmer also need to make sure that the MPI finalizing routine \verb|call MPI_FINALIZE(ierror)| has not been called before using SsTC routines.
 
-Note:  By default SsTC uses double precision \verb|dp, kind=8| numbers except for integers, which are the default \verb|kind=4|.
+Note:  By default SsTC uses double precision \verb|dp, kind=8| numbers for real and complex valued scalars and arrays.
+\section{Notation and suggested practices}\label{sec:notation}
+%MENTION ARRAY LAYOUT AND MEMORY LAYOUT. ALSO FORTRAN BLOCKS FOR NICE FINALIZATION OF DERIVED TYPES.
 \section{Calculators \& tasks}
 The calculator Eq. \eqref{eq:calculator} is the generic name for Fortran function with interface
-\begin{verbatim}
+\begin{lstlisting}[caption={Interface of a general calculator.},captionpos=b, label={lst:interface_g_calc}]
 abstract interface
   function SsTC_global_calculator(task, system, k, error) &
            result(u)
@@ -97,37 +112,207 @@ abstract interface
                           product(task%continuous_indices))
   end function SsTC_global_calculator
 end interface
-\end{verbatim}
+\end{lstlisting}
 given by one of the SsTC modules, see Sec. \ref{sec:modularity}, or otherwise provided by the user in the scope of the main application using SsTC. The calculator must be interface conforming.
 
-The task is a Fortran object (derived type) specifying the \\ sampling/integration task to perform and contains a full description of the properties of the calculator. The generic properties which applies to every task \verb|class(SsTC_global_k_data) :: task| are the following,
+Additionally to the general ``global calculator", there exists a ``local calculator" with interface
+\begin{lstlisting}[caption={Interface of a local calculator.},captionpos=b, , label={lst:interface_l_calc}]
+abstract interface
+  function SsTC_local_calculator(k_data, system, k, error) &
+           result(u)
+
+    class(SsTC_local_k_data), intent(in) :: k_data
+    type(SsTC_sys), intent(in)           :: system
+    real(kind=dp), intent(in)            :: k(3)
+    logical, intent(inout)               :: error
+
+    complex(kind=dp) :: u(product(k_data%integer_indices))
+  end function SsTC_local_calculator
+end interface
+\end{lstlisting}
+with reduced functionality and meant for internal computations regarding common quantities in k-space, as described in Sec. \ref{sec:local_k_quantities}. Users are encouraged to use always global calculators.
+
+The task is a Fortran object (derived type) of \verb|class(SsTC_global_k_data)| specifying the sampling or integration task to perform and contains a full description of the properties of the calculator. The generic properties which apply to every task \verb|task| are the following,
 \begin{itemize}
 \item \verb|character(len=*) :: task%name|: The name given to the task.
-\item \verb|procedure(SsTC_global_calculator), &|\\
-	  \verb|pointer :: task%global_calculator|: Interface conforming procedure pointer to the selected calculator. The library's sampling routines will use the provided calculator to sample.
+\item \verb|procedure(SsTC_global_calculator), pointer :: task%global_calculator|: Interface conforming procedure pointer to the selected calculator. The library's sampling routines will use the provided calculator to sample.
 \item \verb|integer :: task%integer_indices(N_int_ind)|: Each entry \verb|i| of the array contains the number of values the integer index $\alpha_i$ in Eq. \eqref{eq:calculator} can have. \verb|N_int_ind| is the total number of integer indices encompassed by $\bm{\alpha}$ and the total number of integer index combinations is given by \verb|product(task%integer_indices)|.
-\item \verb|integer :: task%continuous_indices(N_ext_vars)|: Each entry \verb|i| of the array contains the number \verb|ext_vars_steps(i)| of values the continuous index $\beta_i$ in Eq. \eqref{eq:calculator} can have. \verb|N_ext_vars| is the total number of external variables encompassed by $\bm{\beta}$ and the total number of continuous index combinations is given by \verb|product(task%continuous_indices)|.
-\item \verb|real(kind=dp) :: task%ext_var_data(N_ext_vars)%&|\\
-      \verb|data(ext_vars_steps(N_ext_vars))|: Each entry \verb|i, j| corresponding to \verb|task%ext_var_data(i)%data(j)| is a real number $\lambda_{ij}$ containing the particular value $\beta_{i}$ has, as given by
-\begin{equation}
-\lambda_{ij} = \lambda_{i1} + \left(\lambda_{i\;\verb|ext_vars_steps(i)|} - \lambda_{i1}\right)\times\left(j - 1\right)/\verb|ext_vars_steps(i)|
+\item \verb|integer :: task%continuous_indices(N_ext_vars)|: Each entry \verb|i| of the array contains the number \verb|ext_vars_steps(i)| of values the continuous index $\beta_i$ in Eq. \eqref{eq:calculator} can have. \verb|N_ext_vars| is the total number of external variables encompassed by $\bm{\beta}$ and the total number of continuous index combinations is given by \verb|product(task%continuous_indices)|. Not applicable to \verb|class(SsTC_local_k_data)|.
+\item \verb|real(kind=dp) :: task%ext_var_data(N_ext_vars)%data(ext_vars_steps(N_ext_vars))|: Each entry \verb|i, j| corresponding to \verb|task%ext_var_data(i)%data(j)| is a real number $\lambda_{ij}$ containing the particular value the continuous index $\beta_{i}$ has, as given by
+\begin{equation}\label{eq:disc_cont}
+\lambda_{ij} = \lambda_{i1} + \left(\lambda_{i\;\verb|ext_vars_steps(i)|} - \lambda_{i1}\right)\times\left(j - 1\right)/\left(\verb|ext_vars_steps(i)| - 1\right),\quad j\in [1, \verb|ext_vars_steps(i)|].
 \end{equation}
-where $\lambda_{i1}$ and $\lambda_{i\;\verb|ext_vars_steps(i)|}$ are the starting and ending points of the values given to $\beta_{i}$.
+where $\lambda_{i1}$ and $\lambda_{i\;\verb|ext_vars_steps(i)|}$ are the starting and ending points of the values given to $\beta_{i}$. Not applicable to \verb|class(SsTC_local_k_data)|.
 \end{itemize}
+Particular tasks can be created by means of a specific sampling or integrator task constructor as described in Sec. \ref{sec: sampling_integration} or by the programmer with complete freedom. Extension of the task members is also possible by means of derived type extension.
 \section{Systems}
-\section{Sampling and integration routines}
+A system is a Fortran derived type
+\begin{lstlisting}[caption={Derived type corresponding to a system.},captionpos=b]
+type SsTC_sys
+  character(len=120)            :: name
+  integer                       :: num_bands
+  real(kind=dp)                 :: direct_lattice_basis(3, 3)
+  !1st index is vector label, 2nd index is vector component.
+  real(kind=dp)                 :: metric_tensor(3, 3)
+  !Metric tensor of the direct lattice basis.
+  real(kind=dp)                 :: cell_volume
+  integer                       :: num_R_points
+  !Number of R points (unit cells).
+  integer, allocatable          :: R_point(:, :)
+  !Id of the R-point (1st index) and R-vector coords. 
+  !relative to the direct lattice basis vectors (2nd index).
+  integer, allocatable          :: deg_R_point(:)
+  !Degeneracy of the R-point specified by its memory layout id.
+  complex(kind=dp), allocatable :: real_space_hamiltonian_elements(:, :, :)
+  !Hamiltonian matrix elements (1st and 2nd indexes) and 
+  !id of the R-point (3rd index) in eV.
+  complex(kind=dp), allocatable :: real_space_position_elements(:, :, :, :) 
+  !Position operator matrix elements (1st and 2nd indexes), 
+  !cartesian coordinate (3rd index) and id of the R-point (4th index) in A.
+  real(kind=dp)                 :: e_fermi = 0.0_dp
+  !Fermi energy.
+  real(kind=dp)                 :: deg_thr = 1.0E-4_dp
+  !Degeneracy threshold in eV.
+  real(kind=dp)                 :: deg_offset = 0.04_dp
+  !Offset for regularization in case of degeneracies, in eV.
+end type SsTC_sys
+\end{lstlisting}
+representing a crystalline system by its tight-binding \cite{marzariMaximallyLocalizedWannier2012} representation. The components
+\begin{equation}
+\verb|real_space_hamiltonian_elements(m, n, id)| = \braket{m\bm{0}|\hat{H}|n\bm{R}},\quad \verb|id|\;\text{corresponds to }\bm{R}.
+\end{equation}
+and
+\begin{equation}
+\verb|real_space_position_elements(m, n, i, id)| = \braket{m\bm{0}|\hat{r}_i|n\bm{R}},\quad \verb|id|\;\text{corresponds to }\bm{R}.
+\end{equation}
+are identified.
+The recommended way to create system is by using the function \verb|SsTC_sys_constructor|,
+\begin{lstlisting}[caption={Interface of the system constructor.},captionpos=b]
+function SsTC_sys_constructor(name, path_to_tb_file, &
+                              efermi, deg_thr, deg_offset) &
+  result(system)
+
+  character(len=*), intent(in)        :: name
+  character(len=*), intent(in)        :: path_to_tb_file
+  real(kind=dp), optional, intent(in) :: efermi, &
+                                         deg_thr, deg_offset
+
+  type(SsTC_sys) :: system
+end function SsTC_sys_constructor
+\end{lstlisting}
+where the optional arguments can be specified. The function will try to read a file named \\ \verb|trim(path_to_tb_file)//trim(name)//"_tb.dat"| in the path relative to the main application directory. The files have the format of a \href{https://wannier.org/}{Wannier90} \cite{pizziWannier90CommunityCode2020} \href{https://wannier.org/}{tight-binding} (\verb|*_tb.dat| file) which can be written by the user for toy tight-binding models or can be generated by the code Wannier90 from postprocessing \textit{ab-initio} calculations. As for v3.1.0 of Wannier90, the file is automatically generated when running \verb|wannier90.x| if the option \verb|write_tb=.TRUE.| is specified in the Wannier90 input card (\verb|*.win| file).
+\section{Sampling and integration routines}\label{sec: sampling_integration}
+In this section we describe the main routines of the SsTC library, encompassing task creation, task sampling or integration and printing to files. Note that the sampling or integration subroutines take as inputs tasks corresponding to the same \verb|class| as the tasks generated by the respective task constructors, which are, at the same time, extensions of \verb|class(SsTC_global_k_data)|. As such, much flexibility in the definition of calculators can be achieved by means of type extension.
 \subsection{Kpath module}
+This module is centered around creating, sampling and printing tasks which involve a path in reciprocal space. The ``kpath" task is a derived type
+\begin{lstlisting}[caption={Derived type corresponding to a ``kpath" task.},captionpos=b]
+type, extends(SsTC_global_k_data) :: SsTC_kpath_task
+  !1st index is the id of the vector in the path.
+  !2nd index corresponds to the component of the vector
+  !in the path in coordinates relative to the reciprocal lattice.
+  real(kind=dp), allocatable :: vectors(:, :)
+  !number_of_pts(i) contains the number of k-points between vector i and vector i+1.
+  integer, allocatable :: number_of_pts(:)
+  !Array to store data with integer index,
+  !continuous index and kpt index respectively.
+  complex(kind=dp), allocatable :: kpath_data(:, :, :)
+end type SsTC_kpath_task
+\end{lstlisting}
+where we consider a set of reciprocal space vectors $\{\bm{q}_i\}$ by their components $\{a_{ij}\}$ relative to the reciprocal space basis vectors $\bm{b}_{\{1, 2, 3\}}$,
+\begin{equation}\label{eq:vec_coords}
+\bm{q}_i = \sum_{j=1}^3 a_{ij}\times \bm{b}_j, \quad a_{ij}\in\left[-0.5, 0.5\right],
+\end{equation}
+and identify
+\begin{equation}
+\verb|vectors(i, j)| = a_{ij}.
+\end{equation}
+The array \verb|number_of_pts(i)| contains the number of points between vector $\bm{q}_i$ and vector $\bm{q}_{i+1}$. For the general calculator Eq. \eqref{eq:calculator}, we identify
+\begin{equation}
+\verb|kpath_data(alpha, beta, ik)| = C^{\alpha}(\bm{k},\beta),\quad \bm{k}\text{ is identified with } \verb|ik|.
+\end{equation}
+A ``kpath" task can be constructed by the function \verb|SsTC_kpath_constructor|,
+\begin{lstlisting}[caption={Interface of the ``kpath" constructor.},captionpos=b]
+subroutine SsTC_kpath_constructor(task, name, &
+                                  l_calculator, g_calculator, &
+                                  Nvec, vec_coord, nkpts, &
+                                  N_int_ind, int_ind_range, &
+                                  N_ext_vars, ext_vars_start, ext_vars_end, &
+                                  ext_vars_steps, &
+                                  part_int_comp)
+
+  character(len=*) :: name
+
+  procedure(SsTC_local_calculator), optional  :: l_calculator
+  procedure(SsTC_global_calculator), optional :: g_calculator
+
+  integer, intent(in)       :: Nvec
+  real(kind=dp), intent(in) :: vec_coord(Nvec, 3)
+  integer, intent(in)       :: nkpts(Nvec - 1)
+
+  integer, optional, intent(in) :: N_int_ind
+  integer, optional, intent(in) :: int_ind_range(N_int_ind)
+
+  integer, optional, intent(in)       :: N_ext_vars
+  real(kind=dp), optional, intent(in) :: ext_vars_start(N_ext_vars), &
+                                         ext_vars_end(N_ext_vars)
+  integer, optional, intent(in)       :: ext_vars_steps(N_ext_vars)
+
+  integer, optional, intent(in) :: part_int_comp(N_int_ind)
+
+  class(SsTC_kpath_task), intent(out) :: task
+end subroutine SsTC_kpath_constructor
+\end{lstlisting}
+where
+\begin{itemize}
+\item \verb|name|: Name given to the task.
+\item \verb|l_calculator|: Pointer to a function that wants to be sampled, with interface \ref{lst:interface_l_calc}, its recommended to leave it unreferenced in the subroutine call.
+\item \verb|g_calculator|: ointer to a function that wants to be sampled, with interface \ref{lst:interface_g_calc}, its use is encouraged.
+\item \verb|Nvec|: Number of vectors in the path.
+\item \verb|vec_coord(i, j)|: Vector coordinates $a_{ij}$ in Eq. \eqref{eq:vec_coords}
+\item \verb|nkpts(i)|: Number of points between vectors $\bm{q}_i$ and $\bm{q}_{i+1}$.
+\item \verb|N_int_ind|: Number of integer indices.
+\item \verb|int_ind_range(i)|: Number of values the integer index $\alpha_i$ can have.
+\item \verb|N_ext_vars|: Number of continuous variables.
+\item \verb|ext_vars_start(i)|: Starting point $\lambda_{i1}$ in Eq. \eqref{eq:disc_cont} for the variable $\beta_i$
+\item \verb|ext_vars_end(i)|: Ending point $\lambda_{i\;\verb|ext_vars_steps(i)|}$ in Eq. \eqref{eq:disc_cont} for the variable $\beta_i$
+\item \verb|ext_vars_steps(i)|: Number of points into which to descretize the variable $\beta_i$.
+\item \verb|part_int_comp(N_int_ind)|: Array corresponding to a selection of a particuar integer component.
+\end{itemize}
+Sampling, and thus writing the values of $C$ in Eq. \eqref{eq:calculator} given by \verb|l_calculator| or \verb|g_calculator| to the array \verb|kpath_data| can be made with the subroutine \verb|SsTC_kpath_sampler|.
+\begin{lstlisting}[caption={Interface of the ``kpath" sampler.},captionpos=b]
+subroutine SsTC_kpath_sampler(task, system)
+  class(SsTC_kpath_task), intent(inout) :: task
+  type(SsTC_sys), intent(in)            :: system
+end subroutine SsTC_kpath_sampler
+\end{lstlisting}
+All the \verb|allocatable| components of both \verb|task| and \verb|system| should be allocated before the subroutine call either by the corresponding constructors or by the user.
+
+Writing to files can be done by means of the subroutine \verb|SsTC_print_kpath|.
+\begin{lstlisting}[caption={Interface of the ``kpath" printer.},captionpos=b]
+subroutine SsTC_print_kpath(task, system)
+  class(SsTC_kpath_task), intent(in) :: task
+  type(SsTC_sys), intent(in)         :: system
+end subroutine SsTC_print_kpath
+\end{lstlisting}
+The routine will write a file for each integer index with name \\ \verb|trim(system%name)//'-'//trim(task%name)//'_'trim(num_label)//'.dat'| with num label being an \\ \verb|N_int_ind|-dimensional array with the corresponding integer index in ``array layout" (see Sec. \ref{sec:notation}). Each file will contain, column by column, the following,
+\begin{itemize}
+\item An \verb|id| corresponding to the particular $\bm{k}$ point being sampled (1 column).
+\item The components $a_{i\{1, 2, 3\}}$ in Eq. \eqref{eq:vec_coords} of the vector $\bm{k}$ corresponding to \verb|id| (3 columns).
+\item For each continuous index $i$, the particular values of the data $\lambda_{ij}$ as given by Eq. \eqref{eq:disc_cont} \\ (\verb|size(task%continuous_indices)| columns).
+\item The real and imaginary part of the calculator $C^{\alpha}(\bm{k};\beta)$ (2 columns).
+\end{itemize}
+If further use of the sampled data is intended within the execution of the application, making a copy of \verb|task%kpath_data| is suggested.
 \subsection{Kslice module}
 \subsection{Sampler module}
 \subsection{Integrator module}
-\section{Usage in high performance computing}
 \section{Other routines}
 \subsection{Comms module}
 \subsection{Utility module}
 \subsection{Extrapolation integration module}
 \subsection{Data structures module}
-\subsection{Local k-quantities module}
+\subsection{Local k-quantities module}\label{sec:local_k_quantities}
 \section{Modularity}\label{sec:modularity}
+\section{Usage in high performance computing}
 \section{Examples}
 \nocite{*}
 \bibliographystyle{unsrt}
