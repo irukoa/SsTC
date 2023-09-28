@@ -822,8 +822,100 @@ SsTC_shrink_array => shrink_array, &
 SsTC_expand_array => expand_array
 \end{lstlisting}
 \subsection{Data structures module}\label{sec:data_structures}
+The module data structures provides utility, array transformation and index tracking routines motivated by the comfort of storing data local for each $\bm{k}$ in array layout and the flexibility of memory layout in array passing, as discussed in Sec. \ref{sec:notation}.
+
+\subsubsection{Utility}
+The derived type \verb|SsTC_external_vars|,
+\begin{lstlisting}[caption={Derived type ``external variables".},captionpos=b]
+type SsTC_external_vars
+  real(kind=dp), allocatable :: data(:) !External variable data array.
+end type SsTC_external_vars
+\end{lstlisting}
+stores the external variable data $\lambda_{ij}$ in Eq. \eqref{eq:disc_cont} for each external variable $\beta_i$. The data is created by the constructor,
+\begin{lstlisting}[caption={Interface of ``external variable constructor".},captionpos=b]
+function SsTC_external_variable_constructor(start, end, steps) &
+result(vars)
+  !Function to set external variable data.
+  real(kind=dp), intent(in) :: start, end
+  integer, intent(in)       :: steps
+
+  type(SsTC_external_vars) :: vars
+  
+end function SsTC_external_variable_constructor
+\end{lstlisting}
+which implements Eq. \eqref{eq:disc_cont} for an index $\beta_i$.
+\subsubsection{Array transformation and index tracking}
+
+The function \verb|SsTC_integer_array_element_to_memory_element|,
+\begin{lstlisting}[caption={Interface of ``integer array element to memory element".},captionpos=b]
+function SsTC_integer_array_element_to_memory_element(data_k, i_arr) &
+result(i_mem)
+
+  !Get integer indices from array layout to memory layout.
+  class(SsTC_local_k_data), intent(in) :: data_k
+  integer, intent(in)                  :: i_arr(size(data_k%integer_indices))
+
+  integer :: i_mem
+  
+end function SsTC_integer_array_element_to_memory_element
+\end{lstlisting}
+computes the integer index $r = f(\{n_1, n_2, \cdots, n_N\})$ in Eq. \eqref{eq:column_mayor_mapping} from the indices $\{n_1, \cdots, n_N\}$ specified by \verb|i_arr|. The sizes $s_i$ are given by \verb|data_k%integer_indices(i)|.
+
+The function \verb|SsTC_integer_memory_element_to_array_element|,
+\begin{lstlisting}[caption={Interface of ``integer array element to memory element".},captionpos=b]
+function SsTC_integer_memory_element_to_array_element(data_k, i_mem) &
+result(i_arr)
+
+  !Get integer indices from memory layout to array layout.
+  class(SsTC_local_k_data), intent(in) :: data_k
+  integer, intent(in)                  :: i_mem
+
+  integer :: i_arr(size(data_k%integer_indices))
+  
+end function SsTC_integer_memory_element_to_array_element
+\end{lstlisting}
+computes the integer indexes $\{n_1, n_2, \cdots, n_N\} = f^{-1}(r)$ in Eq. \eqref{eq:column_mayor_mapping} from the index $r$. The sizes $s_i$ are given by \verb|data_k%integer_indices(i)|.
+
+The function \verb|SsTC_continuous_array_element_to_memory_element|,
+\begin{lstlisting}[caption={Interface of ``continuous array element to memory element".},captionpos=b]
+function SsTC_continuous_array_element_to_memory_element(task, r_arr) &
+result(r_mem)
+
+  !Get continuous indices from array layout to memory layout.
+  class(SsTC_global_k_data), intent(in) :: task
+  integer, intent(in)                   :: r_arr(size(task%continuous_indices))
+
+  integer :: r_mem
+  
+end function SsTC_continuous_memory_element_to_array_element
+\end{lstlisting}
+computes the continuous index $r = f(\{n_1, n_2, \cdots, n_N\})$ in Eq. \eqref{eq:column_mayor_mapping} from the indices $\{n_1, \cdots, n_N\}$ specified by \verb|r_arr|. The sizes $s_i$ are given by \verb|task%continuous_indices(i)|.
+
+The function \verb|SsTC_continuous_memory_element_to_array_element|,
+\begin{lstlisting}[caption={Interface of ``continuous array element to memory element".},captionpos=b]
+function SsTC_continuous_memory_element_to_array_element(task, r_mem) &
+result(r_arr)
+
+  !Get continuous indices from memory layout to array layout.
+  class(SsTC_global_k_data), intent(in) :: task
+  integer, intent(in)                   :: r_mem
+
+  integer :: r_arr(size(task%continuous_indices))
+  
+end function SsTC_continuous_memory_element_to_array_element
+\end{lstlisting}
+computes the continuous indexes $\{n_1, n_2, \cdots, n_N\} = f^{-1}(r)$ in Eq. \eqref{eq:column_mayor_mapping} from the index $r$. The sizes $s_i$ are given by \verb|task%continuous_indices(i)|.
+
+The routine \verb|SsTC_construct_iterable|
+\begin{lstlisting}[caption={Interface of ``construct iterable".},captionpos=b]
+subroutine SsTC_construct_iterable(global, vars)
+  class(SsTC_global_k_data), intent(inout) :: global
+  integer, intent(in)                      :: vars(:)
+end subroutine SsTC_construct_iterable
+\end{lstlisting}
+creates an ``iterable" dictionary which is stored in \verb|global%iterables(:,:)|. The dictionary holds all posible combinations from the variation of the $\beta_i$-indexed coordinate labels which are specified in the array \verb|vars|, i.e., \verb|vars| is an array which each entery specifying the $i$ label of $\beta_i$ to permutate. The first index of the dictionary holds the ``permutation label" associated with variation of the variables \verb|vars| and the second the particular permutation of the variables, so the set of arrays $\verb|array|_n = \verb|global%iterables(n,:)|$ hold a list of size \verb|global%continuous_indices| with a particular permutation in the indices \verb|vars(j)| for each $j\in \verb|size(vars)|$. The variables not permutated are stored with the constant value of 1 in the corresponding entry of \verb|global%iterables(:,:)|.
+
 \subsection{Local k-quantities module}\label{sec:local_k_quantities}
-\subsection{Comms module}
 \section{Modularity}\label{sec:modularity}
 \section{Usage in high performance computing}
 SsTC uses a hybrid parallelization model, using the MPI \cite{messagepassinginterfaceforumMPIMessagePassingInterface2021} and the OpenMP \cite{openmparchitecturereviewboardOpenMPApplicationProgramming2021} libraries.
