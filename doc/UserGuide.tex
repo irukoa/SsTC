@@ -25,7 +25,7 @@
   left = 2cm,
   top  = 2cm,
 }
-\title{SsTC library\\
+\title{SsTC library:\\
 \large{User's Guide}\\
 \large{Version 0.2.0}}
 \author{Álvaro R. Puente-Uriona}
@@ -128,7 +128,7 @@ abstract interface
   end function SsTC_local_calculator
 end interface
 \end{lstlisting}
-with reduced functionality and meant for internal computations regarding quantities in k-space, as described in Sec. \ref{sec:local_k_quantities}.
+with reduced functionality and meant for internal computations regarding quantities local for each $\bm{k}$ point, as described in Sec. \ref{sec:local_k_quantities}.
 
 The task is a Fortran object (derived type) of \verb|class(SsTC_local_k_data)|, of which \\ \verb|type(SsTC_global_k_data)| is an extension, specifying the sampling or integration task to perform and contains a full description of the properties of the calculator. The generic properties which apply to every task \verb|task| are the following,
 \begin{itemize}
@@ -140,7 +140,7 @@ The task is a Fortran object (derived type) of \verb|class(SsTC_local_k_data)|, 
 \begin{equation}\label{eq:disc_cont}
 \lambda_{ij} = \lambda_{i1} + \left(\lambda_{i\;\verb|ext_vars_steps(i)|} - \lambda_{i1}\right)\times\left(j - 1\right)/\left(\verb|ext_vars_steps(i)| - 1\right).
 \end{equation}
-where $\lambda_{i1}$ and $\lambda_{i\;\verb|ext_vars_steps(i)|}$  are the starting and ending points of the values given to $\beta_{i}$, $j\in [1, \verb|ext_vars_steps(i)|]$. Not applicable to \verb|type(SsTC_local_k_data)|.
+where $\lambda_{i1}$ and $\lambda_{i\;\verb|ext_vars_steps(i)|}$ are the starting and ending points of the values given to $\beta_{i}$, $j\in [1, \verb|ext_vars_steps(i)|]$. Not applicable to \verb|type(SsTC_local_k_data)|.
 \end{itemize}
 Particular tasks can be created by means of a specific sampling or integrator task constructor as described in Sec. \ref{sec: sampling_integration} or by the programmer with complete freedom. Extension of the task members is also possible by means of derived type extension.
 
@@ -196,7 +196,7 @@ In SsTC, the sizes $s_i$ of integer or continuous indices are specified by the c
 \item \verb|SsTC_continuous_array_element_to_memory_element|: Returns $r = f(\{n_1, n_2, \cdots, n_N\})$ for continuous indices.
 \item \verb|SsTC_continuous_memory_element_to_array_element|: Returns $\{n_1, n_2, \cdots, n_N\} = f^{-1}(r)$ for continuous indices.
 \end{itemize}
-where $f$ is a function representing the mapping Eq. \eqref{eq:column_mayor_mapping} and $f^{-1}$ represents its inverse. The four utilities are described in detail in Sec. \ref{sec:data_structures}.
+where $f$ is a function representing the mapping Eq. \eqref{eq:column_mayor_mapping} and $f^{-1}$ represents its inverse mapping. The four utilities are described in detail in Sec. \ref{sec:data_structures}.
 \section{Systems}
 A system is a Fortran derived type
 \begin{lstlisting}[caption={Derived type corresponding to a system.},captionpos=b]
@@ -280,7 +280,11 @@ and identify
 \end{equation}
 The array \verb|number_of_pts(i)| contains the number of points between vector $\bm{q}_i$ and vector $\bm{q}_{i+1}$. For the general calculator Eq. \eqref{eq:calculator}, we identify
 \begin{equation}
-\verb|kpath_data(alpha, beta, ik)| = C^{\alpha}(\bm{k},\beta),\quad \bm{k}\text{ is identified with } \verb|ik|.
+\verb|kpath_data(alpha, beta, ik)| = C^{\alpha}(\bm{k},\beta),\quad \bm{k}\text{ is identified with } \verb|ik|,
+\end{equation}
+with
+\begin{equation}
+\bm{k} = \bm{q}_i + (\bm{q}_{i+1} - \bm{q}_i)\times (\verb|ik| - 1)/(\verb|number_of_pts(i)| - 1).
 \end{equation}
 A ``kpath" task can be constructed by the function \verb|SsTC_kpath_constructor|,
 \begin{lstlisting}[caption={Interface of the ``kpath" constructor.},captionpos=b]
@@ -377,7 +381,7 @@ and identify the two vectors spanning a plane
 \end{equation}
 We also identify the ``sampling corner" or starting point
 \begin{equation}
-\verb|corner(j)| = a_{3, j}
+\verb|corner(j)| = a_{3, j}.
 \end{equation}
 For the general calculator Eq. \eqref{eq:calculator}, we identify
 \begin{equation}
@@ -385,7 +389,7 @@ For the general calculator Eq. \eqref{eq:calculator}, we identify
 \end{equation}
 and given by
 \begin{equation}
-\bm{k} = \verb|corner| + \bm{q}_1\times (\verb|ik1|-1)/(\verb|samples(1)| - 1) + \bm{q}_2\times (\verb|ik2|-1)/(\verb|samples(2)| - 1)
+\bm{k} = \verb|corner| + \bm{q}_1\times (\verb|ik1|-1)/(\verb|samples(1)| - 1) + \bm{q}_2\times (\verb|ik2|-1)/(\verb|samples(2)| - 1).
 \end{equation}
 A ``kslice" task can be constructed by the function \verb|SsTC_kslice_task_constructor|,
 \begin{lstlisting}[caption={Interface of the ``kslice" constructor.},captionpos=b]
@@ -453,13 +457,96 @@ end subroutine SsTC_print_kslice
 \end{lstlisting}
 The routine will write a file for each integer index with name \\ \verb|trim(system%name)//'-'//trim(task%name)//'_'trim(num_label)//'.dat'| with num label being an \\ \verb|N_int_ind|-dimensional array with the corresponding integer index in array layout (see Sec. \ref{sec:notation}). Each file will contain, column by column, the following,
 \begin{itemize}
-\item An \verb|id| corresponding to the particular $\bm{k}$ point being sampled (1 column).
 \item The components $a_{i\{1, 2, 3\}}$ in Eq. \eqref{eq:vec_coords_slice} of the vector $\bm{k}$ corresponding to \verb|id| (2 columns).
 \item For each continuous index $i$, the particular values of the data $\lambda_{ij}$ as given by Eq. \eqref{eq:disc_cont} \\ (\verb|size(task%continuous_indices)| columns).
 \item The real and imaginary part of the calculator $C^{\alpha}(\bm{k};\beta)$ (2 columns).
 \end{itemize}
 If further use of the sampled data is intended within the execution of the application, making a copy of \verb|task%kslice_data| is suggested.
 \subsection{Sampler module}
+This module is centred around creating, sampling and printing tasks which involve a 3-dimensional BZ sampling. The ``sampler" task is a derived type
+\begin{lstlisting}[caption={Derived type corresponding to a ``sampler" task.},captionpos=b]
+type, extends(SsTC_global_k_data) :: SsTC_sampling_task
+  integer                       :: samples(3) = (/100, 100, 100/)
+  !Integer index, continuous index and kpt index 1, 2 and 3 respectively.
+  complex(kind=dp), allocatable :: BZ_data(:, :, :, :, :)
+end type SsTC_sampling_task
+\end{lstlisting}
+For the general calculator Eq. \eqref{eq:calculator}, and the reciprocal space basis vectors $\bm{b}_{\{1, 2, 3\}}$, we identify
+\begin{equation}
+\verb|BZ_data(alpha, beta, ik1, ik2, ik3)| = C^{\alpha}(\bm{k},\beta),\quad \bm{k}\text{ is identified with } \verb|ik1, ik2, ik3|,
+\end{equation}
+and given by
+\begin{equation}\label{eq:vec_coords_sampler}
+\bm{k} = \sum_{i=1}^3 \bm{b}_i\times (\verb|ik|i-1)/(\verb|samples(i)| - 1).
+\end{equation}
+A ``sampler" task can be constructed by the function \verb|SsTC_sampling_task_constructor|,
+\begin{lstlisting}[caption={Interface of the ``sampler" constructor.},captionpos=b]
+subroutine SsTC_sampling_task_constructor(task, name, &
+                                          l_calculator, g_calculator, &
+                                          samples, &
+                                          N_int_ind, int_ind_range, &
+                                          N_ext_vars, &
+                                          ext_vars_start, ext_vars_end, &
+                                          ext_vars_steps, &
+                                          part_int_comp)
+
+  character(len=*) :: name
+
+  procedure(SsTC_local_calculator), optional  :: l_calculator
+  procedure(SsTC_global_calculator), optional :: g_calculator
+
+  integer, optional, intent(in) :: samples(3)
+
+  integer, optional, intent(in) :: N_int_ind
+  integer, optional, intent(in) :: int_ind_range(N_int_ind)
+
+  integer, optional, intent(in)       :: N_ext_vars
+  real(kind=dp), optional, intent(in) :: ext_vars_start(N_ext_vars), &
+                                         ext_vars_end(N_ext_vars)
+  integer, optional, intent(in)       :: ext_vars_steps(N_ext_vars)
+
+  integer, optional, intent(in) :: part_int_comp(N_int_ind)
+
+  class(SsTC_sampling_task), intent(out) :: task
+end subroutine SsTC_sampling_task_constructor
+\end{lstlisting}
+where
+\begin{itemize}
+\item \verb|name|: Name given to the task.
+\item \verb|l_calculator|: Pointer to a function that wants to be sampled, with interface \ref{lst:interface_l_calc}. Only one of \\ \verb|l_calculator| or \verb|g_calculator| can be specified.
+\item \verb|g_calculator|: Pointer to a function that wants to be sampled, with interface \ref{lst:interface_g_calc}. Only one of \\ \verb|l_calculator| or \verb|g_calculator| can be specified.
+\item \verb|samples(3)|: Each entry $i$ contains the number into which $\bm{b}_i$ has been discretized.
+\item \verb|N_int_ind|: Number of integer indices.
+\item \verb|int_ind_range(i)|: Number of values the integer index $\alpha_i$ can have.
+\item \verb|N_ext_vars|: Number of continuous variables.
+\item \verb|ext_vars_start(i)|: Starting point $\lambda_{i1}$ in Eq. \eqref{eq:disc_cont} for the variable $\beta_i$
+\item \verb|ext_vars_end(i)|: Ending point $\lambda_{i\;\verb|ext_vars_steps(i)|}$ in Eq. \eqref{eq:disc_cont} for the variable $\beta_i$
+\item \verb|ext_vars_steps(i)|: Number of points into which to descretize the variable $\beta_i$.
+\item \verb|part_int_comp(N_int_ind)|: Array corresponding to a selection of a particular integer component in array layout.
+\end{itemize}
+Sampling, and thus writing the values of $C$ in Eq. \eqref{eq:calculator} given by \verb|l_calculator| or \verb|g_calculator| to the array \verb|BZ_data| can be made with the subroutine \verb|SsTC_sample_sampling_task|.
+\begin{lstlisting}[caption={Interface of the ``sampler" sampler.},captionpos=b]
+subroutine SsTC_sample_sampling_task(task, system)
+  class(SsTC_kslice_task), intent(inout) :: task
+  type(SsTC_sys), intent(in)             :: system
+end subroutine SsTC_sample_sampling_task
+\end{lstlisting}
+All the \verb|allocatable| components of both \verb|task| and \verb|system| should be allocated before the subroutine call either by the corresponding constructors or by the user.
+
+Writing to files can be done by means of the subroutine \verb|SsTC_print_sampling|.
+\begin{lstlisting}[caption={Interface of the ``kpath" printer.},captionpos=b]
+subroutine SsTC_print_sampling(task, system)
+  class(SsTC_kpath_task), intent(in) :: task
+  type(SsTC_sys), intent(in)         :: system
+end subroutine SsTC_print_sampling
+\end{lstlisting}
+The routine will write a file for each integer index with name \\ \verb|trim(system%name)//'-'//trim(task%name)//'_'trim(num_label)//'.dat'| with num label being an \\ \verb|N_int_ind|-dimensional array with the corresponding integer index in array layout (see Sec. \ref{sec:notation}). Each file will contain, column by column, the following,
+\begin{itemize}
+\item The components $\verb|ik|i=\{1, 2, 3\}$ of the vector $\bm{k}$ in Eq. \eqref{eq:vec_coords_sampler} corresponding to \verb|id| (3 columns).
+\item For each continuous index $i$, the particular values of the data $\lambda_{ij}$ as given by Eq. \eqref{eq:disc_cont} \\ (\verb|size(task%continuous_indices)| columns).
+\item The real and imaginary part of the calculator $C^{\alpha}(\bm{k};\beta)$ (2 columns).
+\end{itemize}
+If further use of the sampled data is intended within the execution of the application, making a copy of \verb|task%BZ_data| is suggested.
 \subsection{Integrator module}
 \section{Other routines}
 \subsection{Comms module}
