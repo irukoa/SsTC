@@ -793,6 +793,14 @@ end function SsTC_utility_logu
 \end{lstlisting}
 computes the matrix logarithm of the unitary $\verb|dim|\times\verb|dim|$ matrix \verb|mat|. It returns $\verb|logu| = \text{log}\left(\verb|mat|\right)$. If an error occurs in the calculation, \verb|error=.true.| is set.
 \subsection{Extrapolation integration module}
+Extrapolation integration is a submodule of the SsTC project, powered by the \\ \verb|F90-Extrapolation-Integration| project, hosted on \href{https://github.com/irukoa/F90-Extrapolation-Integration}{GitHub}. We refer the reader to the user's guide provided by the repository for a full review of the routines provided by the module.
+
+In SsTC, the routines are made public to the user with the following renaming.
+\begin{lstlisting}[caption={Renaming of extrapolation routines.},captionpos=b]
+SsTC_integral_extrapolation => integral_extrapolation, &
+SsTC_shrink_array => shrink_array, &
+SsTC_expand_array => expand_array
+\end{lstlisting}
 \subsection{Data structures module}\label{sec:data_structures}
 \subsection{Local k-quantities module}\label{sec:local_k_quantities}
 \subsection{Comms module}
