@@ -914,8 +914,87 @@ subroutine SsTC_construct_iterable(global, vars)
 end subroutine SsTC_construct_iterable
 \end{lstlisting}
 creates an ``iterable" dictionary which is stored in \verb|global%iterables(:,:)|. The dictionary holds all posible combinations from the variation of the $\beta_i$-indexed coordinate labels which are specified in the array \verb|vars|, i.e., \verb|vars| is an array which each entery specifying the $i$ label of $\beta_i$ to permutate. The first index of the dictionary holds the ``permutation label" associated with variation of the variables \verb|vars| and the second the particular permutation of the variables, so the set of arrays $\verb|array|_n = \verb|global%iterables(n,:)|$ hold a list of size \verb|global%continuous_indices| with a particular permutation in the indices \verb|vars(j)| for each $j\in \verb|size(vars)|$. The variables not permutated are stored with the constant value of 1 in the corresponding entry of \verb|global%iterables(:,:)|.
-
 \subsection{Local k-quantities module}\label{sec:local_k_quantities}
+The local ``k" quantities module provides utilities which implement Wannier interpolation \cite{marzariMaximallyLocalizedWannier2012} of several common physically meaningfull quantities by computing the Fourier transformation of a \verb|type(SsTC_sys)| system's Hamiltonian and position matrix elements from direct space to reciprocal space.
+
+\subsubsection{Definitions}
+The matrix elements of an operator $\hat{O}$ in the Wannier basis $\{\ket{n\bm{R}}\}$ are
+\begin{equation}
+O_{nm}(\bm{R}) = \braket{n\bm{0}|\hat{O}|m\bm{R}}.
+\end{equation}
+The Fourier transform of those matrix elements
+\begin{equation}
+O_{nm}^{(W)}(\bm{k}) = \sum_{\bm{R}} e^{i\bm{k}\cdot\bm{R}} O_{nm}(\bm{R})
+\end{equation}
+are called the matrix elements of an operator $\hat{O}$ in the Bloch basis and in the Wannier gauge. The Bloch basis in the Wannier gauge is a reciprocal space basis $\{\ket{n\bm{k}}^{(W)}\}$ which obeys
+\begin{equation}
+\ket{n\bm{k}}^{(W)} = \sum_{\bm{R}} e^{i\bm{k}\cdot\bm{R}} \ket{n\bm{R}}
+\end{equation}
+
+It is important to note that the Bloch basis in the Wannier gauge does not, in general, make any operator, such as the Hamiltonian $\hat{H}$, diagonal. It rather provides a localized basis which makes it possible to interpolate most physical quantities with precision. The Bloch basis which diagonalizes the Hamiltonian $\hat{H}$ is called the Bloch basis in the Hamiltonian gauge, $\{\ket{n\bm{k}}^{(H)}\}$ which obeys
+\begin{equation}\label{eq:hamil_gauge}
+\hat{H}\ket{n\bm{k}}^{(H)} = \varepsilon_n(\bm{k})\ket{n\bm{k}}^{(H)},\quad \ket{n\bm{k}}^{(H)} = \sum_{m} U_{mn}(\bm{k}) \ket{n\bm{k}}^{(W)}
+\end{equation}
+for some unitary operator with matrix elements $U_{mn}(\bm{k})$ and we call $\varepsilon_n(\bm{k})$ the eigenvalues of $\hat{H}$. Both reciprocal space bases $W$ and $H$ are related by unitary transformations local for each $\bm{k}$.
+
+The Fourier transform of the position operator in the Bloch basis and in the Wannier gauge are given by
+\begin{equation}
+\bm{A}_{nm}^{(W)}(\bm{k}) = \sum_{\bm{R}} e^{i\bm{k}\cdot\bm{R}} \bm{r}_{nm}(\bm{R}) = ^{(H)}\braket{n\bm{k}|\bm{\nabla}|m\bm{k}}^{(H)},
+\end{equation}
+which is called the Berry connection in the Bloch basis and in the Wannier gauge. The matrix representing the Berry connection in the Bloch basis and in the Hamiltonian gauge is related to the matrix representing the Berry connection in the Wannier gauge by,
+\begin{equation}
+\bm{A}^{(H)}(\bm{k}) = U^{\dagger}(\bm{k})\bm{A}^{(W)}(\bm{k})U(\bm{k}) + i \bm{D}^{(H)}(\bm{k}),
+\end{equation}
+where $U(\bm{k})$ is the matrix representing the unitary operator with matrix elements $U_{mn}(\bm{k})$ in Eq. \eqref{eq:hamil_gauge} and $\bm{D}^{(H)}$ has matrix elements
+\begin{equation}\label{eq:d}
+D^{a(H)}_{nm}(\bm{k}) = \frac{\left[U^{\dagger}(\bm{k})\left(\nabla^a H^{(W)}(\bm{k})\right)U(\bm{k})\right]_{nm}}{\varepsilon_m(\bm{k})-\varepsilon_n(\bm{k})}.
+\end{equation}
+\subsubsection{Procedures}
+The module contains 2 core procedures, which Fourier transform the elements of the Hamiltonian and poisition operator read from \verb|real_space_hamiltonian_elements(:, :, :)| and \\ \verb|real_space_position_elements(:, :, :, :)| respectively to the Bloch basis in the Wannier gauge.
+
+The routine \verb|SsTC_get_hamiltonian|,
+\begin{lstlisting}[caption={Interface of ``get Hamiltonian".},captionpos=b]
+subroutine SsTC_get_hamiltonian(system, k, H, Nder_i, only_i)
+
+  type(SsTC_sys), intent(in)                        :: system
+  real(kind=dp), intent(in)                         :: k(3)
+  type(SsTC_local_k_data), allocatable, intent(out) :: H(:)
+  integer, optional                                 :: Nder_i 
+  !Order of the derivative. Nder = 0 means normal Hamiltonian,
+  !Nder = 1, \partial H/\partial k^i...
+  logical, optional                                 :: only_i 
+  !Determine, in the case of Nder > 0,
+  !if all derivatives i with i < Nder are requested.
+  
+end subroutine SsTC_get_hamiltonian
+\end{lstlisting}
+computes the \verb|Nder_i| = $nD$-th Hamiltonian derivative, retrieving the Bloch basis in the Wannier gauge matrix elements 
+\begin{equation}\label{eq:get_hamiltonian}
+\verb|H(i)%k_data(r)| = \frac{\partial^{nD}}{\partial k^{a_1} \cdots \partial k^{a_{nD}}} H_{nm}^{(W)}(\bm{k}),
+\end{equation}
+where the set of band and derivative indices $\{n,m, a_1, \cdots,a_{nD}\}$ are stored in memory layout in the index \verb|r|, for a system \verb|system| and $\bm{k}$ point \verb|k|. If $nD = 0$, the regular Hamiltonian is stored. The index \verb|i| in Eq. \eqref{eq:get_hamiltonian} references the $i$-th derivative of the Hamiltonian in the case of \verb|only_i = .false.| and $nD > 1$. If \verb|only_i = .true.|, the routine will only compute the $nD$-th Hamiltonian derivative and store it in \verb|H(1)|.
+
+The routine \verb|SsTC_get_position|,
+\begin{lstlisting}[caption={Interface of ``get position".},captionpos=b]
+subroutine SsTC_get_position(system, k, A, Nder_i, only_i)
+
+  type(SsTC_sys), intent(in)                        :: system
+  real(kind=dp), intent(in)                         :: k(3)
+  type(SsTC_local_k_data), allocatable, intent(out) :: A(:)
+  integer, optional                                 :: Nder_i 
+  !Order of the derivative. Nder = 0 means normal Berry connection,
+  !Nder = 1, \partial A^i/\partial k^j...
+  logical, optional                                 :: only_i 
+  !Determine, in the case of Nder > 0,
+  !if all derivatives i with i < Nder are requested.
+  
+end subroutine SsTC_get_position
+\end{lstlisting}
+computes the \verb|Nder_i| = $nD$-th position operator's derivative, retrieving the Bloch basis in the Wannier gauge matrix elements 
+\begin{equation}\label{eq:get_berry}
+\verb|A(i)%k_data(r)| = \frac{\partial^{nD}}{\partial k^{a_1} \cdots \partial k^{a_{nD}}} A_{nm}^{a(W)}(\bm{k}),
+\end{equation}
+where the set of band and derivative indices $\{n,m, a, a_1, \cdots,a_{nD}\}$ are stored in memory layout in the index \verb|r|, for a system \verb|system| and $\bm{k}$ point \verb|k|. If $nD = 0$, the regular Berry connection is stored. The index \verb|i| in Eq. \eqref{eq:get_berry} references the $i$-th derivative of the Berry connection in the case of \verb|only_i = .false.| and $nD > 1$. If \verb|only_i = .true.|, the routine will only compute the $nD$-th Hamiltonian derivative and store it in \verb|H(1)|.
 \section{Modularity}\label{sec:modularity}
 \section{Usage in high performance computing}
 SsTC uses a hybrid parallelization model, using the MPI \cite{messagepassinginterfaceforumMPIMessagePassingInterface2021} and the OpenMP \cite{openmparchitecturereviewboardOpenMPApplicationProgramming2021} libraries.
