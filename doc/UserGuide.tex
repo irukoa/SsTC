@@ -60,7 +60,7 @@ The sampling and integration utilities contained in SsTC are the following.
 \item Integration. 3-dimensional regular sampling of $C$ followed by an integration process. The integration process as for v0.2.0 amounts to the rectangle approximation in each dimension. There exists also an experimental integration method based on extrapolation methods.
 \end{itemize}
 All the concepts covered in this section are treated with greater detail in the specific sections in the document.
-\section{Installation \& linking to application}
+\section{Installation \& linking to application}\label{sec:install}
 As for v0.2.0, the library is only guaranteed to compile on Linux systems using the \verb|mpiifort| and \verb|mpiifx| compilers contained in the \href{https://www.intel.com/content/www/us/en/developer/tools/oneapi/hpc-toolkit.html}{Intel\textregistered oneAPI HPC} toolkit. As such, the main application to be linked with must be compiled with \verb|mpiifort| or \verb|mpiifx|.
 
 The SsTC project is hosted on \href{https://github.com/irukoa/SsTC}{GitHub} and can be downloaded by running the command
@@ -119,7 +119,7 @@ abstract interface
   end function SsTC_global_calculator
 end interface
 \end{lstlisting}
-given by one of the SsTC modules, see Sec. \ref{sec:modularity}, or otherwise provided by the user in the scope of the main application using SsTC. The calculator must be interface conforming.
+given by SsTC modules, see Sec. \ref{sec:modularity}, or otherwise provided by the user in the scope of the main application using SsTC. The calculator must be interface conforming.
 
 Additionally to the general ``global calculator", there exists a ``local calculator" with interface
 \begin{lstlisting}[caption={Interface of a local calculator.},captionpos=b, , label={lst:interface_l_calc}]
@@ -138,7 +138,7 @@ end interface
 \end{lstlisting}
 with reduced functionality and meant for internal computations regarding quantities local for each $\bm{k}$ point, as described in Sec. \ref{sec:local_k_quantities}.
 
-The task is a Fortran object (derived type) of \verb|class(SsTC_local_k_data)|, of which \\ \verb|type(SsTC_global_k_data)| is an extension, specifying the sampling or integration task to perform and contains a full description of the properties of the calculator. The generic properties which apply to every task \verb|task| are the following,
+The task is a Fortran object (derived type) of \verb|class(SsTC_local_k_data)|, of which \\ \verb|type(SsTC_global_k_data)| is an extension, specifying the sampling or integration task to perform and contains a full description of the properties of the calculator $\bm{\alpha},\bm{\beta}$. The generic properties which apply to every task \verb|task| are the following,
 \begin{itemize}
 \item \verb|character(len=*) :: task%name|: The name given to the task.
 \item \verb|procedure(SsTC_global_calculator), pointer :: task%global_calculator|: Interface conforming procedure pointer to the selected calculator. The library's sampling routines will use the provided calculator to sample.
@@ -190,7 +190,7 @@ subroutine SsTC_init(nThreads, nNested, exec_label)
     
 end subroutine SsTC_init
 \end{lstlisting}
-The routine will check wether MPI has been initialized and stop the program on execution if it was not initialized. It will also open the output and error log files \verb|file=trim(exec_label//".out")| and \\ \verb|file=trim(exec_label//".err")|. The user can also control the nunber of parallel nested regions with the variable \verb|nNested|. Changing this variable from the default value of 1 is not recommended unless the number of $\bm{k}$ points being sampled by a particular task is smaller than the total number of threads available. Lastly, \verb|nThreads| sets the number of threads per MPI process, with the default value of \verb|OMP_GET_MAX_THREADS()|.
+The routine will check whether MPI has been initialized and stop the program on execution if it was not initialized. It will also open the output and error log files \verb|file=trim(exec_label//".out")| and \\ \verb|file=trim(exec_label//".err")|. The user can also control the number of parallel nested regions with the variable \verb|nNested|. Changing this variable from the default value of 1 is not recommended unless the number of $\bm{k}$ points being sampled by a particular task is smaller than the total number of threads available. Lastly, \verb|nThreads| sets the number of threads per MPI process, with the default value of \verb|OMP_GET_MAX_THREADS()|.
 \section{Notation: Memory layout and array layout}\label{sec:notation}
 These concepts apply to $N$-dimensional arrays such as \verb|array(:, :, ..., :)|, where each dimension $i$ has size $s_i$. The total size of \verb|array| is
 \begin{equation}
@@ -208,9 +208,9 @@ This mapping is called the \href{https://eli.thegreenplace.net/2015/memory-layou
 \begin{equation}
 r \Leftrightarrow \{n_1, n_2, \cdots, n_N\},
 \end{equation}
-which makes it possible to keep track of the elements of an array in both layouts, provided that the sizes $s_i$ are known. The output values of the calculators, corresponding to the sampling $C^{\alpha}(\bm{k};\beta)$ for a $\bm{k}$ vector, are always arrays in memory layout, both for integer and continuous indices, which makes the interface of the calculator flexible for any number of integer or continuous indices.
+which makes it possible to keep track of the elements of an array in both layouts, provided that the sizes of each dimension, $s_i$, are known. The output values of the calculator interfaces, corresponding to the sampling $C^{\alpha}(\bm{k};\beta)$ for a $\bm{k}$ vector, are always arrays in memory layout, both for integer and continuous indices, which makes the interface of the calculator flexible for any number of integer or continuous indices.
 
-In SsTC, the sizes $s_i$ of integer or continuous indices are specified by the components \\ \verb|task%integer_indices| and \verb|task%continuous_indices| of the task \verb|class(SsTC_local_k_data) :: task|, respectively. The library provides the utilities
+In SsTC, the sizes $s_i$ of integer or continuous indices are specified by the components of \\ \verb|task%integer_indices| and \verb|task%continuous_indices| (if applicable) of the task \\ \verb|class(SsTC_local_k_data) :: task|, respectively. The library provides the utilities
 \begin{itemize}
 \item \verb|SsTC_integer_array_element_to_memory_element|: Returns $r = f(\{n_1, n_2, \cdots, n_N\})$ for integer indices.
 \item \verb|SsTC_integer_memory_element_to_array_element|: Returns $\{n_1, n_2, \cdots, n_N\} = f^{-1}(r)$ for integer indices.
@@ -241,7 +241,7 @@ type SsTC_sys
   !id of the R-point (3rd index) in eV.
   complex(kind=dp), allocatable :: real_space_position_elements(:, :, :, :) 
   !Position operator matrix elements (1st and 2nd indexes), 
-  !cartesian coordinate (3rd index) and id of the R-point (4th index) in A.
+  !Cartesian coordinate (3rd index) and id of the R-point (4th index) in A.
   real(kind=dp)                 :: e_fermi = 0.0_dp
   !Fermi energy.
   real(kind=dp)                 :: deg_thr = 1.0E-4_dp
@@ -1211,9 +1211,39 @@ as in Eq. (28) of Ref. \cite{yatesSpectralFermiSurface2007} for multiband case w
 \verb|mu(n, n, a, b)| = \frac{\partial^2\varepsilon_n(\bm{k})}{\partial k^a\partial k^b}.
 \end{equation}
 If some error is encountered during diagonalization, \verb|error = .true.| is set.
-\section{Modularity}\label{sec:modularity}
 \section{Usage in high performance computing}
-SsTC uses a hybrid parallelization model, using the MPI \cite{messagepassinginterfaceforumMPIMessagePassingInterface2021} and the OpenMP \cite{openmparchitecturereviewboardOpenMPApplicationProgramming2021} libraries.
+SsTC uses a hybrid parallelization model, using the MPI \cite{messagepassinginterfaceforumMPIMessagePassingInterface2021} and the OpenMP \cite{openmparchitecturereviewboardOpenMPApplicationProgramming2021} libraries. The intended use of hybrid parallelization is to allow the MPI library to distribute (coarse grained) chunks of $\bm{k}$ points across different MPI ranks in sampling tasks. Then, each rank can make use of multi threading to further distribute chunks of $\bm{k}$ points across threads and SIMD units in a shared memory scheme.
+
+In the following, we consider an application \verb|appl.x| making use of SsTC, which has been compiled and linked as described in Sec. \ref{sec:install}.
+\subsection{Example of a SLURM job}
+\href{https://slurm.schedmd.com/documentation.html}{SLURM} is a widely used workload manager in computational clusters. The following file \verb|run.sh| located in the same directory as \verb|appl.x|,
+\begin{lstlisting}[caption={File ``run".},captionpos=b]
+#!/bin/bash -x
+#SBATCH -J APPL
+###Number of nodes.
+#SBATCH --nodes=4
+###Number of tasks.
+#SBATCH --ntasks=4
+###Number of tasks per node.
+#SBATCH --ntasks-per-node=1
+###Number of threads per task.
+#SBATCH --cpus-per-task=48
+#SBATCH -e error-%j.err
+#SBATCH -o output-%j.out
+#SBATCH --mail-type=all
+#SBATCH --partition=128gb
+#SBATCH --time=480:00:00
+#SBATCH --mem=126000
+
+ml purge
+ml intel/2022a
+
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+mpirun -np $SLURM_NTASKS ./appl.x
+\end{lstlisting}
+will run \verb|appl.x| in a total of $4\times 48$ threads, distributed in 4 nodes. 
+\section{Modularity}\label{sec:modularity}
 \section{Examples}
 \section{Suggested practices}
 \bibliographystyle{unsrt}
