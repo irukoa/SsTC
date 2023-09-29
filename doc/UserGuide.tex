@@ -3,6 +3,7 @@
 \usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{amssymb}
+\usepackage{xcolor}
 \usepackage{graphicx}
 \usepackage{braket}
 \usepackage{bm}
@@ -25,11 +26,19 @@
   left = 2cm,
   top  = 2cm,
 }
+
 \title{SsTC library:\\
 \large{User's Guide}\\
 \large{Version 0.2.0}}
 \author{Álvaro R. Puente-Uriona}
 \date{\today}
+
+\graphicspath{{./images/}}
+
+%Set font size for figures.
+%This is a global parameter to change the label size on all the figures.
+\newcommand\imglabelsize{10} %Default: 10.
+%
 \begin{document}
 \maketitle
 \tableofcontents
@@ -1244,6 +1253,7 @@ mpirun -np $SLURM_NTASKS ./appl.x
 \end{lstlisting}
 will run \verb|appl.x| in a total of $4\times 48$ threads, distributed in 4 nodes.
 \section{Modularity}\label{sec:modularity}
+SsTC features a mod loader...
 \section{Examples}
 In this section, we consider two examples of creation and sampling of tasks involving the integrator module. The first one involves the formal example of the integral of a user defined function in the BZ. The second one, involves the calculation of the jerk current of GaAs by using a custom modification for SsTC.
 \subsection{Example 1: Integral of user defined functions}
@@ -1322,30 +1332,86 @@ bash:/path/of/your/choice/SsTC/doc/examples/example1$ cat dummy-example01-test_1
 bash:/path/of/your/choice/SsTC/doc/examples/example1$
 \end{verbatim}
 which shows faster convergence than the rectangle method. The user is now encouraged to modify the parameters given to the task constructor and also modify the calculator accordingly. We recommend to consider more external variables or other functions to be integrated. The user can also check the output and error logs \verb|SsTC_exec.out/err|. More complex calculators can also be implemented with the help of the routines in the ``local k quantities" module.
+\subsection{Example 2: Modularity and jerk current}
+In this example we illustrate how the user can create a ``mod" for SsTC, intended to calculate the jerk current of the system GaAs. The jerk current is a forth order conductivity tensor \cite{puente-urionaInitioStudyNonlinear2023, fregosoJerkCurrentNovel2018},
+\begin{equation}\label{eq:jerk}
+\iota^{abcd}(\omega) = \frac{2\pi e^4}{\hbar^3}\int_{\text{BZ}}[d\bm{k}]\sum_{nm}\left[f_{nn}(\bm{k})- f_{mm}(\bm{k})\right]\frac{\partial^2\left[\varepsilon_n(\bm{k})-\varepsilon_m(\bm{k})\right]}{\partial k^a \partial k^d}r_{nm}^b(\bm{k}) r_{mn}^c(\bm{k}) \delta(\varepsilon_n(\bm{k})-\varepsilon_m(\bm{k}) -\hbar\omega),
+\end{equation}
+where $r_{nm}^a(\bm{k}) = (1-\delta_{nm})A_{nm}^a(\bm{k})$.
+
+The code is contained in the directory
+\begin{verbatim}
+bash:/path/of/your/choice/SsTC/doc/examples/example2$
+\end{verbatim}
+In the directory are 3 files and a folder,
+\begin{verbatim}
+bash:/path/of/your/choice/SsTC/doc/examples/example2$ ls
+compile.sh  example2.F90  GaAs_tb.dat  mymod
+\end{verbatim}
+\verb|mymod| contains a module implementing the jerk conductivity tensor, \verb|calculators_jerk.F90|. It provides the following
+\begin{itemize}
+\item A new type of integral task: the \verb|optical_BZ_integral_task| an augmented version of the integrator task, with further capabilities, such as the possibility to determine a smearing in the calculation of delta functions.
+\item The task constructor \verb|jerk_current_constructor|, which employs the regular integral task constructor and sets the value of the optical smearing as well as the values of integer and continuous indices for the case of the jerk current tensor .
+\item The jerk current calculator \verb|jerk_current|, implementing the integrand of Eq. \eqref{eq:jerk}.
+\end{itemize}
+Aside from that, the folder also contains the necessary makefiles and header files to be included by the SsTC ``mod" loader. \verb|GaAs_tb.dat| is an ``exact" tight binding model for GaAs, constructed by post-processing a wannierization procedure of an \textit{ab-initio} calculation for GaAs by Wannier90. \verb|compile.sh| contains a compilation script for the source code \verb|example1.F90|, which computes the jerk current tensor and prints the results.
+
+The first step is to copy the \verb|mymod| folder to the ``mod" directory of SsTC and compile the library again,
+\begin{verbatim}
+bash:/path/of/your/choice/SsTC/doc/examples/example2$ cp -r mymod ../../../src/calculators/
+bash:/path/of/your/choice/SsTC/doc/examples/example2$ cd ../../..
+bash:/path/of/your/choice/SsTC$ make
+\end{verbatim}
+Notice that the log has shown the messages
+\begin{verbatim}
+Detected mod makefiles are [./src/calculators/mymod/optical.mk ].
+...
+Including header file: src/calculators/mymod/headers.inc
+Including procedure list file: src/calculators/mymod/procedures.inc
+...
+\end{verbatim}
+which states that the routines and declarations in the module \verb|calculators_jerk.F90| have been added correctly to those provided by the unmodified SsTC. Now, any application using SsTC will also have in its scope the routines and declarations provided by the custom module. 
+
+Then, we return to the example directory and check the source code \verb|example2.F90|. It declares the custom derived type \verb|optical_BZ_integral_task|, which is constructed with the aid of the custom \\ \verb|jerk_current_constructor|. Notice that the routine already assumes that the user wants to calculate the jerk current, so there is no need to specify the calculator or the number of integer and continuous indices, which is already done by the programmer in the custom constructor routine. The only quantities to specify are the integration method, samples, and starting point, ending point and steps for $\omega$ in Eq. \eqref{eq:jerk}. Notice that no optical smearing is specified, so the adaptive smearing scheme \cite{yatesSpectralFermiSurface2007} is employed. Then, the sampling, integration and printing is done by means of unmodified SsTC routines. In the calculation, a regular mesh of $100\times 100 \times 100$ is employed, which requires, approximately $5000$ seconds to finish in a personal computer with an Intel(R) Core(TM) i7-10700 CPU at 2.90GHz and 16 threads. Compiling \& running gives
+\begin{verbatim}
+bash:/path/of/your/choice/SsTC/doc/examples/example2$ ./compile.sh
+bash:/path/of/your/choice/SsTC/doc/examples/example2$ mpirun -np 1 ./test.x
+bash:/path/of/your/choice/SsTC/doc/examples/example2$ ls
+compile.sh  example2.F90  GaAs-jc_*.dat  GaAs_tb.dat  mymod  SsTC_exec.err  SsTC_exec.out
+test.x
+\end{verbatim}
+examining the output with and visualizing some response functions with a visualization software like \verb|gnuplot| should reproduce Fig. \ref{fig:GaAs_jc_xxxx} for the file \verb|GaAs-jc_1111.dat|
+\begin{figure}
+\centering
+\includegraphics[width=\columnwidth]{jc/jc_GaAs_xxxx.pdf}
+\caption{Jerk current tensor component $\iota^{xxxx}$ in the $\hbar\omega\in[0, 10]\;\text{eV}$ range.}
+\label{fig:GaAs_jc_xxxx}
+\end{figure}
+\begin{verbatim}
+bash:/path/of/your/choice/SsTC/doc/examples/example2$ gnuplot
+gnuplot> plot 'GaAs-jc_1111.dat' u ($1):(($2)/1E17) w l
+\end{verbatim}
+The user is encouraged to follow the lines of this example and implement its own calculators by using the SsTC routines as a basis.
 \section{Suggested practices}
 It is a good idea to make use of the \href{https://www.intel.com/content/www/us/en/docs/fortran-compiler/developer-guide-reference/2023-0/block.html}{BLOCK} scoping unit in the main application when defining tasks,
 \begin{lstlisting}[caption={Definition of SsTC tasks in BLOCK scoping units.},captionpos=b]
-.
-.
-.
+...
 block
+  
+  type(optical_BZ_integral_task) :: jerk
 
-  type(SsTC_optical_BZ_integral_task) :: jdost
+  call jerk_current_constructor(optical_task = jerk, method = "rectangle", &
+                                samples = (/100, 100, 100/), &
+                                omegastart = 0.0_dp, omegaend = 10.0_dp, omegasteps = 100)
 
-  call SsTC_default_jdos_constructor(optical_task = jdost, method = "extrapolation", &
-                                     samples = (/100, 100, 100/), &
-                                     omegastart = 0.0_dp, omegaend = 10.0_dp, &
-                                     omegasteps = 100)
-
-  call SsTC_sample_and_integrate_BZ_integral_task(task = jdost, &
+  call SsTC_sample_and_integrate_BZ_integral_task(task = jerk, &
                                                   system = GaAs)
 
-  call SsTC_print_BZ_integral_task(task = jdost, &
+  call SsTC_print_BZ_integral_task(task = jerk, &
                                    system = GaAs)
+
 end block
-.
-.
-.
+...
 \end{lstlisting}
 these allow for efficient memory usage, specially if some tasks are going to be run. It also helps with derived type finalization. If any component of \verb|task| is going to be used further in the application, creating a copy of the component to a global variable within the scoping unit is suggested.
 \bibliographystyle{unsrt}
