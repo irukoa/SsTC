@@ -8,5 +8,5 @@ set xlabel "$\\hbar \\omega \\;(\\text{eV})$"
 set xtics 0.0, 2, 10 nomirror
 set ytics -5.0, 2.0, 1.0 nomirror
 unset key
-set ylabel "$\\iota^{xxxx} (\\omega)\\; (10^{16}\\times\\text{Am/V}^3\\text{s}^2)$"
-plot 'GaAs-jc_1111.dat' u ($1):(($2)/10E16) w l dt 1 lc rgb "#000000" title "$g_{\\text{jerk}}^{xxxx}$"
+set ylabel "$\\iota^{xxxx} (\\omega)\\; (10^{17}\\times\\text{Am/V}^3\\text{s}^2)$"
+plot 'GaAs-jc_1111.dat' u ($1):(($2)/1E17) w l dt 1 lc rgb "#000000" title "$g_{\\text{jerk}}^{xxxx}$"
