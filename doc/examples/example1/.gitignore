@@ -1,0 +1,5 @@
+*
+!.gitignore
+!*.F90
+!*.sh
+!dummy_tb.dat

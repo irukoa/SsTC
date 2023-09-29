@@ -1242,10 +1242,112 @@ export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 
 mpirun -np $SLURM_NTASKS ./appl.x
 \end{lstlisting}
-will run \verb|appl.x| in a total of $4\times 48$ threads, distributed in 4 nodes. 
+will run \verb|appl.x| in a total of $4\times 48$ threads, distributed in 4 nodes.
 \section{Modularity}\label{sec:modularity}
 \section{Examples}
+In this section, we consider two examples of creation and sampling of tasks involving the integrator module. The first one involves the formal example of the integral of a user defined function in the BZ. The second one, involves the calculation of the jerk current of GaAs by using a custom modification for SsTC.
+\subsection{Example 1: Integral of user defined functions}
+This example is intended to show the capabilities of SsTC when considering the toy problem of a calculator depending on a user defined number of integer and continuous indices. The code is contained in the directory
+\begin{verbatim}
+bash:/path/of/your/choice/SsTC/doc/examples/example1$
+\end{verbatim}
+In the directory are 3 files,
+\begin{verbatim}
+bash:/path/of/your/choice/SsTC/doc/examples/example1$ ls
+compile.sh  dummy_tb.dat  example1.F90
+\end{verbatim}
+\verb|compile.sh| contains a compilation script for the source code \verb|example1.F90|. The file \verb|dummy_tb.dat| contains the tight-binding model of a dummy system  without any interactions.
+
+The source code declares the dummy system, initializes MPI and SsTC and loads the dummy system into the program. Then, an integration task is declared and constructed by using the integrator task constructor. 
+
+We specify the name, the function implementing the calculator $C^{\alpha}(\bm{k};\bm{\beta})$, the integration method, the number of samples, the number of integer indices encompassed by $\bm{\alpha}$, the ranges of each of them, the number of external variables encompassed by $\bm{\beta}$ and the starting, ending and number of samples for each of the external variables.
+
+The function implementing the calculator is given by \verb|test_calculator|, defined within the \verb|contains| section of the source code, it represents the calculator
+\begin{equation}
+C^{ij}(\bm{k}, a) = (i + j)e^{a k_1}, i, j\in [1, 3]\subset \mathbb{Z}, a\in [1, 10]\subset \mathbb{R}.
+\end{equation}
+the sampling and integration task states that we want to calculate
+\begin{equation}
+R^{ij}(a) = \int_{\text{BZ}} \left[d\bm{k}\right]C^{ij}(\bm{k}, a) = \int_{-0.5}^{0.5} dk_1\;(i + j)e^{a k_1} = (i + j)\frac{e^{a/2}-e^{-a/2}}{a}.
+\end{equation}
+by using the rectangle approximation and 33 samples in the direction of the coordinate $k_1$.
+
+The sampling and integration is then performed by the sampling and integration subroutine. This writes the values of $R^{ij}(a)$ to \verb|test_integral%result(:, :)| in memory layout. Lastly the results are printed by the printing subroutine and stored in the $3\times 3$ files \verb|dummy-example01-test_*.dat|.
+
+Compiling \& running gives
+\begin{verbatim}
+bash:/path/of/your/choice/SsTC/doc/examples/example1$ ./compile.sh
+bash:/path/of/your/choice/SsTC/doc/examples/example1$ mpirun -np 1 ./test.x
+bash:/path/of/your/choice/SsTC/doc/examples/example1$ cat dummy-example01-test_11.dat
+   0.10000000E+001   0.20897236E+001   0.00000000E+000
+   0.20000000E+001   0.23734400E+001   0.00000000E+000
+   0.30000000E+001   0.28975941E+001   0.00000000E+000
+   0.40000000E+001   0.37495456E+001   0.00000000E+000
+   0.50000000E+001   0.50746909E+001   0.00000000E+000
+   0.60000000E+001   0.71053255E+001   0.00000000E+000
+   0.70000000E+001   0.10207415E+002   0.00000000E+000
+   0.80000000E+001   0.14955362E+002   0.00000000E+000
+   0.90000000E+001   0.22251046E+002   0.00000000E+000
+   0.10000000E+002   0.33513272E+002   0.00000000E+000
+bash:/path/of/your/choice/SsTC/doc/examples/example1$
+\end{verbatim}
+As an example, the true result for $R^{11}(7) $ is $9.45292988$. By modifying \verb|samples = (/33, 1, 1/)| to \\ \verb|samples = (/100, 1, 1/)|, compiling and running again gives
+\begin{verbatim}
+bash:/path/of/your/choice/SsTC/doc/examples/example1$ cat dummy-example01-test_11.dat
+   0.10000000E+001   0.20861075E+001   0.00000000E+000
+   0.20000000E+001   0.23578391E+001   0.00000000E+000
+   0.30000000E+001   0.28579122E+001   0.00000000E+000
+   0.40000000E+001   0.36663242E+001   0.00000000E+000
+   0.50000000E+001   0.49154263E+001   0.00000000E+000
+   0.60000000E+001   0.68151744E+001   0.00000000E+000
+   0.70000000E+001   0.96937557E+001   0.00000000E+000
+   0.80000000E+001   0.14062024E+002   0.00000000E+000
+   0.90000000E+001   0.20715243E+002   0.00000000E+000
+   0.10000000E+002   0.30893650E+002   0.00000000E+000
+bash:/path/of/your/choice/SsTC/doc/examples/example1$
+\end{verbatim}
+By now choosing \verb|method = "extrapolation"| and returning to \verb|samples = (/33, 1, 1/)|, gives
+\begin{verbatim}
+bash:/path/of/your/choice/SsTC/doc/examples/example1$ cat dummy-example01-test_11.dat
+   0.10000000E+001   0.20843812E+001   0.00000000E+000
+   0.20000000E+001   0.23504024E+001   0.00000000E+000
+   0.30000000E+001   0.28390393E+001   0.00000000E+000
+   0.40000000E+001   0.36268604E+001   0.00000000E+000
+   0.50000000E+001   0.48401636E+001   0.00000000E+000
+   0.60000000E+001   0.66785833E+001   0.00000000E+000
+   0.70000000E+001   0.94529300E+001   0.00000000E+000
+   0.80000000E+001   0.13644959E+002   0.00000000E+000
+   0.90000000E+001   0.20001339E+002   0.00000000E+000
+   0.10000000E+002   0.29681288E+002   0.00000000E+000
+bash:/path/of/your/choice/SsTC/doc/examples/example1$
+\end{verbatim}
+which shows faster convergence than the rectangle method. The user is now encouraged to modify the parameters given to the task constructor and also modify the calculator accordingly. We recommend to consider more external variables or other functions to be integrated. The user can also check the output and error logs \verb|SsTC_exec.out/err|. More complex calculators can also be implemented with the help of the routines in the ``local k quantities" module.
 \section{Suggested practices}
+It is a good idea to make use of the \href{https://www.intel.com/content/www/us/en/docs/fortran-compiler/developer-guide-reference/2023-0/block.html}{BLOCK} scoping unit in the main application when defining tasks,
+\begin{lstlisting}[caption={Definition of SsTC tasks in BLOCK scoping units.},captionpos=b]
+.
+.
+.
+block
+
+  type(SsTC_optical_BZ_integral_task) :: jdost
+
+  call SsTC_default_jdos_constructor(optical_task = jdost, method = "extrapolation", &
+                                     samples = (/100, 100, 100/), &
+                                     omegastart = 0.0_dp, omegaend = 10.0_dp, &
+                                     omegasteps = 100)
+
+  call SsTC_sample_and_integrate_BZ_integral_task(task = jdost, &
+                                                  system = GaAs)
+
+  call SsTC_print_BZ_integral_task(task = jdost, &
+                                   system = GaAs)
+end block
+.
+.
+.
+\end{lstlisting}
+these allow for efficient memory usage, specially if some tasks are going to be run. It also helps with derived type finalization. If any component of \verb|task| is going to be used further in the application, creating a copy of the component to a global variable within the scoping unit is suggested.
 \bibliographystyle{unsrt}
 \bibliography{bibdata}
 \end{document}
