@@ -1253,7 +1253,79 @@ mpirun -np $SLURM_NTASKS ./appl.x
 \end{lstlisting}
 will run \verb|appl.x| in a total of $4\times 48$ threads, distributed in 4 nodes.
 \section{Modularity}\label{sec:modularity}
-SsTC features a mod loader...
+SsTC features a modularity capability for users to extend the library by their own modifications. These modifications, or ``mods", allow users to create and maintain modules featuring further derived type extension and creation of custom calculators.
+
+Lets consider a SsTC user who implemented, by using the basic SsTC library's routines, a set of calculators and task constructors involving various physically meaningful quantities by extending the basic integrator/sampler/kslice/kpath tasks to satisfy its own needs. For example, a set of optical photocurrent tensor calculations contained in a module. In order to distribute the implemented set of utilities, the user will have to create and maintain a repository containing SsTC within its dependencies or create pull requests to the SsTC repository. However, with the modularity feature, this is unnecessary: the user is only responsible for mantaining it's own calculator implementing module, and in compile time, the utilities and declarations provided in the module get added to the SsTC library's scope and made public to the user. This creates a modified version of SsTC, a ``mod". The SsTC user who created the mod has only to instruct other users to use SsTC (perhaps some particular version) and add his/her ``mod" with the aid of the ``mod loader", whose working principle is described in Sec. \ref{sec:mod_loader}. An example of this capability is shown in Example 2 in Sec. \ref{sec:example2}, where we instruct on how to add capabilities to SsTC for the calculation of an optical response.
+
+\subsection{Structure of a mod}\label{sec:mod_structure}
+A modification is a user made and maintained set of files contained in a folder, containing at least the following,
+\begin{itemize}
+\item One or more source code Fortran module files with the extension \verb|*.F90|, containing the set of mentioned user defined declarations, utilities or calculators. These files should have the structure,
+\begin{lstlisting}[caption={Structure of user made ``mod" files.},captionpos=b]
+module mymod
+
+  use SsTC_utility
+  use SsTC_...      !All the SsTC dependencies required by this module.
+  
+  use my_other_mods !Any other modules.
+
+  implicit none
+
+  private
+
+  public :: some_thing_I_implemented
+
+  public :: ...
+  
+  ... !Declarations
+
+contains
+
+  ... !Procedures
+
+end module mymod
+\end{lstlisting}
+where the user is free to modify everything provided by the basic SsTC library or add any other capabilities.
+\item A header file named \verb|headers.inc| containing the Fortran ``use" statement required to load the provided Fortran module, for example, in the case of a module file like the one above,
+\begin{lstlisting}[caption={Header file.},captionpos=b]
+  use mymod
+\end{lstlisting}
+will be the header file.
+\item A procedure header file named \verb|procedures.inc| containing the Fortran ``public" statement required to make a set of declarations public. In the case of a module file like the one above,
+\begin{lstlisting}[caption={Header file.},captionpos=b]
+  public :: some_thing_I_implemented
+
+  public :: ...
+\end{lstlisting}
+will be the header file.
+\item A Makefile with any name, but with extension \verb|*.mk|. It is recommended that the name is something related with the mod theme. The Makefile needs to contain the set of instructions needed to compile the source code contained in the \verb|*.F90| files in a standard make language fashion. The name of the dependencies is the following,
+\begin{itemize}
+\item \verb|utility.o| if the module file \verb|*.F90| has \verb|use SsTC_utility|.
+\item \verb|extrapolation_integration.o| if the module file \verb|*.F90| has \verb|use extrapolation_integration|.
+\item \verb|data_structures.o| if the module file \verb|*.F90| has \verb|use SsTC_data_structures|.
+\item \verb|kpath.o| if the module file \verb|*.F90| has \verb|use SsTC_kpath|.
+\item \verb|kslice.o| if the module file \verb|*.F90| has \verb|use SsTC_kslice|.
+\item \verb|sampler.o| if the module file \verb|*.F90| has \verb|use SsTC_sampler|.
+\item \verb|integrator.o| if the module file \verb|*.F90| has \verb|use SsTC_integrator|.
+\item \verb|local_k_quantities.o| if the module file \verb|*.F90| has \verb|use SsTC_local_k_quantities|.
+\end{itemize}
+In the case of a module file like the one above the makefile should have the structure,
+\begin{lstlisting}[caption={Header file.},captionpos=b]
+mymod.o: $(CALC)/mymod/mymod.F90 utility.o ... #All other deps.
+		 $(F90) $(F90FLAGS) -c $(CALC)/mymod/mymod.F90 -o "$(OBJ)/mymod.o"
+
+DEPS += mymod.o
+\end{lstlisting}
+where we are assuming a single source code file \verb|mymod.F90| ans the variables \verb|CALC|, \verb|F90|, \verb|F90FLAGS| and \verb|OBJ| are given in the main Makefile at \verb|bash:/path/of/your/choice/SsTC|.
+\end{itemize}
+
+\subsection{The mod loader}\label{sec:mod_loader}
+The ``mod loader" works by searching for \verb|*.mk| files in the subdirectories of the variable \verb|CALC|, which is given by \verb|bash:/path/of/your/choice/SsTC/src/calculators|. Once a Makefile is found, its contents get included in the main Makefile at \verb|bash:/path/of/your/choice/SsTC|. When running make for building SsTC, after the new dependencies are included, a \verb|python| script is executed, which finds the \verb|headers.inc| and \verb|procedures.inc| files associated with each found Makefile, creates a copy of the source code \verb|SsTC.F90|, \verb|SsTC_mod.F90| and includes the contents of the \verb|*.inc| files in the new source code. Then, the source code is compiled to a library \verb|libSsTC.a|, thus creating a ``mod" of SsTC.
+
+For the mod loader to load the mod, the folder containing the files listed in Sec. \ref{sec:mod_structure} needs to be copied to \verb|bash:/path/of/your/choice/SsTC/src/calculators| and then run
+\begin{verbatim}
+bash:/path/of/your/choice/SsTC$ make
+\end{verbatim}
 \section{Examples}
 In this section, we consider two examples of creation and sampling of tasks involving the integrator module. The first one involves the formal example of the integral of a user defined function in the BZ. The second one, involves the calculation of the jerk current of GaAs by using a custom modification for SsTC.
 \subsection{Example 1: Integral of user defined functions}
@@ -1332,7 +1404,7 @@ bash:/path/of/your/choice/SsTC/doc/examples/example1$ cat dummy-example01-test_1
 bash:/path/of/your/choice/SsTC/doc/examples/example1$
 \end{verbatim}
 which shows faster convergence than the rectangle method. The user is now encouraged to modify the parameters given to the task constructor and also modify the calculator accordingly. We recommend to consider more external variables or other functions to be integrated. The user can also check the output and error logs \verb|SsTC_exec.out/err|. More complex calculators can also be implemented with the help of the routines in the ``local k quantities" module.
-\subsection{Example 2: Modularity and jerk current}
+\subsection{Example 2: Modularity and jerk current}\label{sec:example2}
 In this example we illustrate how the user can create a ``mod" for SsTC, intended to calculate the jerk current of the system GaAs. The jerk current is a forth order conductivity tensor \cite{puente-urionaInitioStudyNonlinear2023, fregosoJerkCurrentNovel2018},
 \begin{equation}\label{eq:jerk}
 \iota^{abcd}(\omega) = \frac{2\pi e^4}{\hbar^3}\int_{\text{BZ}}[d\bm{k}]\sum_{nm}\left[f_{nn}(\bm{k})- f_{mm}(\bm{k})\right]\frac{\partial^2\left[\varepsilon_n(\bm{k})-\varepsilon_m(\bm{k})\right]}{\partial k^a \partial k^d}r_{nm}^b(\bm{k}) r_{mn}^c(\bm{k}) \delta(\varepsilon_n(\bm{k})-\varepsilon_m(\bm{k}) -\hbar\omega),
@@ -1384,13 +1456,15 @@ examining the output with and visualizing some response functions with a visuali
 \begin{figure}
 \centering
 \includegraphics[width=\columnwidth]{jc/jc_GaAs_xxxx.pdf}
-\caption{Jerk current tensor component $\iota^{xxxx}$ in the $\hbar\omega\in[0, 10]\;\text{eV}$ range.}
+\caption{Jerk current tensor component $\iota^{xxxx}$ for GaAs in the $\hbar\omega\in[0, 10]\;\text{eV}$ range.}
 \label{fig:GaAs_jc_xxxx}
 \end{figure}
 \begin{verbatim}
 bash:/path/of/your/choice/SsTC/doc/examples/example2$ gnuplot
 gnuplot> plot 'GaAs-jc_1111.dat' u ($1):(($2)/1E17) w l
 \end{verbatim}
+Other components can also be visualized by the same means.
+
 The user is encouraged to follow the lines of this example and implement its own calculators by using the SsTC routines as a basis.
 \section{Suggested practices}
 It is a good idea to make use of the \href{https://www.intel.com/content/www/us/en/docs/fortran-compiler/developer-guide-reference/2023-0/block.html}{BLOCK} scoping unit in the main application when defining tasks,
