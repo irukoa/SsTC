@@ -45,7 +45,7 @@
 
 \title{SsTC library:\\
 \large{User's Guide}\\
-\large{Version 0.2.0}}
+\large{Version 0.2.1}}
 \author{Álvaro R. Puente-Uriona}
 \date{\today}
 
@@ -83,7 +83,7 @@ The sampling and integration utilities contained in SsTC are the following.
 \item ``Kpath" sampling. 1-dimensional sampling of $C$ with specification of the path to sample.
 \item ``Kslice" sampling. 2-dimensional regular sampling of $C$ with specification of the slice to sample.
 \item ``Regular" sampling. 3-dimensional regular sampling of $C$ with specification of the number of samples in each dimension.
-\item Integration. 3-dimensional regular sampling of $C$ followed by an integration process. The integration process as for v0.2.0 amounts to the rectangle approximation in each dimension. There exists also an experimental integration method based on extrapolation methods.
+\item Integration. 3-dimensional regular sampling of $C$ followed by an integration process. The integration process as for v0.2.1 amounts to the rectangle approximation in each dimension. There exists also an experimental integration method based on extrapolation methods.
 \end{itemize}\end{tcolorbox}
 All the concepts covered in this section are treated with greater detail in the specific sections in the document.
 \section{Prerequisites, installation \& linking to application}\label{sec:install}
@@ -94,7 +94,7 @@ SsTC is a Fortran 2018 standard complying code and the prerequisites for its com
 \item Make software.
 \item Python 3 ($>$ v3.9) software with 're' and 'glob' libraries.
 \end{itemize}\end{tcolorbox}
-As for v0.2.0, SsTC is only guaranteed to compile on Linux systems using the \verb|mpiifort| and \verb|mpiifx| compilers contained in the \href{https://www.intel.com/content/www/us/en/developer/tools/oneapi/hpc-toolkit.html}{Intel\textregistered oneAPI HPC} toolkit. As such, the main application to be linked with must be compiled with \verb|mpiifort| or \verb|mpiifx|.
+As for v0.2.1, SsTC is only guaranteed to compile on Linux systems using the \verb|mpiifort| and \verb|mpiifx| compilers contained in the \href{https://www.intel.com/content/www/us/en/developer/tools/oneapi/hpc-toolkit.html}{Intel\textregistered oneAPI HPC} toolkit. As such, the main application to be linked with must be compiled with \verb|mpiifort| or \verb|mpiifx|.
 
 The SsTC project is hosted on \href{https://github.com/irukoa/SsTC}{GitHub} and can be downloaded by running the command
 
