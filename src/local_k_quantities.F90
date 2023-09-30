@@ -305,11 +305,7 @@ contains
             !diagonalize the subspace and overwrite to degen_vels.
             call SsTC_utility_diagonalize(v(n:n + deg(n) - 1, n:n + deg(n) - 1, i), &
                                           deg(n), degen_vels(n:n + deg(n) - 1), dummy_rot, error)
-            if (error) then
-              write (unit=stderr, fmt="(a, i5, a)") "Rank", rank, ": Error in function velocities when computing&
-              & the eigenvalues of the degenerate subspace."
-              return
-            endif
+            if (error) return
             deallocate (dummy_rot)
           endif
         enddo
@@ -392,11 +388,7 @@ contains
             !diagonalize the subspace and overwrite to degen_mass.
             call SsTC_utility_diagonalize(mu(n:n + deg(n) - 1, n:n + deg(n) - 1, i, j), &
                                           deg(n), degen_mass(n:n + deg(n) - 1), dummy_rot, error)
-            if (error) then
-              write (unit=stderr, fmt="(a, i5, a)") "Rank", rank, ": Error in function inverse_effective_mass&
-              & when computing the eigenvalues of the degenerate subspace."
-              return
-            endif
+            if (error) return
             deallocate (dummy_rot)
           endif
         enddo
