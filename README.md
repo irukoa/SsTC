@@ -1,28 +1,22 @@
-# (S)olid (s)tate (T)ask (C)onstructor
+# Solid state Task Constructor - SsTC
 
-## A high perfomance library to create integration and sampling tasks in the BZ of a system for given k-dependent calculators.
+## A high perfomance computing oriented library to create integration and sampling tasks in the BZ of a crystal for k-dependent functions.
 
 # Prerequisites
 
-## Make software.
+### Fortran compiler:
 
-## Python 3:
+[Intel Fortran oneAPI](https://www.intel.com/content/www/us/en/developer/tools/oneapi/hpc-toolkit.html) compilers `mpiifort` and `mpiifx`.
+
+### Make software.
+
+### Python 3 (> v3.9):
 
 We recommend Python 3.9.7 :: Intel Corporation.
 
-## Fortran compiler:
+### Libraries:
 
-Fortran 2018 (ISO/IEC 1539:2018) complying compiler.
-
-We recommend ifort (IFORT), at least, `--version` 2021.5.0 20211109.
-
--pthread compile flag.
-
-## Libraries:
-
-Intel's Math Kernel Library (MLK).
-
-OpenMP Library (OMP).
+Intel oneAPI Math Kernel Libraries (MKL), OpenMP library and MPI library.
 
 Python3's 're' and 'glob' libraries.
 
@@ -46,53 +40,63 @@ Python3's 're' and 'glob' libraries.
 
 1. Include the line `use SsTC` in your application preamble.
 
-2. Before creating any SsTC task, sampling/integrating in the BZ or printing to files, make sure to have the line `call SsTC_init()` in your application.
+2. Before creating any SsTC task, sampling/integrating in the BZ or printing to files, make sure to have the MPI enviroment initialized and the line `call SsTC_init()` in your application.
 
-Note 1: By default SsTC uses double precision `kind=8` numbers except for integers, which are the default `kind=4`.
+Note 1: SsTC uses double precision numbers for real and complex kinds.
 
 Note 2: It is recommended that each task is defined within a [BLOCK](https://www.intel.com/content/www/us/en/docs/fortran-compiler/developer-guide-reference/2023-0/block.html)
  construct to help in derived-type finalization and thus prevent memory leaks.
 
-For example, an application calculating the joint density of states (JDOS) of the system GaAs should look like:
+For example, an application calculating the jerk current of the system GaAs should look like:
 
-       bash:/path/to/application/$ cat my_jdos_application.F90
+       bash:/path/to/application/$ cat my_jerk_application.F90
 <!-- tsk -->
-       program my_jdos_application
+       program my_jerk_application
 
-         use SsTC
+		 USE OMP_LIB
+		 USE MPI_F08
 
-         integer, parameter :: dp = 8
+		 use SsTC
 
-         type(SsTC_sys) :: GaAs
+		 implicit none
 
-         call SsTC_init()
+		 integer, parameter :: dp = 8
 
-         GaAs = SsTC_sys_constructor("GaAs", "./", efermi = 7.7414_dp)
+		 integer :: ierror
 
-         JDOS: block
+		 type(SsTC_sys) :: GaAs
 
-           type(SsTC_optical_BZ_integral_task) :: jdostsk
+		 call MPI_INIT(ierror)
 
-           call SsTC_default_jdos_constructor(optical_task = jdostsk, &
-                                              method = "extrapolation", samples = (/65, 65, 65/), &
-                                              omegastart = 0.0_dp, omegaend = 10.0_dp, omegasteps = 100)
+		 call SsTC_init()
 
-           call SsTC_sample_and_integrate_BZ_integral_task(task = jdostsk, &
-                                                           system = GaAs)
+		 GaAs = SsTC_sys_constructor("GaAs", "./", efermi = 7.7414_dp)
 
-           call SsTC_print_BZ_integral_task(task = jdostsk, &
-                                            system = GaAs)
+		 block
+		  
+	       type(optical_BZ_integral_task) :: jerk
 
-         end block JDOS
+		   call jerk_current_constructor(optical_task = jerk, method = "rectangle", samples = (/100, 100, 100/), &
+										 omegastart = 0.0_dp, omegaend = 10.0_dp, omegasteps = 100)
 
-       end program my_jdos_application
+		   call SsTC_sample_and_integrate_BZ_integral_task(task = jerk, &
+														   system = GaAs)
+
+		   call SsTC_print_BZ_integral_task(task = jerk, &
+											system = GaAs)
+
+		 end block
+
+		 call MPI_FINALIZE(ierror)
+
+       end program my_jerk_application
 
 3. To link SsTC to your program, the compilation command should have the form:
 
-       bash:/path/to/application/$ $(F90) $(F90FLAGS) my_jdos_application.F90 -I/path/of/your/choice/SsTC/bin /path/of/your/choice/SsTC/bin/libSsTC.a -o "my_jdos_application.x"
+       bash:/path/to/application/$ $(F90) $(F90FLAGS) my_jerk_application.F90 -I/path/of/your/choice/SsTC/bin /path/of/your/choice/SsTC/bin/libSsTC.a -o "my_jdos_application.x"
 
-   We recommend `$(F90) = ifort`, and `$(F90FLAGS)` should include, at least, `-qopenmp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -pthread` or other compiler-specific analogous flags.
+   Where `$(F90) = mpiifort/mpiifx`, and `$(F90FLAGS)` should include, at least, `-qopenmp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -pthread` or other compiler-specific analogous flags.
 
 # Usage
 
-See user's manual in the documentation.
+See user's manual in the documentation folder.
