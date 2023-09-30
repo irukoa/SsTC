@@ -147,6 +147,7 @@ contains
     type(SsTC_sys), intent(in)                  :: system
 
     complex(kind=dp), allocatable :: data_k(:, :, :), &
+                                     simd_tmp(:, :), &
                                      local_data_k(:, :, :), &
                                      temp_res(:, :), res(:, :)
 
@@ -156,7 +157,6 @@ contains
                info, &
                i, r
 
-    integer :: TID
     real(kind=dp) :: start_time, end_time
 
     logical :: error = .false.
@@ -173,32 +173,28 @@ contains
     allocate (counts(0:nProcs - 1), displs(0:nProcs - 1))
     call get_MPI_task_partition(product(task%samples), nProcs, counts, displs)
 
-    if (task%method == "extrapolation") then !Extraplation case. Requires large RAM.
+    if (task%method == "extrapolation") then !Extrapolation case.
 
       if (rank == 0) write (unit=stdout, fmt="(a)") &
         "          Starting BZ sampling and integration subroutine with extrapolation method."
       if (rank == 0) write (unit=stdout, fmt="(a)") "          Integrating task: "//trim(task%name)//" in the BZ for the system " &
         //trim(system%name)//"."
-      if (rank == 0) write (unit=stdout, fmt="(a)") "          The required memory for the integration process is approximately,"
-      if (rank == 0) write (unit=stdout, fmt="(a, f15.3, a)") &
-        "          ", 16.0_dp*real(product(task%samples)*product(task%integer_indices)* &
-                                   product(task%continuous_indices), dp)/1024.0_dp**2, &
-        "MB in each MPI process."
 
       allocate (local_data_k(displs(rank) + 1:displs(rank) + counts(rank), &
                              product(task%integer_indices), product(task%continuous_indices)), &
                 data_k(product(task%samples), &
-                       product(task%integer_indices), product(task%continuous_indices)))
+                       product(task%integer_indices), product(task%continuous_indices)), &
+                simd_tmp(product(task%integer_indices), product(task%continuous_indices)))
 
-      !_OMPTGT_(PARALLEL DEFAULT(SHARED) PRIVATE(ik, k_ind, ik1, ik2, ik3, k, TID))
+      local_data_k = cmplx(0.0_dp, 0.0_dp, dp)
+      data_k = cmplx(0.0_dp, 0.0_dp, dp)
+      simd_tmp = cmplx(0.0_dp, 0.0_dp, dp)
 
-      TID = OMP_GET_THREAD_NUM()
-      IF ((TID .EQ. 0) .and. (rank .EQ. 0)) THEN
-        write (unit=stdout, fmt="(a, i5, a, i5, a)") &
-        &"          Running on ", nProcs, " process(es) each using ", OMP_GET_NUM_THREADS(), " threads."
-      ENDIF
-
-      !_OMPTGT_(DO)
+      !_OMPOFFLOADTGT_(TARGET TEAMS)
+      !_OMPTGT_(PARALLEL DO REDUCTION (.or.: error) &)
+      !_OMPTGT_(SHARED(task, system, displs, counts, rank, sampling_info, local_data_k) &)
+      !_OMPTGT_(PRIVATE(ik, k_ind, ik1, ik2, ik3, k, simd_tmp))
+      !_OMPTGT_(SIMD)
       do ik = displs(rank) + 1, displs(rank) + counts(rank)
 
         k_ind = SsTC_integer_memory_element_to_array_element(sampling_info, ik)
@@ -224,20 +220,18 @@ contains
 
         !Gather data.
         if (associated(task%local_calculator)) then
-          local_data_k(ik, :, 1) = task%local_calculator(task, system, k, error)
+          simd_tmp(:, 1) = task%local_calculator(task, system, k, error)
+          local_data_k(ik, :, 1) = simd_tmp(:, 1)
         elseif (associated(task%global_calculator)) then
-          local_data_k(ik, :, :) = task%global_calculator(task, system, k, error)
-        endif
-
-        if (error) then
-          write (unit=stderr, fmt="(a, i5, a, 3e18.8e3)") "Rank ", rank, ": Error when sampling k-point", k
-          write (unit=stderr, fmt="(a)") "Stopping..."
-          stop
+          simd_tmp = task%global_calculator(task, system, k, error)
+          local_data_k(ik, :, :) = simd_tmp
         endif
 
       enddo
-      !_OMPTGT_(END DO)
-      !_OMPTGT_(END PARALLEL)
+      !_OMPOFFLOADTGT_(END TARGET)
+
+      if (error) write (unit=stderr, fmt="(a, i5, a)") "Rank: ", rank, ". ERROR in subroutine &
+      & SsTC_sample_and_integrate_BZ_integral_task. Check error log."
 
       do i = 1, product(task%integer_indices) !For each integer index.
         do r = 1, product(task%continuous_indices) !For each continuous index.
@@ -267,7 +261,7 @@ contains
       endif
       if (rank == 0) write (unit=stdout, fmt="(a)") ""
 
-      deallocate (local_data_k, data_k)
+      deallocate (local_data_k, data_k, simd_tmp)
 
     elseif (task%method == "rectangle") then !Rectangle method approximation case.
 
@@ -275,24 +269,16 @@ contains
         "          Starting BZ sampling and integration subroutine with rectangle method."
       if (rank == 0) write (unit=stdout, fmt="(a)") "          Integrating task: "//trim(task%name)//" in the BZ for the system "&
       &//trim(system%name)//"."
-      if (rank == 0) write (unit=stdout, fmt="(a)") "          The required memory for the integration process is approximately,"
-      if (rank == 0) write (unit=stdout, fmt="(a, f15.3, a)") "          ", 16.0_dp*real(product(task%integer_indices)*&
-      & product(task%continuous_indices), dp)/1024.0_dp**2, "MB in each MPI process."
 
       allocate (temp_res(product(task%integer_indices), product(task%continuous_indices)), &
-                res(product(task%integer_indices), product(task%continuous_indices)))
-      temp_res = cmplx(0.0_dp, 0.0_dp, dp)
-      res = cmplx(0.0_dp, 0.0_dp, dp)
+                res(product(task%integer_indices), product(task%continuous_indices)), &
+                simd_tmp(product(task%integer_indices), product(task%continuous_indices)))
 
-      !_OMPTGT_(PARALLEL DEFAULT (SHARED) PRIVATE(ik, k_ind, ik1, ik2, ik3, k, TID) REDUCTION (+: temp_res))
-
-      TID = OMP_GET_THREAD_NUM()
-      IF ((TID .EQ. 0) .and. (rank .EQ. 0)) THEN
-        write (unit=stdout, fmt="(a, i5, a, i5, a)") &
-          "          Running on ", nProcs, " process(es) each using ", OMP_GET_NUM_THREADS(), " threads."
-      ENDIF
-
-      !_OMPTGT_(DO)
+      !_OMPOFFLOADTGT_(TARGET TEAMS)
+      !_OMPTGT_(PARALLEL DO REDUCTION (+: temp_res) REDUCTION (.or.: error) &)
+      !_OMPTGT_(SHARED(task, system, displs, counts, rank, sampling_info) &)
+      !_OMPTGT_(PRIVATE(ik, k_ind, ik1, ik2, ik3, k, simd_tmp))
+      !_OMPTGT_(SIMD)
       do ik = displs(rank) + 1, displs(rank) + counts(rank)
 
         k_ind = SsTC_integer_memory_element_to_array_element(sampling_info, ik)
@@ -318,27 +304,25 @@ contains
 
         !Gather data.
         if (associated(task%local_calculator)) then
-          temp_res(:, 1) = temp_res(:, 1) + task%local_calculator(task, system, k, error)
+          simd_tmp(:, 1) = task%local_calculator(task, system, k, error)
+          temp_res(:, 1) = temp_res(:, 1) + simd_tmp(:, 1)
         elseif (associated(task%global_calculator)) then
-          temp_res = temp_res + task%global_calculator(task, system, k, error)
-        endif
-
-        if (error) then
-          write (unit=stderr, fmt="(a, i5, a, 3e18.8e3)") "Rank ", rank, ": Error when sampling k-point", k
-          write (unit=stderr, fmt="(a)") "Stopping..."
-          stop
+          simd_tmp = task%global_calculator(task, system, k, error)
+          temp_res = temp_res + simd_tmp
         endif
 
       enddo
-      !_OMPTGT_(END DO)
-      !_OMPTGT_(END PARALLEL)
+      !_OMPOFFLOADTGT_(END TARGET)
+
+      if (error) write (unit=stderr, fmt="(a, i5, a)") "Rank: ", rank, ". ERROR in subroutine &
+      & SsTC_sample_and_integrate_BZ_integral_task. Check error log."
 
       call MPI_ALLREDUCE(temp_res, res, size(temp_res), MPI_COMPLEX16, MPI_SUM, MPI_COMM_WORLD, ierror)
       task%result = res/product(task%samples)
 
       if (rank == 0) write (unit=stdout, fmt="(a)") "          Integral done."
 
-      deallocate (temp_res, res)
+      deallocate (temp_res, res, simd_tmp)
       deallocate (sampling_info%integer_indices, counts, displs)
 
       if (rank == 0) write (unit=stdout, fmt="(a)") ""

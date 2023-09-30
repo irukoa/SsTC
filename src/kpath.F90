@@ -140,7 +140,6 @@ contains
     integer :: ik, &
                i, r
 
-    integer :: TID
     real(kind=dp) :: start_time, end_time
 
     logical :: error = .false.
@@ -163,15 +162,10 @@ contains
               data_k(sum(task%number_of_pts) - (size(task%vectors(:, 1)) - 2), &
                      product(task%integer_indices), product(task%continuous_indices)))
 
-    !_OMPTGT_(PARALLEL DEFAULT(SHARED) PRIVATE(TID, ik, count, icount, ivec, isampling, k))
-
-    TID = OMP_GET_THREAD_NUM()
-    IF ((TID .EQ. 0) .and. (rank .EQ. 0)) THEN
-      write (unit=stdout, fmt="(a, i5, a, i5, a)") &
-      &"          Running on ", nProcs, " process(es) each using ", OMP_GET_NUM_THREADS(), " threads."
-    ENDIF
-
-    !_OMPTGT_(DO)
+    !_OMPOFFLOADTGT_(TARGET TEAMS)
+    !_OMPTGT_(PARALLEL DO REDUCTION (.or.: error) &)
+    !_OMPTGT_(SHARED(task, system, displs, counts, rank, local_data_k) &)
+    !_OMPTGT_(PRIVATE(ik, count, icount, ivec, isampling, k))
     do ik = displs(rank) + 1, displs(rank) + counts(rank)
 
       !Retrieve ivec, the label corresponding to the ivec-th vector and isampling,
@@ -214,15 +208,11 @@ contains
         local_data_k(ik, :, :) = task%global_calculator(task, system, k, error)
       endif
 
-      if (error) then
-        write (unit=stderr, fmt="(a, i5, a, 3e18.8e3)") "Rank ", rank, ": Error when sampling k-point", k
-        write (unit=stderr, fmt="(a)") "Stopping..."
-        stop
-      endif
-
     enddo
-    !_OMPTGT_(END DO)
-    !_OMPTGT_(END PARALLEL)
+    !_OMPOFFLOADTGT_(END TARGET)
+
+    if (error) write (unit=stderr, fmt="(a, i5, a)") "Rank: ", rank, ". ERROR in subroutine &
+    & SsTC_kpath_sampler. Check error log."
 
     do i = 1, product(task%integer_indices) !For each integer index.
       do r = 1, product(task%continuous_indices) !For each continuous index.
