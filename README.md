@@ -1,6 +1,6 @@
 # Solid state Task Constructor - SsTC
 
-## A high perfomance computing oriented library to create integration and sampling tasks in the BZ of a crystal for k-dependent functions.
+## A high-perfomance computing oriented library to create integration and sampling tasks in the BZ of a crystal for k-dependent functions.
 
 # Prerequisites
 
