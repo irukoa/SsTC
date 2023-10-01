@@ -1085,7 +1085,7 @@ subroutine SsTC_construct_iterable(global, vars)
 end subroutine SsTC_construct_iterable
 \end{lstlisting}
 \end{codebox}
-creates an ``iterable" dictionary which is stored in \verb|global%iterables(:,:)|. The dictionary holds all possible combinations from the variation of the $\beta_i$-indexed coordinate labels which are specified in the array \verb|vars|, i.e., \verb|vars| is an array which each entery specifying the $i$ label of $\beta_i$ to permutate. The first index of the dictionary holds the ``permutation label" associated with variation of the variables \verb|vars| and the second the particular permutation of the variables, so the set of arrays $\verb|array|_n = \verb|global%iterables(n,:)|$ hold a list of size \verb|size(global%continuous_indices)| with a particular permutation in the indices \verb|vars(j)| for each $j\in \verb|size(vars)|$. The variables not permutated are stored with the constant value of 1 in the corresponding entry of \verb|global%iterables(:,:)|.
+creates an ``iterable" dictionary which is stored in \verb|global%iterables(:,:)|. The dictionary holds all possible combinations from the variation of the $\beta_i$-indexed coordinate labels which are specified in the array \verb|vars|, i.e., \verb|vars| is an array which each entry specifying the $i$ label of $\beta_i$ to permute. The first index of the dictionary holds the ``permutation label" associated with variation of the variables \verb|vars| and the second the particular permutation of the variables, so the set of arrays $\verb|array|_n = \verb|global%iterables(n,:)|$ hold a list of size \verb|size(global%continuous_indices)| with a particular permutation in the indices \verb|vars(j)| for each $j\in \verb|size(vars)|$. The variables not permutated are stored with the constant value of 1 in the corresponding entry of \verb|global%iterables(:,:)|.
 \subsection{Local k-quantities module}\label{sec:local_k_quantities}
 The local $\bm{k}$ quantities module provides utilities which implement Wannier interpolation \cite{marzariMaximallyLocalizedWannier2012} of several common physically meaningful quantities by computing the Fourier transformation of a \verb|type(SsTC_sys)| system's Hamiltonian and position matrix elements from direct space to reciprocal space.
 
@@ -1372,7 +1372,7 @@ computes
 \begin{equation}
 \verb|v(n, m, a)| = \frac{\partial H_{nm}^{(H)}(\bm{k})}{\partial k^a},
 \end{equation}
-as in Eq. (26) of Ref. \cite{yatesSpectralFermiSurface2007} for multiband case with degeneracy correction, for system \verb|system| and $\bm{k}$-point $\verb|k| = \bm{k}$ in units of eV\r{A}. The diagonal elements correspond to the band gradients
+as in Eq. (26) of Ref. \cite{yatesSpectralFermiSurface2007} for multi-band case with degeneracy correction, for system \verb|system| and $\bm{k}$-point $\verb|k| = \bm{k}$ in units of eV\r{A}. The diagonal elements correspond to the band gradients
 \begin{equation}
 \verb|v(n, n, a)| = \frac{\partial\varepsilon_n(\bm{k})}{\partial k^a}.
 \end{equation}
@@ -1402,7 +1402,7 @@ computes
 \begin{equation}
 \verb|mu(n, m, a, b)| = \frac{\partial H_{nm}^{(H)}(\bm{k})}{\partial k^a \partial k^b},
 \end{equation}
-as in Eq. (28) of Ref. \cite{yatesSpectralFermiSurface2007} for multiband case with degeneracy correction, for system \verb|system| and $\bm{k}$-point $\verb|k| = \bm{k}$ in units of eV\r{A}$^2$. The diagonal elements correspond to the inverse effective masses,
+as in Eq. (28) of Ref. \cite{yatesSpectralFermiSurface2007} for multi-band case with degeneracy correction, for system \verb|system| and $\bm{k}$-point $\verb|k| = \bm{k}$ in units of eV\r{A}$^2$. The diagonal elements correspond to the inverse effective masses,
 \begin{equation}
 \verb|mu(n, n, a, b)| = \frac{\partial^2\varepsilon_n(\bm{k})}{\partial k^a\partial k^b}.
 \end{equation}
@@ -1414,7 +1414,7 @@ In the following, we consider an application \verb|appl.x| making use of SsTC, w
 \subsection{Example of a SLURM job}
 \href{https://slurm.schedmd.com/documentation.html}{SLURM} is a widely used workload manager in computational clusters. The following file \verb|run.sh| located in the same directory as \verb|appl.x|,
 \begin{codebox}{SLURM script}
-\begin{lstlisting}[caption={SLURM script ``run".},captionpos=b]
+\begin{lstlisting}[language=bash, caption={SLURM script ``run".},captionpos=b]
 #!/bin/bash -x
 #SBATCH -J APPL
 ###Number of nodes.
@@ -1444,7 +1444,7 @@ will run \verb|appl.x| in a total of $4\times 48$ threads, distributed in 4 node
 \section{Modularity}\label{sec:modularity}
 SsTC features a modularity capability for users to extend the library by their own modifications. These modifications, or ``mods", allow users to create and maintain modules featuring further derived type extension and creation of custom calculators.
 
-Lets consider a SsTC user who implemented, by using the basic SsTC library's routines, a set of calculators and task constructors involving various physically meaningful quantities by extending the basic integrator/sampler/kslice/kpath tasks to satisfy his/her own needs. For example, a set of optical photocurrent tensor calculations contained in a module. In order to distribute the implemented set of utilities, the user would have to create and maintain a repository containing SsTC within its dependencies or create pull requests to the SsTC repository. However, with the modularity feature, this is unnecessary: the user is only responsible for maintaining his/her's own calculator implementing module, and in compile time, the utilities and declarations provided in the module get added to the SsTC library's scope and made public to the user. This creates a modified version of SsTC, a ``mod". The SsTC user who created the mod has only to instruct other users to use SsTC (perhaps some particular version) and add his/her ``mod" with the aid of the ``mod loader", whose working principle is described in Sec. \ref{sec:mod_loader}. An example of this capability is shown in Example 2 in Sec. \ref{sec:example2}, where we instruct on how to add capabilities to SsTC for the calculation of an optical response.
+Lets consider a SsTC user who implemented, by using the basic SsTC library's routines, a set of calculators and task constructors involving various physically meaningful quantities by extending the basic integrator/sampler/kslice/kpath tasks to satisfy his/hers own needs. For example, a set of optical photocurrent tensor calculations contained in a module. In order to distribute the implemented set of utilities, the user would have to create and maintain a repository containing SsTC within its dependencies or create pull requests to the SsTC repository. However, with the modularity feature, this is unnecessary: the user is only responsible for maintaining his/hers own calculator implementing module, and in compile time, the utilities and declarations provided in the module get added to the SsTC library's scope and made public to the user. This creates a modified version of SsTC, a ``mod". The SsTC user who created the mod has only to instruct other users to use SsTC (perhaps some particular version) and add his/hers ``mod" with the aid of the ``mod loader", whose working principle is described in Sec. \ref{sec:mod_loader}. An example of this capability is shown in Example 2 in Sec. \ref{sec:example2}, where we instruct on how to add capabilities to SsTC for the calculation of an optical response.
 
 \subsection{Structure of a mod}\label{sec:mod_structure}
 A modification is a user made and maintained set of files contained in a folder, containing at least the following,
@@ -1509,7 +1509,7 @@ will be the header file.
 \end{tcolorbox}
 In the case of a module file like the one above the makefile should have the structure,
 \begin{codebox}{}
-\begin{lstlisting}[caption={Makefile.},captionpos=b]
+\begin{lstlisting}[language=make, caption={Makefile.},captionpos=b]
 mymod.o: $(CALC)/mymod/mymod.F90 utility.o ... #All other deps
          $(F90) $(F90FLAGS) -c $(CALC)/mymod/mymod.F90 -o "$(OBJ)/mymod.o"
 
@@ -1521,7 +1521,7 @@ where we are assuming a single source code file \verb|mymod.F90| ans the variabl
 \end{tcolorbox}
 
 \subsection{The mod loader}\label{sec:mod_loader}
-The ``mod loader" works by searching for \verb|*.mk| files in the subdirectories of the variable \verb|CALC|, which is given by \verb|bash:/path/of/your/choice/SsTC/src/calculators|. Once a Makefile is found, his/her contents get included in the main Makefile at \verb|bash:/path/of/your/choice/SsTC|. When running make for building SsTC, after the new dependencies are included, a \verb|python| script is executed, which finds the \verb|headers.inc| and \verb|procedures.inc| files associated with each found Makefile, creates a copy of the source code \verb|SsTC.F90|, \verb|SsTC_mod.F90| and includes the contents of the \verb|*.inc| files in the new source code. Then, the source code is compiled to a library \verb|libSsTC.a|, thus creating a ``mod" of SsTC.
+The ``mod loader" works by searching for \verb|*.mk| files in the subdirectories of the variable \verb|CALC|, which is given by \verb|bash:/path/of/your/choice/SsTC/src/calculators|. Once a Makefile is found, its contents get included in the main Makefile at \verb|bash:/path/of/your/choice/SsTC|. When running make for building SsTC, after the new dependencies are included, a \verb|python| script is executed, which finds the \verb|headers.inc| and \verb|procedures.inc| files associated with each found Makefile, creates a copy of the source code \verb|SsTC.F90|, \verb|SsTC_mod.F90| and includes the contents of the \verb|*.inc| files in the new source code. Then, the source code is compiled to a library \verb|libSsTC.a|, thus creating a ``mod" of SsTC.
 
 For the mod loader to load the mod, the folder containing the files listed in Sec. \ref{sec:mod_structure} needs to be copied to \verb|bash:/path/of/your/choice/SsTC/src/calculators| and then run
 \begin{codebox}{}
@@ -1704,7 +1704,7 @@ gnuplot> plot 'GaAs-jc_1111.dat' u ($1):(($2)/1E17) w l
 \end{codebox}
 Other components can also be visualized by the same means.
 
-The user is encouraged to follow the lines of this example and implement his/her's own calculators by using the SsTC routines as a basis.
+The user is encouraged to follow the lines of this example and implement his/hers own calculators by using the SsTC routines as a basis.
 \section{Suggested practices}
 It is a good idea to make use of the \href{https://www.intel.com/content/www/us/en/docs/fortran-compiler/developer-guide-reference/2023-0/block.html}{BLOCK} scoping unit in the main application when defining tasks,
 \begin{codebox}{}
