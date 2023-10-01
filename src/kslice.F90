@@ -47,10 +47,10 @@ contains
     real(kind=dp), optional, intent(in) :: corner(3), vector_a(3), vector_b(3)
     integer, optional, intent(in)       :: samples(2)
 
-    integer, intent(in) :: N_int_ind
+    integer, intent(in)           :: N_int_ind
     integer, optional, intent(in) :: int_ind_range(N_int_ind)
 
-    integer, intent(in)       :: N_ext_vars
+    integer, intent(in)                 :: N_ext_vars
     real(kind=dp), optional, intent(in) :: ext_vars_start(N_ext_vars), ext_vars_end(N_ext_vars)
     integer, optional, intent(in)       :: ext_vars_steps(N_ext_vars)
 
