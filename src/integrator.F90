@@ -48,14 +48,14 @@ contains
     character(len=*), optional, intent(in) :: method
     integer, optional, intent(in)          :: samples(3)
 
-    integer, optional, intent(in) :: N_int_ind
-    integer, optional, intent(in) :: int_ind_range(:)
+    integer, intent(in) :: N_int_ind
+    integer, optional, intent(in) :: int_ind_range(N_int_ind)
 
-    integer, optional, intent(in)       :: N_ext_vars
-    real(kind=dp), optional, intent(in) :: ext_vars_start(:), ext_vars_end(:)
-    integer, optional, intent(in)       :: ext_vars_steps(:)
+    integer, intent(in)       :: N_ext_vars
+    real(kind=dp), optional, intent(in) :: ext_vars_start(N_ext_vars), ext_vars_end(N_ext_vars)
+    integer, optional, intent(in)       :: ext_vars_steps(N_ext_vars)
 
-    integer, optional, intent(in) :: part_int_comp(:)
+    integer, optional, intent(in) :: part_int_comp(N_int_ind)
 
     class(SsTC_BZ_integral_task), intent(out) :: task
 
@@ -99,6 +99,9 @@ contains
     elseif (present(l_calculator) .and. (.not. present(g_calculator))) then
       !Set calculator pointer (function alias).
       task%local_calculator => l_calculator
+      nullify (task%global_calculator)
+    else
+      nullify (task%local_calculator)
       nullify (task%global_calculator)
     endif
 

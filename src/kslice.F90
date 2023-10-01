@@ -47,14 +47,14 @@ contains
     real(kind=dp), optional, intent(in) :: corner(3), vector_a(3), vector_b(3)
     integer, optional, intent(in)       :: samples(2)
 
-    integer, optional, intent(in) :: N_int_ind
-    integer, optional, intent(in) :: int_ind_range(:)
+    integer, intent(in) :: N_int_ind
+    integer, optional, intent(in) :: int_ind_range(N_int_ind)
 
-    integer, optional, intent(in)       :: N_ext_vars
-    real(kind=dp), optional, intent(in) :: ext_vars_start(:), ext_vars_end(:)
-    integer, optional, intent(in)       :: ext_vars_steps(:)
+    integer, intent(in)       :: N_ext_vars
+    real(kind=dp), optional, intent(in) :: ext_vars_start(N_ext_vars), ext_vars_end(N_ext_vars)
+    integer, optional, intent(in)       :: ext_vars_steps(N_ext_vars)
 
-    integer, optional, intent(in) :: part_int_comp(:)
+    integer, optional, intent(in) :: part_int_comp(N_int_ind)
 
     class(SsTC_kslice_task), intent(out) :: task
 
@@ -85,9 +85,9 @@ contains
       if (error) then
         write (unit=stderr, fmt="(a, i5, a)") "          Rank ", rank, &
           ": Error in function kslice_task_constructor when checking linear dependence of vectors."
-        write (unit=stderr, fmt="(a, i5, a)") "          Rank ", rank, ": Error in function kslice_task_constructor&
+        write (unit=stdout, fmt="(a, i5, a)") "          Rank ", rank, ": Error in function kslice_task_constructor&
         & when checking linear dependence of vectors."
-        if (rank == 0) write (unit=stdout, fmt="(a)") "Supposing linearly dependent input vectors."
+        if (rank == 0) write (unit=stdout, fmt="(a)") "          Supposing linearly dependent input vectors."
         dep = .True.
         goto 2
       endif
@@ -146,6 +146,9 @@ contains
     elseif (present(l_calculator) .and. (.not. present(g_calculator))) then
       !Set calculator pointer (function alias).
       task%local_calculator => l_calculator
+      nullify (task%global_calculator)
+    else
+      nullify (task%local_calculator)
       nullify (task%global_calculator)
     endif
 
