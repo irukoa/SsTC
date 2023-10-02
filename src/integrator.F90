@@ -197,7 +197,10 @@ contains
       !_OMPTGT_(PARALLEL DO REDUCTION (.or.: error) &)
       !_OMPTGT_(SHARED(task, system, displs, counts, rank, sampling_info, local_data_k) &)
       !_OMPTGT_(PRIVATE(ik, k_ind, ik1, ik2, ik3, k, simd_tmp))
+#ifdef _using_ifx
+#else
       !_OMPTGT_(SIMD)
+#endif
       do ik = displs(rank) + 1, displs(rank) + counts(rank)
 
         k_ind = SsTC_integer_memory_element_to_array_element(sampling_info, ik)
@@ -281,7 +284,9 @@ contains
       !_OMPTGT_(PARALLEL DO REDUCTION (+: temp_res) REDUCTION (.or.: error) &)
       !_OMPTGT_(SHARED(task, system, displs, counts, rank, sampling_info) &)
       !_OMPTGT_(PRIVATE(ik, k_ind, ik1, ik2, ik3, k, simd_tmp))
+#ifdef using_ifx
       !_OMPTGT_(SIMD)
+#endif
       do ik = displs(rank) + 1, displs(rank) + counts(rank)
 
         k_ind = SsTC_integer_memory_element_to_array_element(sampling_info, ik)
