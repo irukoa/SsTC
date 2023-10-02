@@ -6,7 +6,11 @@
 
 ### Fortran compiler:
 
+<<<<<<< HEAD
 [Intel Fortran oneAPI](https://www.intel.com/content/www/us/en/developer/tools/oneapi/hpc-toolkit.html) compiler `mpiifort` (recommended) or `mpiifx`.
+=======
+[Intel Fortran oneAPI](https://www.intel.com/content/www/us/en/developer/tools/oneapi/hpc-toolkit.html) compilers `mpiifort` (recommended) or `mpiifx`.
+>>>>>>> 55eecfa (Update README.)
 
 ### Make software.
 
