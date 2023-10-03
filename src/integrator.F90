@@ -271,6 +271,9 @@ contains
       allocate (temp_res(product(task%integer_indices), product(task%continuous_indices)), &
                 res(product(task%integer_indices), product(task%continuous_indices)))
 
+      temp_res = 0.0_dp
+      res = 0.0_dp
+
       !_OMPOFFLOADTGT_(TARGET TEAMS)
       !_OMPTGT_(PARALLEL DO REDUCTION (+: temp_res) REDUCTION (.or.: error) &)
       !_OMPTGT_(SHARED(task, system, displs, counts, rank, sampling_info) &)
