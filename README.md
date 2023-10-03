@@ -7,10 +7,14 @@
 ### Fortran compiler:
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 [Intel Fortran oneAPI](https://www.intel.com/content/www/us/en/developer/tools/oneapi/hpc-toolkit.html) compiler `mpiifort` (recommended) or `mpiifx`.
 =======
 [Intel Fortran oneAPI](https://www.intel.com/content/www/us/en/developer/tools/oneapi/hpc-toolkit.html) compilers `mpiifort` (recommended) or `mpiifx`.
 >>>>>>> 55eecfa (Update README.)
+=======
+[Intel Fortran oneAPI](https://www.intel.com/content/www/us/en/developer/tools/oneapi/hpc-toolkit.html) compilers `mpiifort` (recommended) or `mpiifx`.
+>>>>>>> f13a7c06a3dd05d4948c014d7c83b9c1087f12bb
 
 ### Make software.
 
@@ -77,7 +81,7 @@ For example, an application calculating the jerk current of the system GaAs, as 
       GaAs = SsTC_sys_constructor("GaAs", "./", efermi = 7.7414_dp)
 
       block
-		  
+
         type(optical_BZ_integral_task) :: jerk
 
         call jerk_current_constructor(optical_task = jerk, method = "rectangle", samples = (/100, 100, 100/), &
