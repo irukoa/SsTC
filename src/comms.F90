@@ -1,4 +1,3 @@
-#include "cond_comp.h"
 module SsTC_mpi_comms
 
   implicit none

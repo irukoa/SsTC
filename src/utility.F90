@@ -170,7 +170,7 @@ contains
     lwork = -1
     allocate (work(1))
     call zheev('V', 'U', dim, rot, dim, eig, work, lwork, rwork, info)
-    lwork = nint(real(work(1), 8))
+    lwork = nint(real(work(1), dp))
     deallocate (work)
 
     !Calculation.
@@ -212,7 +212,7 @@ contains
 
     complex(kind=dp)              :: B(dim, dim)
     complex(kind=dp), allocatable :: work(:)
-    real(8)                       :: rwork(dim)
+    real(kind=dp)                 :: rwork(dim)
     integer                       :: info, lwork, sdim
     logical                       :: bwork(dim), select
     external                      :: zgees
@@ -224,7 +224,7 @@ contains
     lwork = -1
     allocate (work(1))
     call zgees('V', 'N', select, dim, B, dim, sdim, T, Z, dim, work, lwork, rwork, bwork, info)
-    lwork = nint(real(work(1), 8))
+    lwork = nint(real(work(1), dp))
     deallocate (work)
 
     !Calculation.
@@ -284,7 +284,7 @@ contains
     lwork = -1
     allocate (work(1))
     call zgesvd('A', 'A', m, n, B, m, sigmaw, Uw, m, Vw, n, work, lwork, rwork, info)
-    lwork = nint(real(work(1), 8))
+    lwork = nint(real(work(1), dp))
     deallocate (work)
 
     !Calculation.
