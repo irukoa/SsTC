@@ -107,9 +107,9 @@ SsTC is a Fortran 2018 standard complying code and the prerequisites for its com
 \item Make software.
 \item Python 3 ($>$ v3.9) software with 're' and 'glob' libraries.
 \end{itemize}\end{tcolorbox}
-As for v0.3.0, SsTC is only guaranteed to compile on Linux systems using the \verb|mpiifort| and \verb|mpiifx| (with limitations) compilers contained in the \href{https://www.intel.com/content/www/us/en/developer/tools/oneapi/hpc-toolkit.html}{Intel\textregistered oneAPI HPC} toolkit. As such, the main application to be linked with must be compiled with \verb|mpiifort| or \verb|mpiifx|.
+As for v0.3.0, SsTC is only guaranteed to compile on Linux systems using the \verb|mpiifort| and \verb|mpiifx| compilers contained in the \href{https://www.intel.com/content/www/us/en/developer/tools/oneapi/hpc-toolkit.html}{Intel\textregistered oneAPI HPC} toolkit. As such, the main application to be linked with must be compiled with \verb|mpiifort| or \verb|mpiifx|.
 
-The SsTC project is hosted on \href{https://github.com/irukoa/SsTC}{GitHub} and can be downloaded by running the command
+The SsTC project is hosted on \href{https://github.com/irukoa/SsTC}{GitHub} and can be downloaded by running the command,
 
 \begin{codebox}{Download}
 \begin{verbatim}
@@ -128,7 +128,7 @@ bash:/path/of/your/choice/SsTC$ make
 \end{codebox}
 These commands will compile the source code and install the library \verb|libSsTC.a| and the module header file \verb|sstc.mod| in the directory \verb|/path/of/your/choice/SsTC/bin/|.
 
-The default behaviour will compile the library with \verb|mpiifort|. This is the most tested and recommended compiler, but the user can also employ \verb|mpiifx| to compile. This can be achieved by running,
+The default behaviour will compile the library with \verb|mpiifort|, but the user can also employ \verb|mpiifx| to compile. This can be achieved by running,
 \begin{codebox}{Installation using ifx}
 \begin{verbatim}
 bash:/path/of/your/choice/SsTC$ cp config/ifx Makefile
