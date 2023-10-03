@@ -150,14 +150,13 @@ contains
     type(SsTC_sys), intent(in)                  :: system
 
     complex(kind=dp), allocatable :: data_k(:, :, :), &
-                                     simd_tmp(:, :), &
                                      local_data_k(:, :, :), &
                                      temp_res(:, :), res(:, :)
 
     real(kind=dp) :: k(3)
 
     integer :: ik, k_ind(3), ik1, ik2, ik3, &
-               info, &
+               info, einfo, &
                i, r
 
     real(kind=dp) :: start_time, end_time
@@ -186,21 +185,15 @@ contains
       allocate (local_data_k(displs(rank) + 1:displs(rank) + counts(rank), &
                              product(task%integer_indices), product(task%continuous_indices)), &
                 data_k(product(task%samples), &
-                       product(task%integer_indices), product(task%continuous_indices)), &
-                simd_tmp(product(task%integer_indices), product(task%continuous_indices)))
+                       product(task%integer_indices), product(task%continuous_indices)))
 
       local_data_k = cmplx(0.0_dp, 0.0_dp, dp)
       data_k = cmplx(0.0_dp, 0.0_dp, dp)
-      simd_tmp = cmplx(0.0_dp, 0.0_dp, dp)
 
       !_OMPOFFLOADTGT_(TARGET TEAMS)
       !_OMPTGT_(PARALLEL DO REDUCTION (.or.: error) &)
       !_OMPTGT_(SHARED(task, system, displs, counts, rank, sampling_info, local_data_k) &)
-      !_OMPTGT_(PRIVATE(ik, k_ind, ik1, ik2, ik3, k, simd_tmp))
-#ifdef _using_ifx
-#else
-      !_OMPTGT_(SIMD)
-#endif
+      !_OMPTGT_(PRIVATE(ik, k_ind, ik1, ik2, ik3, k))
       do ik = displs(rank) + 1, displs(rank) + counts(rank)
 
         k_ind = SsTC_integer_memory_element_to_array_element(sampling_info, ik)
@@ -226,11 +219,9 @@ contains
 
         !Gather data.
         if (associated(task%local_calculator)) then
-          simd_tmp(:, 1) = task%local_calculator(task, system, k, error)
-          local_data_k(ik, :, 1) = simd_tmp(:, 1)
+          local_data_k(ik, :, 1) = task%local_calculator(task, system, k, error)
         elseif (associated(task%global_calculator)) then
-          simd_tmp = task%global_calculator(task, system, k, error)
-          local_data_k(ik, :, :) = simd_tmp
+          local_data_k(ik, :, :) = task%global_calculator(task, system, k, error)
         endif
 
       enddo
@@ -267,7 +258,7 @@ contains
       endif
       if (rank == 0) write (unit=stdout, fmt="(a)") ""
 
-      deallocate (local_data_k, data_k, simd_tmp)
+      deallocate (local_data_k, data_k)
 
     elseif (task%method == "rectangle") then !Rectangle method approximation case.
 
@@ -277,16 +268,12 @@ contains
       &//trim(system%name)//"."
 
       allocate (temp_res(product(task%integer_indices), product(task%continuous_indices)), &
-                res(product(task%integer_indices), product(task%continuous_indices)), &
-                simd_tmp(product(task%integer_indices), product(task%continuous_indices)))
+                res(product(task%integer_indices), product(task%continuous_indices)))
 
       !_OMPOFFLOADTGT_(TARGET TEAMS)
       !_OMPTGT_(PARALLEL DO REDUCTION (+: temp_res) REDUCTION (.or.: error) &)
       !_OMPTGT_(SHARED(task, system, displs, counts, rank, sampling_info) &)
-      !_OMPTGT_(PRIVATE(ik, k_ind, ik1, ik2, ik3, k, simd_tmp))
-#ifdef using_ifx
-      !_OMPTGT_(SIMD)
-#endif
+      !_OMPTGT_(PRIVATE(ik, k_ind, ik1, ik2, ik3, k))
       do ik = displs(rank) + 1, displs(rank) + counts(rank)
 
         k_ind = SsTC_integer_memory_element_to_array_element(sampling_info, ik)
@@ -312,11 +299,9 @@ contains
 
         !Gather data.
         if (associated(task%local_calculator)) then
-          simd_tmp(:, 1) = task%local_calculator(task, system, k, error)
-          temp_res(:, 1) = temp_res(:, 1) + simd_tmp(:, 1)
+          temp_res(:, 1) = temp_res(:, 1) + task%local_calculator(task, system, k, error)
         elseif (associated(task%global_calculator)) then
-          simd_tmp = task%global_calculator(task, system, k, error)
-          temp_res = temp_res + simd_tmp
+          temp_res = temp_res + task%global_calculator(task, system, k, error)
         endif
 
       enddo
@@ -330,7 +315,7 @@ contains
 
       if (rank == 0) write (unit=stdout, fmt="(a)") "          Integral done."
 
-      deallocate (temp_res, res, simd_tmp)
+      deallocate (temp_res, res)
       deallocate (sampling_info%integer_indices, counts, displs)
 
       if (rank == 0) write (unit=stdout, fmt="(a)") ""
