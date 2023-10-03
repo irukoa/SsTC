@@ -267,17 +267,16 @@ end type SsTC_global_k_data
 SsTC can be initialized in the application by using the routine \verb|SsTC_init()|.
 \begin{codebox}{SsTC initializer}
 \begin{lstlisting}[caption={Interface of ``SsTC initialization".},captionpos=b]
-subroutine SsTC_init(nThreads, nNested, exec_label)
+subroutine SsTC_init(nThreads, exec_label)
 
   integer, intent(in), optional :: nThreads
   !Default are max available threads per MPI process.
-  integer, intent(in), optional :: nNested !Default = 1.
   character(len=*), intent(in), optional :: exec_label !Default "SsTC_exec".
 
 end subroutine SsTC_init
 \end{lstlisting}
 \end{codebox}
-The routine will check whether the MPI library has been initialized and stop the program on execution if it was not. It will also open the output and error log files \verb|file=trim(exec_label//".out")| and \\ \verb|file=trim(exec_label//".err")|. The user can also control the number of parallel nested regions with the variable \verb|nNested|. Changing this variable from the default value of 1 is not recommended unless the number of $\bm{k}$ points being sampled by a particular task is smaller than the total number of threads available. Lastly, \verb|nThreads| sets the number of threads per MPI process, with the default value of \verb|OMP_GET_MAX_THREADS()|.
+The routine will check whether the MPI library has been initialized and stop the program on execution if it was not. It will also open the output and error log files \verb|file=trim(exec_label//".out")| and \\ \verb|file=trim(exec_label//".err")|. Lastly, \verb|nThreads| sets the number of threads per MPI process, with the default value of \verb|OMP_GET_MAX_THREADS()|.
 \section{Notation: Memory layout and array layout}\label{sec:notation}
 These concepts apply to $N$-dimensional arrays such as \verb|array(:, :, ..., :)|, where each dimension $i$ has size $s_i$. The total size of \verb|array| is
 \begin{equation}
