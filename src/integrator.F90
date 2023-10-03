@@ -244,8 +244,9 @@ contains
       do i = 1, product(task%integer_indices) !For each integer index.
         do r = 1, product(task%continuous_indices) !For each continuous index.
           !Integrate, if possible extrapolation method.
-          call integral_extrapolation(data_k(:, i, r), task%samples, &
-                                      (/-0.5_dp, 0.5_dp, -0.5_dp, 0.5_dp, -0.5_dp, 0.5_dp/), task%result(i, r), info)
+          call integral_extrapolation((data_k(:, i, r)), (task%samples), &
+                                      ((/-0.5_dp, 0.5_dp, -0.5_dp, 0.5_dp, -0.5_dp, 0.5_dp/)), task%result(i, r), einfo)
+          info = info*einfo
         enddo
       enddo
 
