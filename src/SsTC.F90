@@ -135,7 +135,7 @@ contains
 
     if (.not. ((is_mpi_initialized) .and. ((.not. is_mpi_finalized)))) then
       write (unit=stdout, fmt="(a)") "          SsTC: MPI has not been initialized or has been finalized. Stopping..."
-      stop
+      error stop
     endif
 
     call MPI_COMM_SIZE(MPI_COMM_WORLD, nProcs, ierror)
