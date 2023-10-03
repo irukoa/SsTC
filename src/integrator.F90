@@ -117,9 +117,9 @@ contains
     if (present(method)) then
       if (method == "extrapolation") then
         task%method = "extrapolation"
-        if (rank == 0) write (unit=stdout, fmt="(a)") "          Warning: To employ the extrapolation method &
-          & all the elements of the array 'samples' must be expressible as either 1 &
-          & or 2^n + 1 for n = 0, 1, ..."
+        if (rank == 0) write (unit=stdout, fmt="(a)") "          Warning: To employ the extrapolation method"
+        if (rank == 0) write (unit=stdout, fmt="(a)") "          all the elements of the array 'samples' must be"
+        if (rank == 0) write (unit=stdout, fmt="(a)") "          expressible as either 1 or 2^n + 1 for n = 0, 1, ..."
       elseif (method == "rectangle") then
         task%method = "rectangle"
       else
@@ -178,7 +178,8 @@ contains
     if (task%method == "extrapolation") then !Extrapolation case.
 
       if (rank == 0) write (unit=stdout, fmt="(a)") &
-        "          Starting BZ sampling and integration subroutine with extrapolation method."
+        "          Starting BZ sampling and integration subroutine with "
+      if (rank == 0) write (unit=stdout, fmt="(a)") "          extrapolation method."
       if (rank == 0) write (unit=stdout, fmt="(a)") "          Integrating task: "//trim(task%name)//" in the BZ for the system " &
         //trim(system%name)//"."
 
