@@ -173,7 +173,6 @@ contains
     type(SsTC_sys), intent(in)             :: system
 
     complex(kind=dp), allocatable :: data_k(:, :, :), &
-                                     simd_tmp(:, :), &
                                      local_data_k(:, :, :)
 
     real(kind=dp) :: k(3)
@@ -205,21 +204,15 @@ contains
     allocate (local_data_k(displs(rank) + 1:displs(rank) + counts(rank), &
                            product(task%integer_indices), product(task%continuous_indices)), &
               data_k(product(task%samples), &
-                     product(task%integer_indices), product(task%continuous_indices)), &
-              simd_tmp(product(task%integer_indices), product(task%continuous_indices)))
+                     product(task%integer_indices), product(task%continuous_indices)))
 
     local_data_k = cmplx(0.0_dp, 0.0_dp, dp)
     data_k = cmplx(0.0_dp, 0.0_dp, dp)
-    simd_tmp = cmplx(0.0_dp, 0.0_dp, dp)
 
     !_OMPOFFLOADTGT_(TARGET TEAMS)
     !_OMPTGT_(PARALLEL DO REDUCTION (.or.: error) &)
     !_OMPTGT_(SHARED(task, system, displs, counts, rank, sampling_info, local_data_k) &)
-    !_OMPTGT_(PRIVATE(ik, k_ind, ik1, ik2, k, simd_tmp))
-#ifdef _using_ifx
-#else
-    !_OMPTGT_(SIMD)
-#endif
+    !_OMPTGT_(PRIVATE(ik, k_ind, ik1, ik2, k))
     do ik = displs(rank) + 1, displs(rank) + counts(rank)
 
       k_ind = SsTC_integer_memory_element_to_array_element(sampling_info, ik)
@@ -232,11 +225,9 @@ contains
 
       !Gather data.
       if (associated(task%local_calculator)) then
-        simd_tmp(:, 1) = task%local_calculator(task, system, k, error)
-        local_data_k(ik, :, 1) = simd_tmp(:, 1)
+        local_data_k(ik, :, 1) = task%local_calculator(task, system, k, error)
       elseif (associated(task%global_calculator)) then
-        simd_tmp = task%global_calculator(task, system, k, error)
-        local_data_k(ik, :, :) = simd_tmp
+        local_data_k(ik, :, :) = task%global_calculator(task, system, k, error)
       endif
 
     enddo
