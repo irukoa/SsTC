@@ -47,14 +47,14 @@ contains
     real(kind=dp), optional, intent(in) :: corner(3), vector_a(3), vector_b(3)
     integer, optional, intent(in)       :: samples(2)
 
-    integer, optional, intent(in) :: N_int_ind
-    integer, optional, intent(in) :: int_ind_range(:)
+    integer, intent(in)           :: N_int_ind
+    integer, optional, intent(in) :: int_ind_range(N_int_ind)
 
-    integer, optional, intent(in)       :: N_ext_vars
-    real(kind=dp), optional, intent(in) :: ext_vars_start(:), ext_vars_end(:)
-    integer, optional, intent(in)       :: ext_vars_steps(:)
+    integer, intent(in)                 :: N_ext_vars
+    real(kind=dp), optional, intent(in) :: ext_vars_start(N_ext_vars), ext_vars_end(N_ext_vars)
+    integer, optional, intent(in)       :: ext_vars_steps(N_ext_vars)
 
-    integer, optional, intent(in) :: part_int_comp(:)
+    integer, optional, intent(in) :: part_int_comp(N_int_ind)
 
     class(SsTC_kslice_task), intent(out) :: task
 
@@ -85,9 +85,9 @@ contains
       if (error) then
         write (unit=stderr, fmt="(a, i5, a)") "          Rank ", rank, &
           ": Error in function kslice_task_constructor when checking linear dependence of vectors."
-        write (unit=stderr, fmt="(a, i5, a)") "          Rank ", rank, ": Error in function kslice_task_constructor&
+        write (unit=stdout, fmt="(a, i5, a)") "          Rank ", rank, ": Error in function kslice_task_constructor&
         & when checking linear dependence of vectors."
-        if (rank == 0) write (unit=stdout, fmt="(a)") "Supposing linearly dependent input vectors."
+        if (rank == 0) write (unit=stdout, fmt="(a)") "          Supposing linearly dependent input vectors."
         dep = .True.
         goto 2
       endif
@@ -147,6 +147,9 @@ contains
       !Set calculator pointer (function alias).
       task%local_calculator => l_calculator
       nullify (task%global_calculator)
+    else
+      nullify (task%local_calculator)
+      nullify (task%global_calculator)
     endif
 
     !Set kdata.
@@ -170,7 +173,6 @@ contains
     type(SsTC_sys), intent(in)             :: system
 
     complex(kind=dp), allocatable :: data_k(:, :, :), &
-                                     simd_tmp(:, :), &
                                      local_data_k(:, :, :)
 
     real(kind=dp) :: k(3)
@@ -202,18 +204,15 @@ contains
     allocate (local_data_k(displs(rank) + 1:displs(rank) + counts(rank), &
                            product(task%integer_indices), product(task%continuous_indices)), &
               data_k(product(task%samples), &
-                     product(task%integer_indices), product(task%continuous_indices)), &
-              simd_tmp(product(task%integer_indices), product(task%continuous_indices)))
+                     product(task%integer_indices), product(task%continuous_indices)))
 
     local_data_k = cmplx(0.0_dp, 0.0_dp, dp)
     data_k = cmplx(0.0_dp, 0.0_dp, dp)
-    simd_tmp = cmplx(0.0_dp, 0.0_dp, dp)
 
     !_OMPOFFLOADTGT_(TARGET TEAMS)
     !_OMPTGT_(PARALLEL DO REDUCTION (.or.: error) &)
     !_OMPTGT_(SHARED(task, system, displs, counts, rank, sampling_info, local_data_k) &)
-    !_OMPTGT_(PRIVATE(ik, k_ind, ik1, ik2, k, simd_tmp))
-    !_OMPTGT_(SIMD)
+    !_OMPTGT_(PRIVATE(ik, k_ind, ik1, ik2, k))
     do ik = displs(rank) + 1, displs(rank) + counts(rank)
 
       k_ind = SsTC_integer_memory_element_to_array_element(sampling_info, ik)
@@ -226,11 +225,9 @@ contains
 
       !Gather data.
       if (associated(task%local_calculator)) then
-        simd_tmp(:, 1) = task%local_calculator(task, system, k, error)
-        local_data_k(ik, :, 1) = simd_tmp(:, 1)
+        local_data_k(ik, :, 1) = task%local_calculator(task, system, k, error)
       elseif (associated(task%global_calculator)) then
-        simd_tmp = task%global_calculator(task, system, k, error)
-        local_data_k(ik, :, :) = simd_tmp
+        local_data_k(ik, :, :) = task%global_calculator(task, system, k, error)
       endif
 
     enddo

@@ -305,11 +305,7 @@ contains
             !diagonalize the subspace and overwrite to degen_vels.
             call SsTC_utility_diagonalize(v(n:n + deg(n) - 1, n:n + deg(n) - 1, i), &
                                           deg(n), degen_vels(n:n + deg(n) - 1), dummy_rot, error)
-            if (error) then
-              write (unit=stderr, fmt="(a, i5, a)") "Rank", rank, ": Error in function velocities when computing&
-              & the eigenvalues of the degenerate subspace."
-              return
-            endif
+            if (error) return
             deallocate (dummy_rot)
           endif
         enddo
@@ -392,11 +388,7 @@ contains
             !diagonalize the subspace and overwrite to degen_mass.
             call SsTC_utility_diagonalize(mu(n:n + deg(n) - 1, n:n + deg(n) - 1, i, j), &
                                           deg(n), degen_mass(n:n + deg(n) - 1), dummy_rot, error)
-            if (error) then
-              write (unit=stderr, fmt="(a, i5, a)") "Rank", rank, ": Error in function inverse_effective_mass&
-              & when computing the eigenvalues of the degenerate subspace."
-              return
-            endif
+            if (error) return
             deallocate (dummy_rot)
           endif
         enddo
@@ -483,8 +475,9 @@ contains
         i_arr = SsTC_integer_memory_element_to_array_element(H(1), i_mem) !Get array index.
 
         temp_res = cmplx_0
-        !_OMPTGT_(PARALLEL PRIVATE (kdotr, vec, prod_R) REDUCTION (+: temp_res))
-        !_OMPTGT_(DO)
+        !_OMPTGT_(SIMD &)
+        !_OMPTGT_(PRIVATE (kdotr, vec, prod_R) &)
+        !_OMPTGT_(REDUCTION (+: temp_res))
         do irpts = 1, system%num_R_points !For each point in the Bravais lattice.
 
           !Compute factor appearing in the exponential (k is in coords relative to recip. lattice vectors).
@@ -510,8 +503,6 @@ contains
           !/real(system%deg_R_point(irpts), dp)
           !TODO: Recheck the deg_R_points division.
         enddo!irpts
-        !_OMPTGT_(END DO)
-        !_OMPTGT_(END PARALLEL)
         H(1)%k_data(i_mem) = temp_res
       enddo!i_mem
 
@@ -529,8 +520,9 @@ contains
           i_arr = SsTC_integer_memory_element_to_array_element(H(i), i_mem) !Get array index.
 
           temp_res = cmplx_0
-          !_OMPTGT_(PARALLEL PRIVATE (kdotr, vec, prod_R) REDUCTION (+: temp_res))
-          !_OMPTGT_(DO)
+          !_OMPTGT_(SIMD &)
+          !_OMPTGT_(PRIVATE (kdotr, vec, prod_R) &)
+          !_OMPTGT_(REDUCTION (+: temp_res))
           do irpts = 1, system%num_R_points !For each point in the Bravais lattice.
 
             !Compute factor appearing in the exponential (k is in coords relative to recip. lattice vectors).
@@ -556,8 +548,6 @@ contains
             !/real(system%deg_R_point(irpts), dp)
             !TODO: Recheck the deg_R_points division.
           enddo!irpts
-          !_OMPTGT_(END DO)
-          !_OMPTGT_(END PARALLEL)
           H(i)%k_data(i_mem) = temp_res
         enddo!i_mem
 
@@ -640,8 +630,9 @@ contains
         i_arr = SsTC_integer_memory_element_to_array_element(A(1), i_mem) !Get array index.
 
         temp_res = cmplx_0
-        !_OMPTGT_(PARALLEL PRIVATE (kdotr, vec, prod_R) REDUCTION (+: temp_res))
-        !_OMPTGT_(DO)
+        !_OMPTGT_(SIMD &)
+        !_OMPTGT_(PRIVATE (kdotr, vec, prod_R) &)
+        !_OMPTGT_(REDUCTION (+: temp_res))
         do irpts = 1, system%num_R_points !For each point in the Bravais lattice.
 
           !Compute factor appearing in the exponential (k is in coords relative to recip. lattice vectors).
@@ -667,8 +658,6 @@ contains
           !/real(system%deg_R_point(irpts), dp)
           !TODO: Recheck the deg_R_points division.
         enddo!irpts
-        !_OMPTGT_(END DO)
-        !_OMPTGT_(END PARALLEL)
         A(1)%k_data(i_mem) = temp_res
       enddo!i_mem
 
@@ -686,8 +675,9 @@ contains
           i_arr = SsTC_integer_memory_element_to_array_element(A(i), i_mem) !Get array index.
 
           temp_res = cmplx_0
-          !_OMPTGT_(PARALLEL PRIVATE (kdotr, vec, prod_R) REDUCTION (+: temp_res))
-          !_OMPTGT_(DO)
+          !_OMPTGT_(SIMD &)
+          !_OMPTGT_(PRIVATE (kdotr, vec, prod_R) &)
+          !_OMPTGT_(REDUCTION (+: temp_res))
           do irpts = 1, system%num_R_points !For each point in the Bravais lattice.
 
             !Compute factor appearing in the exponential (k is in coords relative to recip. lattice vectors).
@@ -713,8 +703,6 @@ contains
             !/real(system%deg_R_point(irpts), dp)
             !TODO: Recheck the deg_R_points division.
           enddo!irpts
-          !_OMPTGT_(END DO)
-          !_OMPTGT_(END PARALLEL)
           A(i)%k_data(i_mem) = temp_res
         enddo!i_mem
 

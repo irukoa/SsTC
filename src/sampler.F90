@@ -14,7 +14,7 @@ module SsTC_sampler
   private
 
   type, extends(SsTC_global_k_data) :: SsTC_sampling_task
-    integer                       :: samples(3) = (/100, 100, 100/)
+    integer                       :: samples(3) = (/10, 10, 10/)
     !Integer index, continuous index and kpt index 1, 2 and 3 respectively.
     complex(kind=dp), allocatable :: BZ_data(:, :, :, :, :)
   end type SsTC_sampling_task
@@ -43,14 +43,14 @@ contains
 
     integer, optional, intent(in) :: samples(3)
 
-    integer, optional, intent(in) :: N_int_ind
-    integer, optional, intent(in) :: int_ind_range(:)
+    integer, intent(in)           :: N_int_ind
+    integer, optional, intent(in) :: int_ind_range(N_int_ind)
 
-    integer, optional, intent(in)       :: N_ext_vars
-    real(kind=dp), optional, intent(in) :: ext_vars_start(:), ext_vars_end(:)
-    integer, optional, intent(in)       :: ext_vars_steps(:)
+    integer, intent(in)                 :: N_ext_vars
+    real(kind=dp), optional, intent(in) :: ext_vars_start(N_ext_vars), ext_vars_end(N_ext_vars)
+    integer, optional, intent(in)       :: ext_vars_steps(N_ext_vars)
 
-    integer, optional, intent(in) :: part_int_comp(:)
+    integer, optional, intent(in) :: part_int_comp(N_int_ind)
 
     class(SsTC_sampling_task), intent(out) :: task
 
@@ -95,6 +95,9 @@ contains
       !Set calculator pointer (function alias).
       task%local_calculator => l_calculator
       nullify (task%global_calculator)
+    else
+      nullify (task%local_calculator)
+      nullify (task%global_calculator)
     endif
 
     !Set number of samples (discretization of BZ).
@@ -122,7 +125,6 @@ contains
     type(SsTC_sys), intent(in)               :: system
 
     complex(kind=dp), allocatable :: data_k(:, :, :), &
-                                     simd_tmp(:, :), &
                                      local_data_k(:, :, :)
 
     real(kind=dp) :: k(3)
@@ -154,18 +156,15 @@ contains
     allocate (local_data_k(displs(rank) + 1:displs(rank) + counts(rank), &
                            product(task%integer_indices), product(task%continuous_indices)), &
               data_k(product(task%samples), &
-                     product(task%integer_indices), product(task%continuous_indices)), &
-              simd_tmp(product(task%integer_indices), product(task%continuous_indices)))
+                     product(task%integer_indices), product(task%continuous_indices)))
 
     local_data_k = cmplx(0.0_dp, 0.0_dp, dp)
     data_k = cmplx(0.0_dp, 0.0_dp, dp)
-    simd_tmp = cmplx(0.0_dp, 0.0_dp, dp)
 
     !_OMPOFFLOADTGT_(TARGET TEAMS)
     !_OMPTGT_(PARALLEL DO REDUCTION (.or.: error) &)
     !_OMPTGT_(SHARED(task, system, displs, counts, rank, sampling_info, local_data_k) &)
-    !_OMPTGT_(PRIVATE(ik, k_ind, ik1, ik2, ik3, k, simd_tmp))
-    !_OMPTGT_(SIMD)
+    !_OMPTGT_(PRIVATE(ik, k_ind, ik1, ik2, ik3, k))
     do ik = displs(rank) + 1, displs(rank) + counts(rank)
 
       k_ind = SsTC_integer_memory_element_to_array_element(sampling_info, ik)
@@ -191,11 +190,9 @@ contains
 
       !Gather data.
       if (associated(task%local_calculator)) then
-        simd_tmp(:, 1) = task%local_calculator(task, system, k, error)
-        local_data_k(ik, :, 1) = simd_tmp(:, 1)
+        local_data_k(ik, :, 1) = task%local_calculator(task, system, k, error)
       elseif (associated(task%global_calculator)) then
-        simd_tmp = task%global_calculator(task, system, k, error)
-        local_data_k(ik, :, :) = simd_tmp
+        local_data_k(ik, :, :) = task%global_calculator(task, system, k, error)
       endif
 
     enddo

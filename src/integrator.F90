@@ -48,14 +48,14 @@ contains
     character(len=*), optional, intent(in) :: method
     integer, optional, intent(in)          :: samples(3)
 
-    integer, optional, intent(in) :: N_int_ind
-    integer, optional, intent(in) :: int_ind_range(:)
+    integer, intent(in)           :: N_int_ind
+    integer, optional, intent(in) :: int_ind_range(N_int_ind)
 
-    integer, optional, intent(in)       :: N_ext_vars
-    real(kind=dp), optional, intent(in) :: ext_vars_start(:), ext_vars_end(:)
-    integer, optional, intent(in)       :: ext_vars_steps(:)
+    integer, intent(in)                 :: N_ext_vars
+    real(kind=dp), optional, intent(in) :: ext_vars_start(N_ext_vars), ext_vars_end(N_ext_vars)
+    integer, optional, intent(in)       :: ext_vars_steps(N_ext_vars)
 
-    integer, optional, intent(in) :: part_int_comp(:)
+    integer, optional, intent(in) :: part_int_comp(N_int_ind)
 
     class(SsTC_BZ_integral_task), intent(out) :: task
 
@@ -100,6 +100,9 @@ contains
       !Set calculator pointer (function alias).
       task%local_calculator => l_calculator
       nullify (task%global_calculator)
+    else
+      nullify (task%local_calculator)
+      nullify (task%global_calculator)
     endif
 
     !Set result.
@@ -114,9 +117,9 @@ contains
     if (present(method)) then
       if (method == "extrapolation") then
         task%method = "extrapolation"
-        if (rank == 0) write (unit=stdout, fmt="(a)") "          Warning: To employ the extrapolation method &
-          & all the elements of the array 'samples' must be expressible as either 1 &
-          & or 2^n + 1 for n = 0, 1, ..."
+        if (rank == 0) write (unit=stdout, fmt="(a)") "          Warning: To employ the extrapolation method"
+        if (rank == 0) write (unit=stdout, fmt="(a)") "          all the elements of the array 'samples' must be"
+        if (rank == 0) write (unit=stdout, fmt="(a)") "          expressible as either 1 or 2^n + 1 for n = 0, 1, ..."
       elseif (method == "rectangle") then
         task%method = "rectangle"
       else
@@ -147,14 +150,13 @@ contains
     type(SsTC_sys), intent(in)                  :: system
 
     complex(kind=dp), allocatable :: data_k(:, :, :), &
-                                     simd_tmp(:, :), &
                                      local_data_k(:, :, :), &
                                      temp_res(:, :), res(:, :)
 
     real(kind=dp) :: k(3)
 
     integer :: ik, k_ind(3), ik1, ik2, ik3, &
-               info, &
+               info, einfo, &
                i, r
 
     real(kind=dp) :: start_time, end_time
@@ -176,25 +178,23 @@ contains
     if (task%method == "extrapolation") then !Extrapolation case.
 
       if (rank == 0) write (unit=stdout, fmt="(a)") &
-        "          Starting BZ sampling and integration subroutine with extrapolation method."
+        "          Starting BZ sampling and integration subroutine with "
+      if (rank == 0) write (unit=stdout, fmt="(a)") "          extrapolation method."
       if (rank == 0) write (unit=stdout, fmt="(a)") "          Integrating task: "//trim(task%name)//" in the BZ for the system " &
         //trim(system%name)//"."
 
       allocate (local_data_k(displs(rank) + 1:displs(rank) + counts(rank), &
                              product(task%integer_indices), product(task%continuous_indices)), &
                 data_k(product(task%samples), &
-                       product(task%integer_indices), product(task%continuous_indices)), &
-                simd_tmp(product(task%integer_indices), product(task%continuous_indices)))
+                       product(task%integer_indices), product(task%continuous_indices)))
 
       local_data_k = cmplx(0.0_dp, 0.0_dp, dp)
       data_k = cmplx(0.0_dp, 0.0_dp, dp)
-      simd_tmp = cmplx(0.0_dp, 0.0_dp, dp)
 
       !_OMPOFFLOADTGT_(TARGET TEAMS)
       !_OMPTGT_(PARALLEL DO REDUCTION (.or.: error) &)
       !_OMPTGT_(SHARED(task, system, displs, counts, rank, sampling_info, local_data_k) &)
-      !_OMPTGT_(PRIVATE(ik, k_ind, ik1, ik2, ik3, k, simd_tmp))
-      !_OMPTGT_(SIMD)
+      !_OMPTGT_(PRIVATE(ik, k_ind, ik1, ik2, ik3, k))
       do ik = displs(rank) + 1, displs(rank) + counts(rank)
 
         k_ind = SsTC_integer_memory_element_to_array_element(sampling_info, ik)
@@ -220,11 +220,9 @@ contains
 
         !Gather data.
         if (associated(task%local_calculator)) then
-          simd_tmp(:, 1) = task%local_calculator(task, system, k, error)
-          local_data_k(ik, :, 1) = simd_tmp(:, 1)
+          local_data_k(ik, :, 1) = task%local_calculator(task, system, k, error)
         elseif (associated(task%global_calculator)) then
-          simd_tmp = task%global_calculator(task, system, k, error)
-          local_data_k(ik, :, :) = simd_tmp
+          local_data_k(ik, :, :) = task%global_calculator(task, system, k, error)
         endif
 
       enddo
@@ -247,8 +245,9 @@ contains
       do i = 1, product(task%integer_indices) !For each integer index.
         do r = 1, product(task%continuous_indices) !For each continuous index.
           !Integrate, if possible extrapolation method.
-          call integral_extrapolation(data_k(:, i, r), task%samples, &
-                                      (/-0.5_dp, 0.5_dp, -0.5_dp, 0.5_dp, -0.5_dp, 0.5_dp/), task%result(i, r), info)
+          call integral_extrapolation(data_k(:, i, r), (task%samples), &
+                                      ((/-0.5_dp, 0.5_dp, -0.5_dp, 0.5_dp, -0.5_dp, 0.5_dp/)), task%result(i, r), einfo)
+          info = info*einfo
         enddo
       enddo
 
@@ -261,7 +260,7 @@ contains
       endif
       if (rank == 0) write (unit=stdout, fmt="(a)") ""
 
-      deallocate (local_data_k, data_k, simd_tmp)
+      deallocate (local_data_k, data_k)
 
     elseif (task%method == "rectangle") then !Rectangle method approximation case.
 
@@ -271,14 +270,15 @@ contains
       &//trim(system%name)//"."
 
       allocate (temp_res(product(task%integer_indices), product(task%continuous_indices)), &
-                res(product(task%integer_indices), product(task%continuous_indices)), &
-                simd_tmp(product(task%integer_indices), product(task%continuous_indices)))
+                res(product(task%integer_indices), product(task%continuous_indices)))
+
+      temp_res = 0.0_dp
+      res = 0.0_dp
 
       !_OMPOFFLOADTGT_(TARGET TEAMS)
       !_OMPTGT_(PARALLEL DO REDUCTION (+: temp_res) REDUCTION (.or.: error) &)
       !_OMPTGT_(SHARED(task, system, displs, counts, rank, sampling_info) &)
-      !_OMPTGT_(PRIVATE(ik, k_ind, ik1, ik2, ik3, k, simd_tmp))
-      !_OMPTGT_(SIMD)
+      !_OMPTGT_(PRIVATE(ik, k_ind, ik1, ik2, ik3, k))
       do ik = displs(rank) + 1, displs(rank) + counts(rank)
 
         k_ind = SsTC_integer_memory_element_to_array_element(sampling_info, ik)
@@ -304,11 +304,9 @@ contains
 
         !Gather data.
         if (associated(task%local_calculator)) then
-          simd_tmp(:, 1) = task%local_calculator(task, system, k, error)
-          temp_res(:, 1) = temp_res(:, 1) + simd_tmp(:, 1)
+          temp_res(:, 1) = temp_res(:, 1) + task%local_calculator(task, system, k, error)
         elseif (associated(task%global_calculator)) then
-          simd_tmp = task%global_calculator(task, system, k, error)
-          temp_res = temp_res + simd_tmp
+          temp_res = temp_res + task%global_calculator(task, system, k, error)
         endif
 
       enddo
@@ -322,7 +320,7 @@ contains
 
       if (rank == 0) write (unit=stdout, fmt="(a)") "          Integral done."
 
-      deallocate (temp_res, res, simd_tmp)
+      deallocate (temp_res, res)
       deallocate (sampling_info%integer_indices, counts, displs)
 
       if (rank == 0) write (unit=stdout, fmt="(a)") ""

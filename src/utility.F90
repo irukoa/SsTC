@@ -170,7 +170,7 @@ contains
     lwork = -1
     allocate (work(1))
     call zheev('V', 'U', dim, rot, dim, eig, work, lwork, rwork, info)
-    lwork = nint(real(work(1), 8))
+    lwork = nint(real(work(1), dp))
     deallocate (work)
 
     !Calculation.
@@ -181,14 +181,10 @@ contains
     !Check convergence.
     if (info < 0) then
       error = .True.
-      write (unit=stderr, fmt='(a, i3, a)') 'Error in utility_diagonalize: THE ', -info, &
-        ' ARGUMENT OF ZHEEV HAD AN ILLEGAL VALUE.'
       return
     endif
     if (info > 0) then
       error = .True.
-      write (unit=stderr, fmt='(a, i3, a)') 'Error in utility_diagonalize: ', info, &
-        ' EIGENVECTORS FAILED TO CONVERGE.'
       return
     endif
 
@@ -216,7 +212,7 @@ contains
 
     complex(kind=dp)              :: B(dim, dim)
     complex(kind=dp), allocatable :: work(:)
-    real(8)                       :: rwork(dim)
+    real(kind=dp)                 :: rwork(dim)
     integer                       :: info, lwork, sdim
     logical                       :: bwork(dim), select
     external                      :: zgees
@@ -228,7 +224,7 @@ contains
     lwork = -1
     allocate (work(1))
     call zgees('V', 'N', select, dim, B, dim, sdim, T, Z, dim, work, lwork, rwork, bwork, info)
-    lwork = nint(real(work(1), 8))
+    lwork = nint(real(work(1), dp))
     deallocate (work)
 
     !Calculation.
@@ -240,14 +236,10 @@ contains
     !Check convergence.
     if (info < 0) then
       error = .True.
-      write (unit=stderr, fmt='(a, i3, a)') 'Error in utility_schur: THE ', -info, &
-        ' ARGUMENT OF ZGEES HAD AN ILLEGAL VALUE.'
       return
     endif
     if (info > 0) then
       error = .True.
-      write (unit=stderr, fmt='(a, i3,a)') 'Error in utility_schur: ', info, &
-        ' EIGENVECTORS FAILED TO CONVERGE.'
       return
     endif
 
@@ -292,7 +284,7 @@ contains
     lwork = -1
     allocate (work(1))
     call zgesvd('A', 'A', m, n, B, m, sigmaw, Uw, m, Vw, n, work, lwork, rwork, info)
-    lwork = nint(real(work(1), 8))
+    lwork = nint(real(work(1), dp))
     deallocate (work)
 
     !Calculation.
@@ -308,14 +300,10 @@ contains
     !Check convergence.
     if (info < 0) then
       error = .True.
-      write (unit=stderr, fmt='(a, i3, a)') 'Error in utility_svd: THE ', -info, &
-        ' ARGUMENT OF CGESVD HAD AN ILLEGAL VALUE.'
       return
     endif
     if (info > 0) then
       error = .True.
-      write (unit=stderr, fmt='(a, i3,a)') 'Error in utility_svd: ', info, &
-        ' SUPERDIAGONALS FAILED TO CONVERGE TO ZERO.'
       return
     endif
 
@@ -352,10 +340,7 @@ contains
       exphs = cmplx_i*mat !Now exphs is Hermitian.
 
       call SsTC_utility_diagonalize(exphs, dim, eig, rot, error)
-      if (error) then
-        write (unit=stderr, fmt="(a)") "Error in utility_exphs."
-        return
-      endif
+      if (error) return
       exphs = cmplx_0
 
       do i = 1, dim
@@ -368,10 +353,7 @@ contains
       !Hermitian matrix.
 
       call SsTC_utility_diagonalize(mat, dim, eig, rot, error)
-      if (error) then
-        write (unit=stderr, fmt="(a)") "Error in utility_exphs."
-        return
-      endif
+      if (error) return
 
       do i = 1, dim
         exphs(i, i) = exp(eig(i))
@@ -405,10 +387,7 @@ contains
     logu = 0.d0
 
     call SsTC_utility_schur(mat, dim, eig, rot, error)
-    if (error) then
-      write (unit=stderr, fmt="(a)") "Error in utility_logu."
-      return
-    endif
+    if (error) return
 
     do i = 1, dim
       logu(i, i) = log(eig(i))

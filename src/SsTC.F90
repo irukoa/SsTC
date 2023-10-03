@@ -120,12 +120,11 @@ module SsTC
 
 contains
 
-  subroutine SsTC_init(nThreads, nNested, exec_label)
+  subroutine SsTC_init(nThreads, exec_label)
 
     implicit none
 
     integer, intent(in), optional :: nThreads
-    integer, intent(in), optional :: nNested
     character(len=*), intent(in), optional :: exec_label
 
     integer :: selThreads
@@ -135,7 +134,7 @@ contains
 
     if (.not. ((is_mpi_initialized) .and. ((.not. is_mpi_finalized)))) then
       write (unit=stdout, fmt="(a)") "          SsTC: MPI has not been initialized or has been finalized. Stopping..."
-      stop
+      error stop
     endif
 
     call MPI_COMM_SIZE(MPI_COMM_WORLD, nProcs, ierror)
@@ -183,17 +182,7 @@ contains
     endif
     if (rank == 0) write (unit=stdout, fmt="(a, i5, a)") "          Paralell regions will run in ", selThreads, " threads."
 
-    if (present(nNested)) then
-      if ((nNested > 1)) then
-        call OMP_SET_MAX_ACTIVE_LEVELS(nNested)
-        if (rank == 0) write (unit=stdout, fmt="(a)") "          The number of nested active parallel regions"
-        if (rank == 0) write (unit=stdout, fmt="(a, i2, a)") "          has been set to ", nNested, "."
-      endif
-    else
-      call OMP_SET_MAX_ACTIVE_LEVELS(1)
-      if (rank == 0) write (unit=stdout, fmt="(a)") "          The number of nested active parallel regions"
-      if (rank == 0) write (unit=stdout, fmt="(a)") "          has been set to 1."
-    endif
+    call OMP_SET_MAX_ACTIVE_LEVELS(1)
 
     if (rank == 0) write (unit=stdout, fmt="(a)") "          SsTC initialized."
     if (rank == 0) write (unit=stdout, fmt="(a)") ""
