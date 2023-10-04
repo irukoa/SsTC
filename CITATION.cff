@@ -1,0 +1,33 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: SsTC
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Álvaro
+    family-names: R. Puente-Uriona
+    email: alvaro.ruiz@ehu.eus
+    affiliation: UPV/EHU
+    orcid: 'https://orcid.org/0000-0003-1915-8804'
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.8406249
+repository-code: 'https://github.com/irukoa/SsTC'
+url: 'https://github.com/irukoa/SsTC'
+abstract: >-
+  (S)olid (s)tate (T)ask (C)onstructor: A high-perfomance
+  computing oriented library to create integration and
+  sampling tasks in the BZ of a crystal for k-dependent
+  functions. 
+keywords:
+  - Fortran
+  - Solid-state physics
+  - Wannier functions
+license: GPL-3.0
+commit: 42fbf16
+version: v0.3.0
+date-released: '2023-10-04'
