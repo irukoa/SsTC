@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/659820914.svg)](https://zenodo.org/badge/latestdoi/659820914)
+
 # Solid state Task Constructor - SsTC
 
 ## A high-perfomance computing oriented library to create integration and sampling tasks in the BZ of a crystal for k-dependent functions.
