@@ -59,7 +59,7 @@ contains
     !Set name.
     task%name = name
 
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          Creating BZ sampling task "//trim(task%name)//"."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Creating BZ sampling task "//trim(task%name)//"."
 
     !Set integer index data.
     if (((N_int_ind) .ge. 1) .and. (present(int_ind_range))) then
@@ -112,8 +112,8 @@ contains
     if (present(part_int_comp)) task%particular_integer_component = &
       SsTC_integer_array_element_to_memory_element(task, part_int_comp)
 
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          Done."
-    if (rank == 0) write (unit=stdout, fmt="(a)") ""
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Done."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") ""
 
   end subroutine SsTC_sampling_task_constructor
 
@@ -149,8 +149,8 @@ contains
     allocate (counts(0:nProcs - 1), displs(0:nProcs - 1))
     call get_MPI_task_partition(product(task%samples), nProcs, counts, displs)
 
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          Starting BZ sampling subroutine."
-    if (rank == 0) write (unit=stdout, fmt="(a, a, a, a, a)") "          Sampling task: "//trim(task%name)// &
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Starting BZ sampling subroutine."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a, a, a, a, a)") "          Sampling task: "//trim(task%name)// &
       " in the BZ for the system "//trim(system%name)//"."
 
     allocate (local_data_k(displs(rank) + 1:displs(rank) + counts(rank), &
@@ -220,9 +220,10 @@ contains
 
     deallocate (local_data_k, data_k)
 
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          Sampling done."
-    if (rank == 0) write (unit=stdout, fmt="(a, f15.3, a)") "          Total execution time: ", end_time - start_time, " s."
-    if (rank == 0) write (unit=stdout, fmt="(a)") ""
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Sampling done."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a, f15.3, a)") &
+      "          Total execution time: ", end_time - start_time, " s."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") ""
 
   end subroutine SsTC_sample_sampling_task
 
@@ -244,7 +245,7 @@ contains
                           ik1, ik2, ik3
     integer            :: printunit
 
-    if (rank == 0) write (unit=stdout, fmt="(a)") &
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") &
       "          Printing sampling task: "//trim(task%name)//" for the system "//trim(system%name)//"."
 
     if (associated(task%local_calculator)) then
@@ -351,8 +352,8 @@ contains
 
     endif
 
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          Printing done."
-    if (rank == 0) write (unit=stdout, fmt="(a)") ""
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Printing done."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") ""
 
   end subroutine SsTC_print_sampling
 

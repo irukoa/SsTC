@@ -68,7 +68,7 @@ contains
     !Set name.
     task%name = name
 
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          Creating kpath task "//trim(task%name)//"."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Creating kpath task "//trim(task%name)//"."
 
     !Set kslice info.
     if (present(corner)) task%corner = corner
@@ -87,7 +87,7 @@ contains
           ": Error in function kslice_task_constructor when checking linear dependence of vectors."
         write (unit=stdout, fmt="(a, i5, a)") "          Rank ", rank, ": Error in function kslice_task_constructor&
         & when checking linear dependence of vectors."
-        if (rank == 0) write (unit=stdout, fmt="(a)") "          Supposing linearly dependent input vectors."
+        if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Supposing linearly dependent input vectors."
         dep = .True.
         goto 2
       endif
@@ -99,8 +99,8 @@ contains
 
 2     continue
       if (dep) then
-        if (rank == 0) write (unit=stdout, fmt="(a)") "          Selected vectors are not linearly independent."
-        if (rank == 0) write (unit=stdout, fmt="(a)") "          Keeping default vectors (1, 0, 0), (0, 1, 0)."
+        if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Selected vectors are not linearly independent."
+        if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Keeping default vectors (1, 0, 0), (0, 1, 0)."
       else
         task%vector(1, :) = vector_a
         task%vector(2, :) = vector_b
@@ -160,8 +160,8 @@ contains
     if (present(part_int_comp)) task%particular_integer_component = &
       SsTC_integer_array_element_to_memory_element(task, part_int_comp)
 
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          Done."
-    if (rank == 0) write (unit=stdout, fmt="(a)") ""
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Done."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") ""
 
   end subroutine SsTC_kslice_task_constructor
 
@@ -197,8 +197,8 @@ contains
     allocate (counts(0:nProcs - 1), displs(0:nProcs - 1))
     call get_MPI_task_partition(product(task%samples), nProcs, counts, displs)
 
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          Starting BZ sampling subroutine kslice."
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          Sampling task: "//trim(task%name)//&
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Starting BZ sampling subroutine kslice."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Sampling task: "//trim(task%name)//&
     &" in the BZ for the system "//trim(system%name)//"."
 
     allocate (local_data_k(displs(rank) + 1:displs(rank) + counts(rank), &
@@ -255,9 +255,10 @@ contains
 
     deallocate (local_data_k, data_k)
 
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          Sampling done."
-    if (rank == 0) write (unit=stdout, fmt="(a, f15.3, a)") "          Total execution time: ", end_time - start_time, " s."
-    if (rank == 0) write (unit=stdout, fmt="(a)") ""
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Sampling done."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a, f15.3, a)") &
+      "          Total execution time: ", end_time - start_time, " s."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") ""
 
   end subroutine SsTC_sample_kslice_task
 
@@ -280,7 +281,7 @@ contains
                           ik1, ik2
     integer            :: printunit
 
-    if (rank == 0) write (unit=stdout, fmt="(a, a, a, a, a)") &
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a, a, a, a, a)") &
       "          Printing kslice task: "//trim(task%name)// &
       " for the system "//trim(system%name)//"."
 
@@ -360,8 +361,8 @@ contains
       enddo
     endif
 
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          Printing done."
-    if (rank == 0) write (unit=stdout, fmt="(a)") ""
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Printing done."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") ""
 
   end subroutine SsTC_print_kslice
 

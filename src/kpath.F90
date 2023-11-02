@@ -67,7 +67,7 @@ contains
     !Set name.
     task%name = name
 
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          Creating kpath task "//trim(task%name)//"."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Creating kpath task "//trim(task%name)//"."
 
     !Set vector info
     allocate (task%vectors(Nvec, 3), task%number_of_pts(Nvec - 1))
@@ -122,8 +122,8 @@ contains
     if (present(part_int_comp)) task%particular_integer_component = &
       SsTC_integer_array_element_to_memory_element(task, part_int_comp)
 
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          Done."
-    if (rank == 0) write (unit=stdout, fmt="(a)") ""
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Done."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") ""
 
   end subroutine SsTC_kpath_constructor
 
@@ -156,7 +156,7 @@ contains
     allocate (counts(0:nProcs - 1), displs(0:nProcs - 1))
     call get_MPI_task_partition(sum(task%number_of_pts) - (size(task%vectors(:, 1)) - 2), nProcs, counts, displs)
 
-    if (rank == 0) write (unit=stdout, fmt="(a, a, a, a)") &
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a, a, a, a)") &
       "          Sampling kpath task: "//trim(task%name)// &
       " for the system "//trim(system%name)//"."
 
@@ -236,9 +236,10 @@ contains
 
     end_time = MPI_WTIME() !End timer.
 
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          Sampling done."
-    if (rank == 0) write (unit=stdout, fmt="(a, f15.3, a)") "          Total execution time: ", end_time - start_time, " s."
-    if (rank == 0) write (unit=stdout, fmt="(a)") ""
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Sampling done."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a, f15.3, a)") &
+      "          Total execution time: ", end_time - start_time, " s."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") ""
 
   end subroutine SsTC_kpath_sampler
 
@@ -261,7 +262,7 @@ contains
 
     real(kind=dp) :: k(3)
 
-    if (rank == 0) write (unit=stdout, fmt="(a)") &
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") &
       "          Printing kpath task: "//trim(task%name)// &
       " for the system "//trim(system%name)//"."
 
@@ -393,8 +394,8 @@ contains
 
     endif
 
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          Printing done."
-    if (rank == 0) write (unit=stdout, fmt="(a)") ""
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Printing done."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") ""
 
   end subroutine SsTC_print_kpath
 

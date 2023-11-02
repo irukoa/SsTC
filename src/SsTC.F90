@@ -120,11 +120,12 @@ module SsTC
 
 contains
 
-  subroutine SsTC_init(nThreads, exec_label)
+  subroutine SsTC_init(nThreads, verb, exec_label)
 
     implicit none
 
     integer, intent(in), optional :: nThreads
+    logical, intent(in), optional :: verb
     character(len=*), intent(in), optional :: exec_label
 
     integer :: selThreads
@@ -133,43 +134,45 @@ contains
     call MPI_FINALIZED(is_mpi_finalized, ierror)
 
     if (.not. ((is_mpi_initialized) .and. ((.not. is_mpi_finalized)))) then
-      write (unit=stdout, fmt="(a)") "          SsTC: MPI has not been initialized or has been finalized. Stopping..."
-      error stop
+      error stop "          SsTC: MPI has not been initialized or has been finalized. Stopping..."
     endif
 
     call MPI_COMM_SIZE(MPI_COMM_WORLD, nProcs, ierror)
     call MPI_COMM_RANK(MPI_COMM_WORLD, rank, ierror)
 
+    if (present(verb)) verbose = verb
+
     if (present(exec_label)) then
-      if (rank == 0) open (newunit=stdout, action="write", file=trim(exec_label//".out"))
-      if (rank == 0) open (newunit=stderr, action="write", file=trim(exec_label//".err"))
+      if ((rank == 0) .and. verbose) open (newunit=stdout, action="write", file=trim(exec_label//".out"))
+      if ((rank == 0) .and. verbose) open (newunit=stderr, action="write", file=trim(exec_label//".err"))
     else
-      if (rank == 0) open (newunit=stdout, action="write", file="SsTC_exec.out")
-      if (rank == 0) open (newunit=stderr, action="write", file="SsTC_exec.err")
+      if ((rank == 0) .and. verbose) open (newunit=stdout, action="write", file="SsTC_exec.out")
+      if ((rank == 0) .and. verbose) open (newunit=stderr, action="write", file="SsTC_exec.err")
     endif
 
     call date_and_time(values=timing)
 
-    if (rank == 0) write (unit=stdout, fmt="(a)") "            /$$$$$$            /$$$$$$$$  /$$$$$$  "
-    if (rank == 0) write (unit=stdout, fmt="(a)") "           /$$__  $$          |__  $$__/ /$$__  $$ "
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          | $$  \__/  /$$$$$$$   | $$   | $$  \__/ "
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          |  $$$$$$  /$$_____/   | $$   | $$       "
-    if (rank == 0) write (unit=stdout, fmt="(a)") "           \____  $$|  $$$$$$    | $$   | $$       "
-    if (rank == 0) write (unit=stdout, fmt="(a)") "           /$$  \ $$ \____  $$   | $$   | $$    $$ "
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          |  $$$$$$/ /$$$$$$$/   | $$   |  $$$$$$/ "
-    if (rank == 0) write (unit=stdout, fmt="(a)") "           \______/ |_______/    |__/    \______/  "
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "            /$$$$$$            /$$$$$$$$  /$$$$$$  "
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "           /$$__  $$          |__  $$__/ /$$__  $$ "
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          | $$  \__/  /$$$$$$$   | $$   | $$  \__/ "
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          |  $$$$$$  /$$_____/   | $$   | $$       "
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "           \____  $$|  $$$$$$    | $$   | $$       "
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "           /$$  \ $$ \____  $$   | $$   | $$    $$ "
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          |  $$$$$$/ /$$$$$$$/   | $$   |  $$$$$$/ "
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "           \______/ |_______/    |__/    \______/  "
 
-    if (rank == 0) write (unit=stdout, fmt="(a)") ""
-    if (rank == 0) write (unit=stdout, fmt="(a, a, a)") "          Version: ", trim(_VERSION)//". By Álvaro R. Puente-Uriona."
-    if (rank == 0) write (unit=stdout, fmt="(a)") ""
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") ""
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a, a, a)") &
+      "          Version: ", trim(_VERSION)//". By Álvaro R. Puente-Uriona."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") ""
 
-    if (rank == 0) write (unit=stdout, &
-                          fmt="(a, i2, a, i2, a, i4, a, i2, a, i2, a, i2, a)") &
+    if ((rank == 0) .and. verbose) write (unit=stdout, &
+                                          fmt="(a, i2, a, i2, a, i4, a, i2, a, i2, a, i2, a)") &
       "          SsTC library initializing at ", &
       timing(2), "/", timing(3), "/", timing(1), &
       ", ", timing(5), ":", timing(6), &
       ":", timing(7), "."
-    if (rank == 0) write (unit=stdout, fmt="(a, i5, a)") "          Running ", nProcs, " MPI processes."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a, i5, a)") "          Running ", nProcs, " MPI processes."
 
     if (present(nThreads)) then
       if ((nThreads > 0)) then
@@ -180,12 +183,13 @@ contains
       call OMP_SET_NUM_THREADS(OMP_GET_MAX_THREADS())
       selThreads = OMP_GET_MAX_THREADS()
     endif
-    if (rank == 0) write (unit=stdout, fmt="(a, i5, a)") "          Paralell regions will run in ", selThreads, " threads."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a, i5, a)") &
+      "          Paralell regions will run in ", selThreads, " threads."
 
     call OMP_SET_MAX_ACTIVE_LEVELS(1)
 
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          SsTC initialized."
-    if (rank == 0) write (unit=stdout, fmt="(a)") ""
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          SsTC initialized."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") ""
 
   end subroutine SsTC_init
 
