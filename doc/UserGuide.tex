@@ -52,7 +52,7 @@
 
 \title{SsTC library:\\
 \large{User's Guide}\\
-\large{Version 0.3.0}}
+\large{Version 0.3.1}}
 \author{Álvaro R. Puente-Uriona}
 \date{\today}
 
@@ -73,7 +73,7 @@
 \clearpage
 \newpage
 \section{Scope}
-Solid-state Task Constructor (SsTC) is a high-performance computing (HPC) oriented Fortran 2018 library which aims to aid programmers and researchers in the process of sampling and integration of functions in the first Brillouin zone (BZ) of a given crystalline system. The library is centered around the following concepts:
+Solid-state Task Constructor (SsTC) is a high-performance computing (HPC) oriented Fortran 2018 library which aims to aid programmers and researchers in the process of sampling and integration of functions in the first Brillouin zone (BZ) of a given crystalline system. The library is centred around the following concepts:
 \begin{tcolorbox}\begin{itemize}
 \item The calculator: A general function representing a physical quantity of interest to the programmer or researcher. It is of the form
 \begin{equation}\label{eq:calculator}
@@ -96,18 +96,18 @@ The sampling and integration utilities contained in SsTC are the following.
 \item ``Kpath" sampling. 1-dimensional sampling of $C$ with specification of the path to sample.
 \item ``Kslice" sampling. 2-dimensional regular sampling of $C$ with specification of the slice to sample.
 \item ``Regular" sampling. 3-dimensional regular sampling of $C$ with specification of the number of samples in each dimension.
-\item Integration. 3-dimensional regular sampling of $C$ followed by an integration process. The integration process as for v0.3.0 amounts to the rectangle approximation in each dimension. There exists also an experimental integration method based on extrapolation methods.
+\item Integration. 3-dimensional regular sampling of $C$ followed by an integration process. The integration process as for v0.3.1 amounts to the rectangle approximation in each dimension. There exists also an experimental integration method based on extrapolation methods.
 \end{itemize}\end{tcolorbox}
 All the concepts covered in this section are treated with greater detail in the specific sections in the document.
 \section{Prerequisites, installation \& linking to application}\label{sec:install}
 SsTC is a Fortran 2018 standard complying code and the prerequisites for its compilation are,
 \begin{tcolorbox}\begin{itemize}
 \item Intel oneAPI Math Kernel Libraries (MKL), OpenMP library and MPI library.
-\item Intel Fortran oneAPI compilers \verb|mpiifort| or \verb|mpiifx|.
+\item Intel Fortran oneAPI compilers \verb|ifort| or \verb|ifx| or GNU Fortran compiler \verb|gfortran|.
 \item Make software.
 \item Python 3 ($>$ v3.9) software with 're' and 'glob' libraries.
 \end{itemize}\end{tcolorbox}
-As for v0.3.0, SsTC is only guaranteed to compile on Linux systems using the \verb|mpiifort| and \verb|mpiifx| compilers contained in the \href{https://www.intel.com/content/www/us/en/developer/tools/oneapi/hpc-toolkit.html}{Intel\textregistered oneAPI HPC} toolkit. As such, the main application to be linked with must be compiled with \verb|mpiifort| or \verb|mpiifx|.
+As for v0.3.1, SsTC is only guaranteed to compile on Linux systems using the \verb|ifort|, \verb|ifx| compilers contained in the \href{https://www.intel.com/content/www/us/en/developer/tools/oneapi/hpc-toolkit.html}{Intel\textregistered oneAPI HPC} toolkit and the \verb|gfortran| compiler. As such, the main application to be linked with must be compiled with the MPI wrappers \verb|mpiifort|, \verb|mpiifx| or \verb|mpif90|.
 
 The SsTC project is hosted on \href{https://github.com/irukoa/SsTC}{GitHub} and can be downloaded by running the command,
 
@@ -128,14 +128,21 @@ bash:/path/of/your/choice/SsTC$ make
 \end{codebox}
 These commands will compile the source code and install the library \verb|libSsTC.a| and the module header file \verb|sstc.mod| in the directory \verb|/path/of/your/choice/SsTC/bin/|.
 
-The default behaviour will compile the library with \verb|mpiifort|, but the user can also employ \verb|mpiifx| to compile. This can be achieved by running,
+The default behaviour will compile the library with \verb|mpiifort|, but the user can also employ \verb|mpiifx|/\verb|mpif90| to compile. This can be achieved by running,
 \begin{codebox}{Installation using ifx}
 \begin{verbatim}
 bash:/path/of/your/choice/SsTC$ cp config/ifx Makefile
 bash:/path/of/your/choice/SsTC$ make
 \end{verbatim}
 \end{codebox}
-which will replace the Makefile for compilation with \verb|mpiifort| by the one for compilation with \verb|mpiifx| and build the library.
+or
+\begin{codebox}{Installation using gfortran}
+\begin{verbatim}
+bash:/path/of/your/choice/SsTC$ cp config/gfortran Makefile
+bash:/path/of/your/choice/SsTC$ make
+\end{verbatim}
+\end{codebox}
+which will replace the Makefile for compilation with \verb|mpiifort| by the one for compilation with \verb|mpiifx|/\verb|mpif90| and build the library.
 
 To link to your Fortran application \verb|appl.F90|, add the line \verb|use SsTC| in your application preamble and compile with
 \begin{codebox}{Compilation \& Linking}
@@ -145,12 +152,13 @@ bash:/path/to/application/$ $(F90) $(F90FLAGS) appl.F90
 /path/of/your/choice/SsTC/bin/libSsTC.a -o "appl.x"
 \end{verbatim}
 \end{codebox}
-where \verb|F90 = mpiifort/mpiifx| and \verb|F90FLAGS| contains, at least,
+where \verb|F90 = mpiifort/mpiifx/mpif90| and \verb|F90FLAGS| contains, at least,
 \begin{codebox}{Compilation flags}
 \begin{verbatim}
 F90FLAGS = -qopenmp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -pthread
 \end{verbatim}
 \end{codebox}
+where, if using \verb|mpif90|, the \verb|-qopenmp| flag should be replace with the \verb|-fopenmp| flag.
 
 To make use of SsTC, the application preamble of \verb|appl.F90| should also contain the lines
 \begin{codebox}{Use statements}
@@ -161,7 +169,7 @@ use OMP_LIB
 \end{codebox}
 The application must also contain a call to the MPI \cite{messagepassinginterfaceforumMPIMessagePassingInterface2021} initialization routine \verb|call MPI_INIT(ierror)| and to the SsTC initialization routine \verb|call SsTC_init()| \textit{before} any call to other SsTC routines. The programmer also needs to make sure that the MPI finalizing routine \verb|call MPI_FINALIZE(ierror)| has not been called before using SsTC routines.
 
-Note:  By default, SsTC uses double precision \verb|dp, kind=8| numbers for real and complex valued scalars and arrays.
+Note:  By default, SsTC uses double precision \verb|dp, kind=8, real64| numbers for real and complex valued scalars and arrays.
 
 The application \verb|appl.x| can be run by the commands
 \begin{codebox}{Running}
@@ -271,12 +279,13 @@ subroutine SsTC_init(nThreads, exec_label)
 
   integer, intent(in), optional :: nThreads
   !Default are max available threads per MPI process.
+  logical, intent(in), optional :: verb !Default .true.
   character(len=*), intent(in), optional :: exec_label !Default "SsTC_exec".
 
 end subroutine SsTC_init
 \end{lstlisting}
 \end{codebox}
-The routine will check whether the MPI library has been initialized and stop the program on execution if it was not. It will also open the output and error log files \verb|file=trim(exec_label//".out")| and \\ \verb|file=trim(exec_label//".err")|. Lastly, \verb|nThreads| sets the number of threads per MPI process, with the default value of \verb|OMP_GET_MAX_THREADS()|.
+The routine will check whether the MPI library has been initialized and stop the program on execution if it was not. It will also open the output and error log files \verb|file=trim(exec_label//".out")| and \\ \verb|file=trim(exec_label//".err")|. This feature, however, can be disabled by using \verb|verb = .false.| which is useful if SsTC is to be used \textit{within} a parallel environment. This routine also (re)initializes the number of OpenMP parallel nested regions to 1. Lastly, \verb|nThreads| sets the number of threads per MPI process, with the default value of \verb|OMP_GET_MAX_THREADS()|.
 \section{Notation: Memory layout and array layout}\label{sec:notation}
 These concepts apply to $N$-dimensional arrays such as \verb|array(:, :, ..., :)|, where each dimension $i$ has size $s_i$. The total size of \verb|array| is
 \begin{equation}
