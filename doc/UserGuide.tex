@@ -285,7 +285,7 @@ subroutine SsTC_init(nThreads, exec_label)
 end subroutine SsTC_init
 \end{lstlisting}
 \end{codebox}
-The routine will check whether the MPI library has been initialized and stop the program on execution if it was not. It will also open the output and error log files \verb|file=trim(exec_label//".out")| and \\ \verb|file=trim(exec_label//".err")|. This feature, however, can be disabled by using \verb|verb = .false.| which is useful if SsTC is to be used \textit{within} a parallel environment. This routine also (re)initializes the number of OpenMP parallel nested regions to 1. Lastly, \verb|nThreads| sets the number of threads per MPI process, with the default value of \verb|OMP_GET_MAX_THREADS()|.
+The routine will check whether the MPI library has been initialized and stop the program on execution if it was not. It will also open the output and error log files \verb|file=trim(exec_label//".out")| and \\ \verb|file=trim(exec_label//".err")|. This feature, however, can be disabled by using \verb|verb = .false.| which is useful if SsTC is to be used \textit{within} a parallel environment. Lastly, \verb|nThreads| sets the number of threads per MPI process, with the default value of \verb|OMP_GET_MAX_THREADS()|.
 \section{Notation: Memory layout and array layout}\label{sec:notation}
 These concepts apply to $N$-dimensional arrays such as \verb|array(:, :, ..., :)|, where each dimension $i$ has size $s_i$. The total size of \verb|array| is
 \begin{equation}

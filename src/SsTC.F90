@@ -186,8 +186,6 @@ contains
     if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a, i5, a)") &
       "          Paralell regions will run in ", selThreads, " threads."
 
-    call OMP_SET_MAX_ACTIVE_LEVELS(1)
-
     if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          SsTC initialized."
     if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") ""
 
