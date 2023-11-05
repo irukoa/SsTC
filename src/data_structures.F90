@@ -179,6 +179,7 @@ contains
     allocate (dummyR(2))
     if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Reading Hamiltonian..."
 
+    system%real_space_hamiltonian_elements = cmplx_0
     do irpts = 1, nrpts
       read (unit=stdin, fmt=*) (system%R_point(irpts, i), i=1, 3)
       do i = 1, num_bands
@@ -198,6 +199,7 @@ contains
     allocate (dummyR(6))
     if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Reading position operator..."
 
+    system%real_space_position_elements = cmplx_0
     do irpts = 1, nrpts
       read (unit=stdin, fmt=*) dummy1, dummy2, dummy3
       do i = 1, num_bands
