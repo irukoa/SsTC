@@ -14,10 +14,6 @@ program testing_driver
 
   implicit none
 
-  integer, parameter :: dp = 8
-
-  real(dp), parameter :: pi = acos(-1.0_dp)
-
   integer :: ierror
 
   integer :: stat, is
@@ -34,7 +30,7 @@ program testing_driver
   stat = 0
 
   testsuites = [ &
-               new_testsuite("suite1", collect_suite_l_k_quantities) &
+               new_testsuite("Local k Quantities", collect_suite_l_k_quantities) &
                ]
 
   call get_argument(1, suite_name)
@@ -71,8 +67,6 @@ program testing_driver
     write (error_unit, '(i0, 1x, a)') stat, "test(s) failed!"
     error stop 1
   end if
-
-  !call SsTC_init()
 
   call MPI_FINALIZE(ierror)
 
