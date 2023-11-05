@@ -58,7 +58,6 @@ local_k_quantities.o: $(SRC)/local_k_quantities.F90 utility.o comms.o data_struc
 SsTC.o: $(SRC)/SsTC.F90 $(DEPS)
 				$(PY) $(SRC)/mod_setup.py
 				$(F90) $(F90FLAGS) -c $(SRC)/SsTC_mod.F90 -o "$(OBJ)/SsTC.o"
-				#rm $(SRC)/SsTC_mod.F90
 
 main: SsTC.o
 			ar cr "$(BIN)/libSsTC.a" $(OBJ)/*.o
