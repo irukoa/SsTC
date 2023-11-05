@@ -1,3 +1,6 @@
 [submodule "src/F90-Extrapolation-Integration"]
 	path = src/F90-Extrapolation-Integration
 	url = https://github.com/irukoa/F90-Extrapolation-Integration
+[submodule "tests/test-drive"]
+	path = tests/test-drive
+	url = https://github.com/fortran-lang/test-drive
