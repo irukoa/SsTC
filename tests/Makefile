@@ -1,6 +1,6 @@
 default: main
 
-F90 = mpif90
+F90 = mpif90 -L/usr/lib -llapack -L/usr/lib -lblas
 F90FLAGS = -fPIE -fopenmp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -cpp -std=f2018
 F90FLAGS += -g -fbacktrace --warn-extra --warn-unused --warn-all -Wno-maybe-uninitialized --check=bounds -fstack-check -fimplicit-none #Debug flags.
 F90FLAGS += -fprofile-arcs -ftest-coverage
