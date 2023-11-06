@@ -1,5 +1,6 @@
-[![DOI](https://zenodo.org/badge/659820914.svg)](https://zenodo.org/badge/latestdoi/659820914)
 [![Language](https://img.shields.io/badge/-Fortran-734f96?logo=fortran&logoColor=white)](https://github.com/topics/fortran)
+[![DOI](https://zenodo.org/badge/659820914.svg)](https://zenodo.org/badge/latestdoi/659820914)
+[![codecov](https://codecov.io/gh/irukoa/SsTC/graph/badge.svg?token=OJEVB2LAG9)](https://codecov.io/gh/irukoa/SsTC)
 
 # Solid state Task Constructor - SsTC
 
