@@ -14,9 +14,9 @@ with open('./src/SsTC_mod.F90', "w") as modded_SsTC:
         for match in re.finditer(headerln, line):
             for filename in glob('src/**/headers.inc', recursive=True):
               print("Including header file: " + filename)
-              line = line + "  include " + '"' + filename + '"\n'
+              line = line + "  include " + '"../' + filename + '"\n'
         for match in re.finditer(procsln, line):
             for filename in glob('src/**/procedures.inc', recursive=True):
               print("Including procedure list file: " + filename)
-              line = line + "  include " + '"' + filename + '"\n'
+              line = line + "  include " + '"../' + filename + '"\n'
         modded_SsTC.write(line)

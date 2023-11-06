@@ -1,4 +1,5 @@
 [![DOI](https://zenodo.org/badge/659820914.svg)](https://zenodo.org/badge/latestdoi/659820914)
+[![Language](https://img.shields.io/badge/-Fortran-734f96?logo=fortran&logoColor=white)](https://github.com/topics/fortran)
 
 # Solid state Task Constructor - SsTC
 
@@ -8,7 +9,7 @@
 
 ### Fortran compiler:
 
-[Intel Fortran oneAPI](https://www.intel.com/content/www/us/en/developer/tools/oneapi/hpc-toolkit.html) compilers `mpiifort` (recommended) or `mpiifx`.
+[Intel Fortran oneAPI](https://www.intel.com/content/www/us/en/developer/tools/oneapi/hpc-toolkit.html) compilers `ifort` (recommended), `ifx` or [GNU Fortran](https://gcc.gnu.org/wiki/GFortran) compiler `gfortran`.
 
 ### Make software.
 
@@ -47,9 +48,9 @@ Python3's 're' and 'glob' libraries.
 Note 1: SsTC uses double precision numbers for real and complex kinds.
 
 Note 2: It is recommended that each task is defined within a [BLOCK](https://www.intel.com/content/www/us/en/docs/fortran-compiler/developer-guide-reference/2023-0/block.html)
- construct to help in derived-type finalization and thus prevent memory leaks.
+ construct to help in derived-type finalization.
 
-For example, an application calculating the jerk current of the system GaAs, as in Example 2 os the User's guide, should look like:
+For example, an application calculating the jerk current of the system GaAs, as in Example 2 of the User's guide, should look like:
 
     bash:/path/to/application/$ cat my_jerk_application.F90
 <!-- tsk -->
@@ -97,7 +98,7 @@ For example, an application calculating the jerk current of the system GaAs, as 
 
        bash:/path/to/application/$ $(F90) $(F90FLAGS) my_jerk_application.F90 -I/path/of/your/choice/SsTC/bin /path/of/your/choice/SsTC/bin/libSsTC.a -o "my_jdos_application.x"
 
-   Where `$(F90) = mpiifort/mpiifx`, and `$(F90FLAGS)` should include, at least, `-qopenmp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -pthread`.
+   Where `$(F90) = mpiifort/mpiifx/mpif90`, and `$(F90FLAGS)` should include, at least, `-qopenmp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -pthread` with `-qopenmp` replaced by `-fopenmp` in the case of using `gfortran`.
 
 # Usage
 

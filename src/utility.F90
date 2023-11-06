@@ -13,6 +13,8 @@ module SsTC_utility
                      stdout = output_unit, &
                      stderr = error_unit
 
+  logical, public :: verbose = .true.
+
   integer, parameter, public          :: dp = 8
 
   integer, public :: timing(8)

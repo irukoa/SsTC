@@ -131,8 +131,8 @@ contains
     filename = trim(path_to_tb_file)//trim(name)//"_tb.dat"
     filename = trim(filename)
 
-    if (rank == 0) write (unit=stdout, fmt="(a, a, a)") "          Initializing system "//trim(name)//"."
-    if (rank == 0) write (unit=stdout, fmt="(a, a, a)") "          Reading file "//trim(filename)//"."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a, a, a)") "          Initializing system "//trim(name)//"."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a, a, a)") "          Reading file "//trim(filename)//"."
 
     open (newunit=stdin, action="read", file=filename)
     read (unit=stdin, fmt=*)
@@ -177,8 +177,9 @@ contains
 
     read (unit=stdin, fmt=*)
     allocate (dummyR(2))
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          Reading Hamiltonian..."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Reading Hamiltonian..."
 
+    system%real_space_hamiltonian_elements = cmplx_0
     do irpts = 1, nrpts
       read (unit=stdin, fmt=*) (system%R_point(irpts, i), i=1, 3)
       do i = 1, num_bands
@@ -193,11 +194,12 @@ contains
     enddo
 
     deallocate (dummyR)
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          Done."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Done."
 
     allocate (dummyR(6))
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          Reading position operator..."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Reading position operator..."
 
+    system%real_space_position_elements = cmplx_0
     do irpts = 1, nrpts
       read (unit=stdin, fmt=*) dummy1, dummy2, dummy3
       do i = 1, num_bands
@@ -217,12 +219,12 @@ contains
     enddo
 
     deallocate (dummyR)
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          Done."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Done."
 
     close (unit=stdin)
 
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          System loaded sucessfully."
-    if (rank == 0) write (unit=stdout, fmt="(a)") ""
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          System loaded sucessfully."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") ""
 
   end function SsTC_sys_constructor
 

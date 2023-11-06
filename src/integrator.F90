@@ -64,7 +64,7 @@ contains
     !Set name.
     task%name = name
 
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          Creating BZ integral task "//trim(task%name)//"."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Creating BZ integral task "//trim(task%name)//"."
 
     !Set integer index data.
     if (((N_int_ind) .ge. 1) .and. (present(int_ind_range))) then
@@ -117,13 +117,14 @@ contains
     if (present(method)) then
       if (method == "extrapolation") then
         task%method = "extrapolation"
-        if (rank == 0) write (unit=stdout, fmt="(a)") "          Warning: To employ the extrapolation method"
-        if (rank == 0) write (unit=stdout, fmt="(a)") "          all the elements of the array 'samples' must be"
-        if (rank == 0) write (unit=stdout, fmt="(a)") "          expressible as either 1 or 2^n + 1 for n = 0, 1, ..."
+        if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Warning: To employ the extrapolation method"
+        if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          all the elements of the array 'samples' must be"
+      if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          expressible as either 1 or 2^n + 1 for n = 0, 1, ..."
       elseif (method == "rectangle") then
         task%method = "rectangle"
       else
-        if (rank == 0) write (unit=stdout, fmt="(a)") "          Integration method not recognized. Setting up rectangle method"
+        if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") &
+          "          Integration method not recognized. Setting up rectangle method"
         task%method = "rectangle"
       endif
     else
@@ -137,8 +138,8 @@ contains
       task%samples = (/10, 10, 10/)
     endif
 
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          Done."
-    if (rank == 0) write (unit=stdout, fmt="(a)") ""
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Done."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") ""
 
   end subroutine SsTC_BZ_integral_task_constructor
 
@@ -177,10 +178,11 @@ contains
 
     if (task%method == "extrapolation") then !Extrapolation case.
 
-      if (rank == 0) write (unit=stdout, fmt="(a)") &
+      if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") &
         "          Starting BZ sampling and integration subroutine with "
-      if (rank == 0) write (unit=stdout, fmt="(a)") "          extrapolation method."
-      if (rank == 0) write (unit=stdout, fmt="(a)") "          Integrating task: "//trim(task%name)//" in the BZ for the system " &
+      if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          extrapolation method."
+      if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") &
+        "          Integrating task: "//trim(task%name)//" in the BZ for the system " &
         //trim(system%name)//"."
 
       allocate (local_data_k(displs(rank) + 1:displs(rank) + counts(rank), &
@@ -240,7 +242,8 @@ contains
         enddo
       enddo
 
-      if (rank == 0) write (unit=stdout, fmt="(a)") "          Sampling done. Starting integration with extrapolation method."
+      if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") &
+        "          Sampling done. Starting integration with extrapolation method."
 
       do i = 1, product(task%integer_indices) !For each integer index.
         do r = 1, product(task%continuous_indices) !For each continuous index.
@@ -252,21 +255,22 @@ contains
       enddo
 
       if (info == 1) then
-        if (rank == 0) write (unit=stdout, fmt="(a)") &
+        if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") &
         &"          Integral done. Extrapolation sucessfull."
       else
-        if (rank == 0) write (unit=stdout, fmt="(a)") &
+        if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") &
         &"          Integral done. Extrapolation failed. Returning rectangle approximation."
       endif
-      if (rank == 0) write (unit=stdout, fmt="(a)") ""
+      if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") ""
 
       deallocate (local_data_k, data_k)
 
     elseif (task%method == "rectangle") then !Rectangle method approximation case.
 
-      if (rank == 0) write (unit=stdout, fmt="(a)") &
+      if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") &
         "          Starting BZ sampling and integration subroutine with rectangle method."
-      if (rank == 0) write (unit=stdout, fmt="(a)") "          Integrating task: "//trim(task%name)//" in the BZ for the system "&
+      if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") &
+      "          Integrating task: "//trim(task%name)//" in the BZ for the system "&
       &//trim(system%name)//"."
 
       allocate (temp_res(product(task%integer_indices), product(task%continuous_indices)), &
@@ -318,16 +322,17 @@ contains
       call MPI_ALLREDUCE(temp_res, res, size(temp_res), MPI_COMPLEX16, MPI_SUM, MPI_COMM_WORLD, ierror)
       task%result = res/product(task%samples)
 
-      if (rank == 0) write (unit=stdout, fmt="(a)") "          Integral done."
+      if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Integral done."
 
       deallocate (temp_res, res)
       deallocate (sampling_info%integer_indices, counts, displs)
 
-      if (rank == 0) write (unit=stdout, fmt="(a)") ""
+      if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") ""
     endif
 
     end_time = MPI_WTIME() !End timer.
-    if (rank == 0) write (unit=stdout, fmt="(a, f15.3, a)") "          Total execution time: ", end_time - start_time, " s."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a, f15.3, a)") &
+      "          Total execution time: ", end_time - start_time, " s."
 
   end subroutine SsTC_sample_and_integrate_BZ_integral_task
 
@@ -345,7 +350,7 @@ contains
     integer            :: i_mem, r_mem, count
     integer            :: printunit
 
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          Printing BZ integral task: "&
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Printing BZ integral task: "&
     &//trim(task%name)//" for the system "//trim(system%name)//"."
 
     if (associated(task%local_calculator)) then
@@ -404,8 +409,8 @@ contains
 
     endif
 
-    if (rank == 0) write (unit=stdout, fmt="(a)") "          Printing done."
-    if (rank == 0) write (unit=stdout, fmt="(a)") ""
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") "          Printing done."
+    if ((rank == 0) .and. verbose) write (unit=stdout, fmt="(a)") ""
 
   end subroutine SsTC_print_BZ_integral_task
 
