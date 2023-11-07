@@ -18,7 +18,8 @@ contains
     type(unittest_type), allocatable, intent(out) :: testsuite(:)
 
     testsuite = [ &
-                new_unittest("Test Wannier Hamiltonian", test_WH) &
+                new_unittest("Test Wannier Hamiltonian", test_WH), &
+                new_unittest("Test Wannier Berry connection", test_WA) &
                 ]
 
   end subroutine collect_suite_l_k_quantities
@@ -45,9 +46,7 @@ contains
     if ((abs(eig(1) + 0.5_dp*sqrt(37.0_dp)) .gt. 1.0E-6_dp) .or. (abs(eig(2) - 0.5_dp*sqrt(37.0_dp)) .gt. 1.0E-6_dp)) cond = .false.
     if (derror) cond = .false.
 
-    deallocate (H)
-
-    cond = .false. !Just a test.
+    deallocate (H, rot, eig)
 
     if (.not. cond) then
       call test_failed(error, "Mismatch between the eigenvalues of the Hamiltonian and the reference.")
@@ -55,5 +54,36 @@ contains
     end if
 
   end subroutine test_WH
+
+  subroutine test_WA(error)
+    type(error_type), allocatable, intent(out) :: error
+    type(SsTC_sys) :: SsTC_toy_model
+
+    complex(kind=dp), allocatable :: A(:, :, :), rot(:, :)
+    real(kind=dp), allocatable :: eig(:)
+
+    logical :: cond = .true., &
+               derror = .false.
+
+    SsTC_toy_model = SsTC_sys_constructor(name="toy_model", path_to_tb_file="./data/", efermi=0.0_dp)
+
+    allocate (A(SsTC_toy_model%num_bands, SsTC_toy_model%num_bands, 3), &
+              rot(SsTC_toy_model%num_bands, SsTC_toy_model%num_bands), &
+              eig(SsTC_toy_model%num_bands))
+    rot = cmplx(0.0_dp, 0.0_dp, dp)
+    eig = 0.0_dp
+    A = SsTC_wannier_berry_connection(SsTC_toy_model, (/0.0_dp, 0.0_dp, 0.0_dp/))
+    call SsTC_utility_diagonalize(A(:, :, 1), SsTC_toy_model%num_bands, eig, rot, derror)
+    if ((abs(eig(1) + 0.5_dp*sqrt(37.0_dp)) .gt. 1.0E-6_dp) .or. (abs(eig(2) - 0.5_dp*sqrt(37.0_dp)) .gt. 1.0E-6_dp)) cond = .false.
+    if (derror) cond = .false.
+
+    deallocate (A, rot, eig)
+
+    if (.not. cond) then
+      call test_failed(error, "Mismatch between the eigenvalues of the Berry connection and the reference.")
+      return
+    end if
+
+  end subroutine test_WA
 
 end module suite_l_k_quantities
