@@ -47,6 +47,8 @@ contains
 
     deallocate (H)
 
+    cond = .false. !Just a test.
+
     if (.not. cond) then
       call test_failed(error, "Mismatch between the eigenvalues of the Hamiltonian and the reference.")
       return

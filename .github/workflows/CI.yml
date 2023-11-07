@@ -37,11 +37,11 @@ jobs:
           run: |
             cd ./tests
             ./build_and_compile.sh
-        - name: Run tests
+        - name: Run Tests
           run: |
             cd ./tests
             mpirun -np 1 ./tests.x
-        - name: Upload coverage to Codecov
+        - name: Upload Coverage to Codecov
           uses: codecov/codecov-action@v3
           with:
             gcov: true
