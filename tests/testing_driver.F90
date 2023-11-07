@@ -25,7 +25,7 @@ program testing_driver
 
   call OMP_SET_MAX_ACTIVE_LEVELS(1)
 
-  call SsTC_init(verb=.false.)
+  call SsTC_init(verb=.true., nThreads=1)
 
   stat = 0
 

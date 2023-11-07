@@ -3,7 +3,7 @@ cp Makefile ../Makefile      #Load testing Makefile and build.
 (cd ../ && make)
 echo "SsTC built."
 #Compile.
-mpif90 ./test-drive/src/testdrive.F90 ./suites/suite_l_k_quantities.F90 ./testing_driver.F90 \
+mpif90 ./test-drive/src/testdrive.F90 ./suites/*.F90 ./testing_driver.F90 \
                                                        -fprofile-arcs -ftest-coverage \
                                                        -g -fbacktrace --warn-extra --warn-unused --warn-all \
                                                        -Wno-maybe-uninitialized --check=bounds -fstack-check -fimplicit-none \
