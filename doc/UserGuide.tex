@@ -142,7 +142,7 @@ bash:/path/of/your/choice/SsTC$ cp config/gfortran Makefile
 bash:/path/of/your/choice/SsTC$ make
 \end{verbatim}
 \end{codebox}
-which will replace the Makefile for compilation with \verb|mpiifort| by the one for compilation with \verb|mpiifx|/\verb|mpif90| and build the library.
+which will replace the Makefile for compilation with \verb|mpiifort| by the one for compilation with \verb|mpiifx|/\\ \verb|mpif90| and build the library.
 
 To link to your Fortran application \verb|appl.F90|, add the line \verb|use SsTC| in your application preamble and compile with
 \begin{codebox}{Compilation \& Linking}
@@ -609,17 +609,20 @@ The routine will write a file for each integer index with name \\ \verb|trim(sys
 \end{tcolorbox}
 If further use of the sampled data is intended within the execution of the application, making a copy of \verb|task%kslice_data| is suggested.
 \subsection{Sampler module}
-This module is centered around creating, sampling, and printing tasks which involve a regular 3-dimensional BZ sampling. The ``sampler" task is a derived type
+This module is centered around creating, sampling, and printing tasks which involve a regular 3-dimensional BZ sampling or a sampling over a predefined set of points in the BZ specified by the user. The ``sampler" task is a derived type
 \begin{codebox}{Sampler task}
 \begin{lstlisting}[caption={Derived type corresponding to a sampler task.},captionpos=b]
 type, extends(SsTC_global_k_data) :: SsTC_sampling_task
   integer                       :: samples(3) = (/100, 100, 100/)
   !Integer index, continuous index and kpt index 1, 2 and 3 respectively.
   complex(kind=dp), allocatable :: BZ_data(:, :, :, :, :)
+  logical                       :: predefined_set_of_kpts = .false.
+  real(kind=dp), allocatable    :: kpts(:, :)
+  complex(kind=dp), allocatable :: predefined_sampled_data(:, :, :)
 end type SsTC_sampling_task
 \end{lstlisting}
 \end{codebox}
-For the general calculator Eq. \eqref{eq:calculator}, and the reciprocal space basis vectors $\bm{b}_{\{1, 2, 3\}}$, we identify
+In the case of regular sampling, for the general calculator Eq. \eqref{eq:calculator}, and the reciprocal space basis vectors $\bm{b}_{\{1, 2, 3\}}$, we identify
 \begin{equation}
 \verb|BZ_data(alpha, beta, ik1, ik2, ik3)| = C^{\bm{\alpha}}(\bm{k}; \bm{\beta}),\quad \bm{k}\text{ is identified with } \verb|ik1, ik2, ik3|,
 \end{equation}
@@ -627,12 +630,21 @@ and given by
 \begin{equation}\label{eq:vec_coords_sampler}
 \bm{k} = \sum_{i=1}^3 \bm{b}_i\times (\verb|ik|i-1)/(\verb|samples(i)| - 1).
 \end{equation}
+
+In the case of predefined sampling specified by the user, we identify, for the vectors $\bm{b}_{\{1, 2, 3\}}$,
+\begin{equation}
+\verb|predefined_sampled_data(alpha, beta, ik)| = C^{\bm{\alpha}}(\bm{k}; \bm{\beta}),\quad \bm{k}\text{ is identified with } \verb|ik|,
+\end{equation}
+and given by
+\begin{equation}\label{eq:alt_vec_coords_sampler}
+\bm{k} = \sum_{i=1}^3 \bm{b}_i\times \verb|kpts(ik, |i \verb|)|.
+\end{equation}
 A sampling task can be constructed by the function \verb|SsTC_sampling_task_constructor|,
 \begin{codebox}{Sampler task constructor}
 \begin{lstlisting}[caption={Interface of the sampling task constructor.},captionpos=b]
 subroutine SsTC_sampling_task_constructor(task, name, &
                                           l_calculator, g_calculator, &
-                                          samples, &
+                                          samples, nkpts, kpts, &
                                           N_int_ind, int_ind_range, &
                                           N_ext_vars, &
                                           ext_vars_start, ext_vars_end, &
@@ -645,6 +657,8 @@ subroutine SsTC_sampling_task_constructor(task, name, &
   procedure(SsTC_global_calculator), optional :: g_calculator
 
   integer, optional, intent(in) :: samples(3)
+  integer, optional, intent(in) :: nkpts
+  real(kind=dp), optional, intent(in) :: kpts(nkpts, 3)
 
   integer, intent(in)           :: N_int_ind
   integer, optional, intent(in) :: int_ind_range(N_int_ind)
@@ -666,7 +680,9 @@ where
 \item \verb|name|: Name given to the task.
 \item \verb|l_calculator|: Pointer to a function that wants to be sampled, with interface \ref{lst:interface_l_calc}. Only one of \\ \verb|l_calculator| or \verb|g_calculator| can be specified.
 \item \verb|g_calculator|: Pointer to a function that wants to be sampled, with interface \ref{lst:interface_g_calc}. Only one of \\ \verb|l_calculator| or \verb|g_calculator| can be specified.
-\item \verb|samples(3)|: Each entry $i$ contains the number into which $\bm{b}_i$ has been discretized.
+\item \verb|samples(3)|: Each entry $i$ contains the number into which $\bm{b}_i$ has been discretized for the case of regular sampling.
+\item \verb|nkpts|: Size of the set of BZ points where sampling will take place in the case of predefined sampling. Specifying this option overrides regular sampling.
+\item \verb|kpts(nkpts, 3)|: Array containing the crystal coordinates of the set of BZ points where sampling will take place in the case of predefined sampling. Specifying this option overrides regular sampling.
 \item \verb|N_int_ind|: Number of integer indices.
 \item \verb|int_ind_range(i)|: Number of values the integer index $\alpha_i$ can have.
 \item \verb|N_ext_vars|: Number of continuous variables.
@@ -676,7 +692,7 @@ where
 \item \verb|part_int_comp(N_int_ind)|: Array corresponding to a selection of a particular integer component in array layout.
 \end{itemize}
 \end{tcolorbox}
-Sampling, and thus writing the values of $C$ in Eq. \eqref{eq:calculator} given by \verb|l_calculator| or \verb|g_calculator| to the array \verb|BZ_data| can be made with the subroutine \verb|SsTC_sample_sampling_task|.
+Sampling, and thus writing the values of $C$ in Eq. \eqref{eq:calculator} given by \verb|l_calculator| or \verb|g_calculator| to the array \verb|BZ_data| in the case of regular sampling or  \verb|predefined_sampled_data| in the case of predefined sampling can be made with the subroutine \verb|SsTC_sample_sampling_task|.
 \begin{codebox}{Sampler task sampler}
 \begin{lstlisting}[caption={Interface of the sampling task sampler.},captionpos=b]
 subroutine SsTC_sample_sampling_task(task, system)
@@ -699,12 +715,13 @@ end subroutine SsTC_print_sampling
 The routine will write a file for each integer index with name \\ \verb|trim(system%name)//'-'//trim(task%name)//'_'trim(num_label)//'.dat'| with \verb|num_label| being an \\ \verb|N_int_ind|-dimensional array with the corresponding integer index in array layout (see Sec. \ref{sec:notation}). Each file will contain, column by column, the following,
 \begin{tcolorbox}[enhanced, breakable]
 \begin{itemize}
-\item The components $\verb|ik|i=\{1, 2, 3\}$ of the vector $\bm{k}$ in Eq. \eqref{eq:vec_coords_sampler} corresponding to \verb|id| (3 columns).
+\item \textbf{Only in the case of predefined sampling,} the label \verb|ik| of the point $\bm{k}$ in Eq. \eqref{eq:alt_vec_coords_sampler}.
+\item In the case of regular sampling, the components $\verb|ik|i=\{1, 2, 3\}$ of the vector $\bm{k}$ in Eq. \eqref{eq:vec_coords_sampler} corresponding to \verb|id| (3 columns). In the case of predefined sampling, the components $\verb|kpts(ik,i)|,\;i=\{1, 2, 3\}$ of the vector $\bm{k}$ in Eq. \eqref{eq:alt_vec_coords_sampler}.
 \item For each continuous index $i$, the particular values of the data $\lambda_{ij}$ as given by Eq. \eqref{eq:disc_cont} \\ (\verb|size(task%continuous_indices)| columns).
 \item The real and imaginary part of the calculator $C^{\bm{\alpha}}(\bm{k}; \bm{\beta})$ (2 columns).
 \end{itemize}
 \end{tcolorbox}
-If further use of the sampled data is intended within the execution of the application, making a copy of \verb|task%BZ_data| is suggested.
+If further use of the sampled data is intended within the execution of the application, making a copy of \verb|task%BZ_data| or \verb|task%predefined_sampled_data| is suggested.
 \subsection{Integrator module}
 This module is centered around creating, sampling, integrating, and printing tasks which involve a BZ integral. The ``integrator" task is a derived type
 \begin{codebox}{Integration task}
