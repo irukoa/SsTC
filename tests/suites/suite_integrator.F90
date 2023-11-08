@@ -36,7 +36,7 @@ contains
     global_calculator : block
 
       !g_calc_test implements the integrand of the sinc fucntion.
-      type(SsTC_optical_BZ_integral_task) :: test_integral
+      type(SsTC_BZ_integral_task) :: test_integral
 
       call SsTC_BZ_integral_task_constructor(task = test_integral, name = "rectangle_test", &
                                              g_calculator = g_calc_test, &
@@ -78,7 +78,7 @@ contains
     global_calculator : block
 
       !g_calc_test implements the integrand of the sinc fucntion.
-      type(SsTC_optical_BZ_integral_task) :: test_integral
+      type(SsTC_BZ_integral_task) :: test_integral
 
       call SsTC_BZ_integral_task_constructor(task = test_integral, name = "extrapolation_test", &
                                              g_calculator = g_calc_test, &
