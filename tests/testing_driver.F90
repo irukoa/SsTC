@@ -11,10 +11,11 @@ program testing_driver
   & select_suite, run_selected, get_argument
 
   use suite_l_k_quantities, only: collect_suite_l_k_quantities
+  use suite_integrator, only: collect_suite_integrator
 
   implicit none
 
-  integer :: ierror
+  integer :: ierror, nProcs, rank
 
   integer :: stat, is
   character(len=:), allocatable :: suite_name, test_name
@@ -23,6 +24,10 @@ program testing_driver
 
   call MPI_INIT(ierror)
 
+  call MPI_COMM_SIZE(MPI_COMM_WORLD, nProcs, ierror)
+  call MPI_COMM_RANK(MPI_COMM_WORLD, rank, ierror)
+  if (rank == 0) write (error_unit, "(a, i5, a)") "Running on ", nProcs, " MPI processes."
+
   call OMP_SET_MAX_ACTIVE_LEVELS(1)
 
   call SsTC_init(verb=.true., nThreads=1)
@@ -30,7 +35,8 @@ program testing_driver
   stat = 0
 
   testsuites = [ &
-               new_testsuite("Local k Quantities", collect_suite_l_k_quantities) &
+               new_testsuite("Local k Quantities", collect_suite_l_k_quantities), &
+               new_testsuite("Integrator", collect_suite_integrator) &
                ]
 
   call get_argument(1, suite_name)
@@ -47,7 +53,7 @@ program testing_driver
         end if
       else
         write (error_unit, fmt) "Testing:", testsuites(is)%name
-        call run_testsuite(testsuites(is)%collect, error_unit, stat)
+        call run_testsuite(testsuites(is)%collect, error_unit, stat, parallel = .false.)
       end if
     else
       write (error_unit, fmt) "Available testsuites"
@@ -59,7 +65,7 @@ program testing_driver
   else
     do is = 1, size(testsuites)
       write (error_unit, fmt) "Testing:", testsuites(is)%name
-      call run_testsuite(testsuites(is)%collect, error_unit, stat)
+      call run_testsuite(testsuites(is)%collect, error_unit, stat, parallel = .false.)
     end do
   end if
 
