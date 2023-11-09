@@ -7,9 +7,12 @@ echo "-----------------------------------------------"
 ./build_and_compile.sh > /dev/null
 echo "Building done."
 echo "-----------------------------------------------"
-echo "Running tests..."
+echo "Running tests (1 MPI process)..."
 echo "-----------------------------------------------"
 mpirun -np 1 ./tests.x > test_results.dat 2>&1
+echo "Running tests (2 MPI processes)..."
+echo "-----------------------------------------------"
+mpirun -np 2 ./tests.x >> test_results.dat 2>&1
 rm toy_model-*
 rm s_test.*
 rm p_test.*

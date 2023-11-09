@@ -76,43 +76,47 @@ program testing_driver
     error stop 1
   end if
 
-  if (rank == 0) write (error_unit, "(a, i5, a)") "Repeating tests in multithread case..."
-  call SsTC_init(verb=.true., nThreads=2, exec_label="p_test")
+  if (nProcs == 1) then
 
-  call get_argument(1, suite_name)
-  call get_argument(2, test_name)
+    if (rank == 0) write (error_unit, "(a, i5, a)") "Repeating tests in multithread case..."
+    call SsTC_init(verb=.true., nThreads=2, exec_label="p_test")
 
-  if (allocated(suite_name)) then
-    is = select_suite(testsuites, suite_name)
-    if (is > 0 .and. is <= size(testsuites)) then
-      if (allocated(test_name)) then
-        write (error_unit, fmt) "Suite:", testsuites(is)%name
-        call run_selected(testsuites(is)%collect, test_name, error_unit, stat)
-        if (stat < 0) then
-          error stop 1
+    call get_argument(1, suite_name)
+    call get_argument(2, test_name)
+
+    if (allocated(suite_name)) then
+      is = select_suite(testsuites, suite_name)
+      if (is > 0 .and. is <= size(testsuites)) then
+        if (allocated(test_name)) then
+          write (error_unit, fmt) "Suite:", testsuites(is)%name
+          call run_selected(testsuites(is)%collect, test_name, error_unit, stat)
+          if (stat < 0) then
+            error stop 1
+          end if
+        else
+          write (error_unit, fmt) "Testing:", testsuites(is)%name
+          call run_testsuite(testsuites(is)%collect, error_unit, stat, parallel=.false.)
         end if
       else
-        write (error_unit, fmt) "Testing:", testsuites(is)%name
-        call run_testsuite(testsuites(is)%collect, error_unit, stat, parallel=.false.)
+        write (error_unit, fmt) "Available testsuites"
+        do is = 1, size(testsuites)
+          write (error_unit, fmt) "-", testsuites(is)%name
+        end do
+        error stop 1
       end if
     else
-      write (error_unit, fmt) "Available testsuites"
       do is = 1, size(testsuites)
-        write (error_unit, fmt) "-", testsuites(is)%name
+        write (error_unit, fmt) "Testing:", testsuites(is)%name
+        call run_testsuite(testsuites(is)%collect, error_unit, stat, parallel=.false.)
       end do
+    end if
+
+    if (stat > 0) then
+      write (error_unit, '(i0, 1x, a)') stat, "test(s) failed!"
       error stop 1
     end if
-  else
-    do is = 1, size(testsuites)
-      write (error_unit, fmt) "Testing:", testsuites(is)%name
-      call run_testsuite(testsuites(is)%collect, error_unit, stat, parallel=.false.)
-    end do
-  end if
 
-  if (stat > 0) then
-    write (error_unit, '(i0, 1x, a)') stat, "test(s) failed!"
-    error stop 1
-  end if
+  endif
 
   call MPI_FINALIZE(ierror)
 
