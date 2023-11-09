@@ -10,6 +10,7 @@ echo "-----------------------------------------------"
 echo "Running tests..."
 echo "-----------------------------------------------"
 mpirun -np 1 ./tests.x > test_results.dat 2>&1
+rm toy_model-*
 echo "Done."
 echo "-----------------------------------------------"
 echo "Getting code coverage..."
