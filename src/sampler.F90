@@ -19,6 +19,7 @@ module SsTC_sampler
     complex(kind=dp), allocatable :: BZ_data(:, :, :, :, :)
     logical                       :: predefined_set_of_kpts = .false.
     real(kind=dp), allocatable    :: kpts(:, :)
+    !Integer index, continuous index and kpt index respectively.
     complex(kind=dp), allocatable :: predefined_sampled_data(:, :, :)
   end type SsTC_sampling_task
 
