@@ -13,6 +13,7 @@ program testing_driver
   use suite_l_k_quantities, only: collect_suite_l_k_quantities
   use suite_integrator, only: collect_suite_integrator
   use suite_sampler, only: collect_suite_sampler
+  use suite_kpath, only: collect_suite_kpath
 
   implicit none
 
@@ -38,7 +39,8 @@ program testing_driver
   testsuites = [ &
                new_testsuite("Local k Quantities", collect_suite_l_k_quantities), &
                new_testsuite("Integrator", collect_suite_integrator), &
-               new_testsuite("Sampler", collect_suite_sampler) &
+               new_testsuite("Sampler", collect_suite_sampler), &
+               new_testsuite("Kpath", collect_suite_kpath) &
                ]
 
   call get_argument(1, suite_name)
