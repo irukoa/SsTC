@@ -16,6 +16,7 @@ program testing_driver
   use suite_kpath, only: collect_suite_kpath
   use suite_kslice, only: collect_suite_kslice
   use suite_utility, only: collect_suite_utility
+  use suite_data_structures, only: collect_suite_data_structures
 
   implicit none
 
@@ -44,7 +45,8 @@ program testing_driver
                new_testsuite("Sampler", collect_suite_sampler), &
                new_testsuite("Kpath", collect_suite_kpath), &
                new_testsuite("Kslice", collect_suite_kslice), &
-               new_testsuite("Utility", collect_suite_utility) &
+               new_testsuite("Utility", collect_suite_utility), &
+               new_testsuite("Data Structures", collect_suite_data_structures) &
                ]
 
   call get_argument(1, suite_name)
