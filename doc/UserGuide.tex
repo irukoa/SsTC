@@ -75,7 +75,7 @@
 \section{Scope}
 Solid-state Task Constructor (SsTC) is a high-performance computing (HPC) oriented Fortran 2018 library which aims to aid programmers and researchers in the process of sampling and integration of functions in the first Brillouin zone (BZ) of a given crystalline system. The library is centred around the following concepts:
 \begin{tcolorbox}\begin{itemize}
-\item The calculator: A general function representing a physical quantity of interest to the programmer or researcher. It is of the form
+\item The calculator: A general function representing a physical quantity of interest to the user. It is of the form
 \begin{equation}\label{eq:calculator}
 C^{\bm{\alpha}}(\bm{k}; \bm{\beta}),
 \end{equation}
@@ -102,12 +102,11 @@ All the concepts covered in this section are treated with greater detail in the 
 \section{Prerequisites, installation \& linking to application}\label{sec:install}
 SsTC is a Fortran 2018 standard complying code and the prerequisites for its compilation are,
 \begin{tcolorbox}\begin{itemize}
-\item Intel oneAPI Math Kernel Libraries (MKL), OpenMP library and MPI library.
+\item Any implementation of BLAS, LAPACK, OpenMP and MPI libraries. We recommend those provided by the Intel oneAPI toolkit (Math Kernel Libraries (MKL), OpenMP and MPI).
 \item Intel Fortran oneAPI compilers \verb|ifort| or \verb|ifx| or GNU Fortran compiler \verb|gfortran|.
-\item Make software.
-\item Python 3 ($>$ v3.9) software with 're' and 'glob' libraries.
+\item Python 3 software with 're' and 'glob' libraries.
 \end{itemize}\end{tcolorbox}
-As for v0.3.1, SsTC is only guaranteed to compile on Linux systems using the \verb|ifort|, \verb|ifx| compilers contained in the \href{https://www.intel.com/content/www/us/en/developer/tools/oneapi/hpc-toolkit.html}{Intel\textregistered oneAPI HPC} toolkit and the \verb|gfortran| compiler. As such, the main application to be linked with must be compiled with the MPI wrappers \verb|mpiifort|, \verb|mpiifx| or \verb|mpif90|.
+As for v0.3.1, SsTC is only guaranteed to compile on Linux systems using the above mentioned compilers contained in the \href{https://www.intel.com/content/www/us/en/developer/tools/oneapi/hpc-toolkit.html}{Intel\textregistered oneAPI HPC} toolkit and the \verb|gfortran| compiler. As such, the main application to be linked with must be compiled with the MPI wrappers \verb|mpiifort|, \verb|mpiifx| or \verb|mpif90|.
 
 The SsTC project is hosted on \href{https://github.com/irukoa/SsTC}{GitHub} and can be downloaded by running the command,
 
@@ -158,7 +157,7 @@ where \verb|F90 = mpiifort/mpiifx/mpif90| and \verb|F90FLAGS| contains, at least
 F90FLAGS = -qopenmp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -pthread
 \end{verbatim}
 \end{codebox}
-where, if using \verb|mpif90|, the \verb|-qopenmp| flag should be replace with the \verb|-fopenmp| flag.
+or the compiler specific analogues of the above mentioned flags.
 
 To make use of SsTC, the application preamble of \verb|appl.F90| should also contain the lines
 \begin{codebox}{Use statements}
@@ -167,9 +166,9 @@ use MPI_F08
 use OMP_LIB
 \end{verbatim}
 \end{codebox}
-The application must also contain a call to the MPI \cite{messagepassinginterfaceforumMPIMessagePassingInterface2021} initialization routine \verb|call MPI_INIT(ierror)| and to the SsTC initialization routine \verb|call SsTC_init()| \textit{before} any call to other SsTC routines. The programmer also needs to make sure that the MPI finalizing routine \verb|call MPI_FINALIZE(ierror)| has not been called before using SsTC routines.
+The application must also contain a call to the MPI \cite{messagepassinginterfaceforumMPIMessagePassingInterface2021} initialization routine \verb|call MPI_INIT(ierror)| followed by a call to the SsTC initialization routine \verb|call SsTC_init()| \textit{before} any call to other SsTC routines. The programmer also needs to make sure that the MPI finalizing routine \verb|call MPI_FINALIZE(ierror)| has not been called before using SsTC routines.
 
-Note:  By default, SsTC uses double precision \verb|dp, kind=8, real64| numbers for real and complex valued scalars and arrays.
+Note:  By default, SsTC uses double precision numbers for real and complex valued scalars and arrays.
 
 The application \verb|appl.x| can be run by the commands
 \begin{codebox}{Running}
@@ -287,7 +286,7 @@ end subroutine SsTC_init
 \end{codebox}
 The routine will check whether the MPI library has been initialized and stop the program on execution if it was not. It will also open the output and error log files \verb|file=trim(exec_label//".out")| and \\ \verb|file=trim(exec_label//".err")|. This feature, however, can be disabled by using \verb|verb = .false.| which is useful if SsTC is to be used \textit{within} a parallel environment. Lastly, \verb|nThreads| sets the number of threads per MPI process, with the default value of \verb|OMP_GET_MAX_THREADS()|.
 \section{Notation: Memory layout and array layout}\label{sec:notation}
-These concepts apply to $N$-dimensional arrays such as \verb|array(:, :, ..., :)|, where each dimension $i$ has size $s_i$. The total size of \verb|array| is
+These concepts apply to $N$-dimensional jagged arrays such as \verb|array(:, :, ..., :)|, where each dimension $i$ has size $s_i$. The total size of \verb|array| is
 \begin{equation}
 \verb|size(array)| = \prod_{i=1}^N s_i.
 \end{equation}
@@ -305,7 +304,7 @@ r \Leftrightarrow \{n_1, n_2, \cdots, n_N\},
 \end{equation}
 which makes it possible to keep track of the elements of an array in both layouts, provided that the sizes of each dimension, $s_i$, are known. The output values of the calculator interfaces, corresponding to the sampling $C^{\bm{\alpha}}(\bm{k}; \bm{\beta})$ for a $\bm{k}$ vector, are always arrays in memory layout, both for integer and continuous indices, which makes the interface of the calculator flexible for any number of integer or continuous indices.
 
-In SsTC, the sizes $s_i$ of integer or continuous indices are specified by the components of \\ \verb|task%integer_indices| and \verb|task%continuous_indices| (if applicable) of the task \\ \verb|class(SsTC_local_k_data) :: task|, respectively. The library provides the utilities
+In SsTC, the sizes $s_i$ of integer or continuous indices are specified by the components of \\ \verb|task%integer_indices| and \verb|task%continuous_indices| (if applicable) of the task \\ \verb|class(SsTC_local_k_data) :: task|, respectively. The library provides the jagged array indexing utilities
 \begin{tcolorbox}[enhanced, breakable]
 \begin{itemize}
 \item \verb|SsTC_integer_array_element_to_memory_element|: Returns $r = f(\{n_1, n_2, \cdots, n_N\})$ for integer indices.
@@ -1040,7 +1039,7 @@ end function SsTC_external_variable_constructor
 \end{lstlisting}
 \end{codebox}
 which implements Eq. \eqref{eq:disc_cont} for an index $\beta_i$.
-\subsubsection{Array transformation and index tracking}
+\subsubsection{Jagged array transformation and index tracking}
 
 The function \verb|SsTC_integer_array_element_to_memory_element|,
 \begin{codebox}{Array element to memory element (integer indices)}
