@@ -98,7 +98,13 @@ Lastly, the user is free to employ SsTC routines inside OpenMP parallel regions 
 
 1. Include the line `use SsTC` in your application preamble.
 
-2. Before creating any SsTC task, sampling/integrating in the BZ or printing to files, make sure to have the MPI enviroment initialized and the line `call SsTC_init()` in your application after the MPI initialization call.
+2. Before creating any SsTC task, sampling/integrating in the BZ or writing to files, make sure to have the MPI enviroment initialized and the line `call SsTC_init()` in your application after the MPI initialization call.
+
+3. To link SsTC to your program, the compilation command should have the form:
+
+       bash:/path/to/application/$ $(F90) $(F90FLAGS) my_application.F90 -I/path/of/your/choice/SsTC/bin /path/of/your/choice/SsTC/bin/libSsTC.a -o "my_application.x"
+
+   Where `$(F90) = mpiifort/mpiifx/mpif90`, and `$(F90FLAGS)` should include, at least, `-qopenmp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -pthread` or the compiler-specific alternatives.
 
 Note 1: SsTC uses double precision numbers for real and complex kinds.
 
@@ -169,7 +175,7 @@ As an example, consider Example 1 in the User's guide,
           i_arr = SsTC_integer_memory_element_to_array_element(task, i)
           do r = 1, product(task%continuous_indices)
             r_arr = SsTC_continuous_memory_element_to_array_element(task, r)
-	    !C^{\alpha}(k;\beta) = (\alpha_1 + \alpha_2)exp(k_x*\beta_1).
+	        !C^{\alpha}(k;\beta) = (\alpha_1 + \alpha_2)exp(k_x*\beta_1).
             u(i, r) = real(i_arr(1) + i_arr(2), dp)* &
                       cmplx(exp(k(1)*task%ext_var_data(1)%data(r_arr(1))))
           enddo
@@ -222,13 +228,3 @@ As another example, an application calculating the jerk current of the system Ga
       call MPI_FINALIZE(ierror)
 
     end program my_jerk_application
-
-3. To link SsTC to your program, the compilation command should have the form:
-
-       bash:/path/to/application/$ $(F90) $(F90FLAGS) my_jerk_application.F90 -I/path/of/your/choice/SsTC/bin /path/of/your/choice/SsTC/bin/libSsTC.a -o "my_jdos_application.x"
-
-   Where `$(F90) = mpiifort/mpiifx/mpif90`, and `$(F90FLAGS)` should include, at least, `-qopenmp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -pthread` or the compiler-specific alternatives.
-
-# Usage
-
-See user's manual in the documentation folder.
