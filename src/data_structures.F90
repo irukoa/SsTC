@@ -12,6 +12,8 @@ module SsTC_data_structures
     integer                       :: num_bands                                !Number of bands.
     real(kind=dp)                 :: direct_lattice_basis(3, 3)               !Direct lattice basis vectors in A.
     !1st index is vector label, 2nd index is vector component.
+    real(kind=dp)                 :: reciprocal_lattice_basis(3, 3)           !Reciprocal lattice basis vectors in A^-1.
+    !1st index is vector label, 2nd index is vector component.
     real(kind=dp)                 :: metric_tensor(3, 3)                      !Metric tensor of the direct lattice basis.
     real(kind=dp)                 :: cell_volume                              !Cell volume.
     integer                       :: num_R_points                             !Number of R points given in the *_tb.dat file.
@@ -145,15 +147,25 @@ contains
         system%metric_tensor(i, j) = dot_product(system%direct_lattice_basis(i, :), system%direct_lattice_basis(j, :))
       enddo
     enddo
-    system%cell_volume = sqrt(system%metric_tensor(1, 1)*system%metric_tensor(2, 2)*system%metric_tensor(3, 3) + &
-                              system%metric_tensor(2, 1)*system%metric_tensor(3, 2)*system%metric_tensor(1, 3) + &
-                              system%metric_tensor(1, 2)*system%metric_tensor(2, 3)*system%metric_tensor(3, 1) - &
-                              system%metric_tensor(3, 1)*system%metric_tensor(2, 2)*system%metric_tensor(1, 3) - &
-                              system%metric_tensor(2, 1)*system%metric_tensor(1, 2)*system%metric_tensor(3, 3) - &
-                              system%metric_tensor(3, 2)*system%metric_tensor(2, 3)*system%metric_tensor(1, 1))
 
     read (unit=stdin, fmt=*) num_bands
     system%num_bands = num_bands
+    block
+      complex(kind=dp) :: G(3, 3), &
+                          rot(3, 3), tmp(3, 3)
+      real(kind=dp) :: eig(3)
+      logical :: error = .false.
+      integer :: n
+      G = cmplx(system%metric_tensor, 0.0_dp, dp)
+      call SsTC_utility_diagonalize(G, 3, eig, rot, error)
+      system%cell_volume = sqrt(product(eig))
+      tmp = cmplx_0
+      do n = 1, 3
+        tmp(n, n) = 1.0_dp/eig(n)
+      enddo
+      system%reciprocal_lattice_basis = 2*pi*real(matmul(matmul(rot, tmp), transpose(conjg(rot))), dp)
+      system%reciprocal_lattice_basis = matmul(system%reciprocal_lattice_basis, system%direct_lattice_basis)
+    end block
     read (unit=stdin, fmt=*) nrpts
     system%num_R_points = nrpts
     allocate (system%R_point(system%num_R_points, 3), &
