@@ -51,8 +51,8 @@
 \hbadness=10000
 
 \title{SsTC library:\\
-\large{User's Guide}\\
-\large{Version 0.3.1}}
+\large{User Guide}\\
+\large{Version 0.4.0}}
 \author{Álvaro R. Puente-Uriona}
 \date{\today}
 
@@ -63,9 +63,9 @@
 \newcommand\imglabelsize{10} %Default: 10.
 %
 
-\usepackage{draftwatermark}
-\SetWatermarkText{DRAFT}
-\SetWatermarkScale{5}
+%\usepackage{draftwatermark}
+%\SetWatermarkText{DRAFT}
+%\SetWatermarkScale{5}
 
 \begin{document}
 \maketitle
@@ -96,7 +96,7 @@ The sampling and integration utilities contained in SsTC are the following.
 \item ``Kpath" sampling. 1-dimensional sampling of $C$ with specification of the path to sample.
 \item ``Kslice" sampling. 2-dimensional regular sampling of $C$ with specification of the slice to sample.
 \item ``Regular" sampling. 3-dimensional regular sampling of $C$ with specification of the number of samples in each dimension.
-\item Integration. 3-dimensional regular sampling of $C$ followed by an integration process. The integration process as for v0.3.1 amounts to the rectangle approximation in each dimension. There exists also an experimental integration method based on extrapolation methods.
+\item Integration. 3-dimensional regular sampling of $C$ followed by an integration process. The integration process as for v0.4.0 amounts to the rectangle approximation or extrapolation methods in each dimension.
 \end{itemize}\end{tcolorbox}
 All the concepts covered in this section are treated with greater detail in the specific sections in the document.
 \section{Prerequisites, installation \& linking to application}\label{sec:install}
@@ -106,7 +106,7 @@ SsTC is a Fortran 2018 standard complying code and the prerequisites for its com
 \item Intel Fortran oneAPI compilers \verb|ifort| or \verb|ifx| or GNU Fortran compiler \verb|gfortran|.
 \item Python 3 software with 're' and 'glob' libraries.
 \end{itemize}\end{tcolorbox}
-As for v0.3.1, SsTC is only guaranteed to compile on Linux systems using the above mentioned compilers contained in the \href{https://www.intel.com/content/www/us/en/developer/tools/oneapi/hpc-toolkit.html}{Intel\textregistered oneAPI HPC} toolkit and the \verb|gfortran| compiler. As such, the main application to be linked with must be compiled with the MPI wrappers \verb|mpiifort|, \verb|mpiifx| or \verb|mpif90|.
+As for v0.4.0, SsTC is only guaranteed to compile on Linux systems using the above mentioned compilers contained in the \href{https://www.intel.com/content/www/us/en/developer/tools/oneapi/hpc-toolkit.html}{Intel\textregistered oneAPI HPC} toolkit and the \verb|gfortran| compiler. As such, the main application to be linked with must be compiled with the MPI wrappers \verb|mpiifort|, \verb|mpiifx| or \verb|mpif90|.
 
 The SsTC project is hosted on \href{https://github.com/irukoa/SsTC}{GitHub} and can be downloaded by running the command,
 
@@ -321,7 +321,11 @@ A system is a Fortran derived type
 type SsTC_sys
   character(len=120)            :: name
   integer                       :: num_bands
-  real(kind=dp)                 :: direct_lattice_basis(3, 3)
+  real(kind=dp)                 :: direct_lattice_basis(3, 3)               
+  !Direct lattice basis vectors in A.
+  !1st index is vector label, 2nd index is vector component.
+  real(kind=dp)                 :: reciprocal_lattice_basis(3, 3)           
+  !Reciprocal lattice basis vectors in A^-1.
   !1st index is vector label, 2nd index is vector component.
   real(kind=dp)                 :: metric_tensor(3, 3)
   !Metric tensor of the direct lattice basis.
