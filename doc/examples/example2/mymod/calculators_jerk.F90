@@ -22,9 +22,9 @@ module mymod
 contains
 
   subroutine jerk_current_constructor(optical_task, method, samples, &
-                                                   omegastart, omegaend, omegasteps, &
-                                                   particular_integer_component, &
-                                                   optical_smearing)
+                                      omegastart, omegaend, omegasteps, &
+                                      particular_integer_component, &
+                                      optical_smearing)
 
     character(len=*), optional, intent(in) :: method
     integer, optional, intent(in)          :: samples(3)
@@ -105,7 +105,7 @@ contains
       na_d = SsTC_non_abelian_d(system, eig, rot, w_dk_hamiltonian)
       !Get inverse effective mass.
       mu = SsTC_inverse_effective_mass(system, SsTC_wannier_d2hamiltonian_dk2(system, k), &
-                                  w_dk_hamiltonian, eig, rot, error)
+                                       w_dk_hamiltonian, eig, rot, error)
 
       !Get connection in the Hamiltonian basis.
       do i = 1, 3

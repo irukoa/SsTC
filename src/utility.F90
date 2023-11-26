@@ -319,7 +319,7 @@ contains
     !Given a Hermitian/Skew-Hermitian dim x dim matrix mat, the routine!
     !computes the dim x dim matrix exphs such that exphs = exp(mat).   !
     !If mat is Skew-Hermitian, then skew = .true. and if Hermitian,    !
-    !then, , then skew = .false..                                      !
+    !then, skew = .false..                                             !
     !                                                                  !
     !==================================================================!
 

@@ -1,0 +1,48 @@
+name: Testing suite.
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  run:
+    runs-on: ubuntu-22.04
+    steps:
+        - name: Checkout
+          uses: actions/checkout@v2
+          with:
+            submodules: 'true'
+        - name: Setup oneAPI Repository
+          run: |
+            wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+            sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+            rm GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB
+            sudo echo "deb https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
+            sudo apt-get update
+        - name: Install
+          run: |
+            sudo apt-get install -y intel-oneapi-common-vars
+            sudo apt-get install -y intel-oneapi-mkl
+        - name: Set Environment
+          run: |
+            source /opt/intel/oneapi/setvars.sh
+            printenv >> $GITHUB_ENV
+        - name: Install Dependencies
+          run: |
+            sudo apt-get update
+            sudo apt-get install  \
+              gfortran            \
+              libblas-dev         \
+              liblapack-dev       \
+              openmpi-bin         \
+              libopenmpi-dev      \
+              mpich
+        - name: Build Suite
+          run: |
+            cd ./tests
+            ./build_and_compile.sh
+        - name: Run Tests
+          run: |
+            cd ./tests
+            mpirun -np 1 ./tests.x
+        - name: Upload Coverage to Codecov
+          uses: codecov/codecov-action@v3
+          with:
+            gcov: true
+            gcov_include: ../src/obj/*.o

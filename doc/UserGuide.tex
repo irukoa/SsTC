@@ -51,8 +51,8 @@
 \hbadness=10000
 
 \title{SsTC library:\\
-\large{User's Guide}\\
-\large{Version 0.3.1}}
+\large{User Guide}\\
+\large{Version 0.4.0}}
 \author{Álvaro R. Puente-Uriona}
 \date{\today}
 
@@ -63,9 +63,9 @@
 \newcommand\imglabelsize{10} %Default: 10.
 %
 
-\usepackage{draftwatermark}
-\SetWatermarkText{DRAFT}
-\SetWatermarkScale{5}
+%\usepackage{draftwatermark}
+%\SetWatermarkText{DRAFT}
+%\SetWatermarkScale{5}
 
 \begin{document}
 \maketitle
@@ -75,7 +75,7 @@
 \section{Scope}
 Solid-state Task Constructor (SsTC) is a high-performance computing (HPC) oriented Fortran 2018 library which aims to aid programmers and researchers in the process of sampling and integration of functions in the first Brillouin zone (BZ) of a given crystalline system. The library is centred around the following concepts:
 \begin{tcolorbox}\begin{itemize}
-\item The calculator: A general function representing a physical quantity of interest to the programmer or researcher. It is of the form
+\item The calculator: A general function representing a physical quantity of interest to the user. It is of the form
 \begin{equation}\label{eq:calculator}
 C^{\bm{\alpha}}(\bm{k}; \bm{\beta}),
 \end{equation}
@@ -96,18 +96,17 @@ The sampling and integration utilities contained in SsTC are the following.
 \item ``Kpath" sampling. 1-dimensional sampling of $C$ with specification of the path to sample.
 \item ``Kslice" sampling. 2-dimensional regular sampling of $C$ with specification of the slice to sample.
 \item ``Regular" sampling. 3-dimensional regular sampling of $C$ with specification of the number of samples in each dimension.
-\item Integration. 3-dimensional regular sampling of $C$ followed by an integration process. The integration process as for v0.3.1 amounts to the rectangle approximation in each dimension. There exists also an experimental integration method based on extrapolation methods.
+\item Integration. 3-dimensional regular sampling of $C$ followed by an integration process. The integration process as for v0.4.0 amounts to the rectangle approximation or extrapolation methods in each dimension.
 \end{itemize}\end{tcolorbox}
 All the concepts covered in this section are treated with greater detail in the specific sections in the document.
 \section{Prerequisites, installation \& linking to application}\label{sec:install}
 SsTC is a Fortran 2018 standard complying code and the prerequisites for its compilation are,
 \begin{tcolorbox}\begin{itemize}
-\item Intel oneAPI Math Kernel Libraries (MKL), OpenMP library and MPI library.
+\item Any implementation of BLAS, LAPACK, OpenMP and MPI libraries. We recommend those provided by the Intel oneAPI toolkit (Math Kernel Libraries (MKL), OpenMP and MPI).
 \item Intel Fortran oneAPI compilers \verb|ifort| or \verb|ifx| or GNU Fortran compiler \verb|gfortran|.
-\item Make software.
-\item Python 3 ($>$ v3.9) software with 're' and 'glob' libraries.
+\item Python 3 software with 're' and 'glob' libraries.
 \end{itemize}\end{tcolorbox}
-As for v0.3.1, SsTC is only guaranteed to compile on Linux systems using the \verb|ifort|, \verb|ifx| compilers contained in the \href{https://www.intel.com/content/www/us/en/developer/tools/oneapi/hpc-toolkit.html}{Intel\textregistered oneAPI HPC} toolkit and the \verb|gfortran| compiler. As such, the main application to be linked with must be compiled with the MPI wrappers \verb|mpiifort|, \verb|mpiifx| or \verb|mpif90|.
+As for v0.4.0, SsTC is only guaranteed to compile on Linux systems using the above mentioned compilers contained in the \href{https://www.intel.com/content/www/us/en/developer/tools/oneapi/hpc-toolkit.html}{Intel\textregistered oneAPI HPC} toolkit and the \verb|gfortran| compiler. As such, the main application to be linked with must be compiled with the MPI wrappers \verb|mpiifort|, \verb|mpiifx| or \verb|mpif90|.
 
 The SsTC project is hosted on \href{https://github.com/irukoa/SsTC}{GitHub} and can be downloaded by running the command,
 
@@ -142,7 +141,7 @@ bash:/path/of/your/choice/SsTC$ cp config/gfortran Makefile
 bash:/path/of/your/choice/SsTC$ make
 \end{verbatim}
 \end{codebox}
-which will replace the Makefile for compilation with \verb|mpiifort| by the one for compilation with \verb|mpiifx|/\verb|mpif90| and build the library.
+which will replace the Makefile for compilation with \verb|mpiifort| by the one for compilation with \verb|mpiifx|/\\ \verb|mpif90| and build the library.
 
 To link to your Fortran application \verb|appl.F90|, add the line \verb|use SsTC| in your application preamble and compile with
 \begin{codebox}{Compilation \& Linking}
@@ -158,7 +157,7 @@ where \verb|F90 = mpiifort/mpiifx/mpif90| and \verb|F90FLAGS| contains, at least
 F90FLAGS = -qopenmp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -pthread
 \end{verbatim}
 \end{codebox}
-where, if using \verb|mpif90|, the \verb|-qopenmp| flag should be replace with the \verb|-fopenmp| flag.
+or the compiler specific analogues of the above mentioned flags.
 
 To make use of SsTC, the application preamble of \verb|appl.F90| should also contain the lines
 \begin{codebox}{Use statements}
@@ -167,9 +166,9 @@ use MPI_F08
 use OMP_LIB
 \end{verbatim}
 \end{codebox}
-The application must also contain a call to the MPI \cite{messagepassinginterfaceforumMPIMessagePassingInterface2021} initialization routine \verb|call MPI_INIT(ierror)| and to the SsTC initialization routine \verb|call SsTC_init()| \textit{before} any call to other SsTC routines. The programmer also needs to make sure that the MPI finalizing routine \verb|call MPI_FINALIZE(ierror)| has not been called before using SsTC routines.
+The application must also contain a call to the MPI \cite{messagepassinginterfaceforumMPIMessagePassingInterface2021} initialization routine \verb|call MPI_INIT(ierror)| followed by a call to the SsTC initialization routine \verb|call SsTC_init()| \textit{before} any call to other SsTC routines. The programmer also needs to make sure that the MPI finalizing routine \verb|call MPI_FINALIZE(ierror)| has not been called before using SsTC routines.
 
-Note:  By default, SsTC uses double precision \verb|dp, kind=8, real64| numbers for real and complex valued scalars and arrays.
+Note:  By default, SsTC uses double precision numbers for real and complex valued scalars and arrays.
 
 The application \verb|appl.x| can be run by the commands
 \begin{codebox}{Running}
@@ -287,7 +286,7 @@ end subroutine SsTC_init
 \end{codebox}
 The routine will check whether the MPI library has been initialized and stop the program on execution if it was not. It will also open the output and error log files \verb|file=trim(exec_label//".out")| and \\ \verb|file=trim(exec_label//".err")|. This feature, however, can be disabled by using \verb|verb = .false.| which is useful if SsTC is to be used \textit{within} a parallel environment. Lastly, \verb|nThreads| sets the number of threads per MPI process, with the default value of \verb|OMP_GET_MAX_THREADS()|.
 \section{Notation: Memory layout and array layout}\label{sec:notation}
-These concepts apply to $N$-dimensional arrays such as \verb|array(:, :, ..., :)|, where each dimension $i$ has size $s_i$. The total size of \verb|array| is
+These concepts apply to $N$-dimensional jagged arrays such as \verb|array(:, :, ..., :)|, where each dimension $i$ has size $s_i$. The total size of \verb|array| is
 \begin{equation}
 \verb|size(array)| = \prod_{i=1}^N s_i.
 \end{equation}
@@ -305,7 +304,7 @@ r \Leftrightarrow \{n_1, n_2, \cdots, n_N\},
 \end{equation}
 which makes it possible to keep track of the elements of an array in both layouts, provided that the sizes of each dimension, $s_i$, are known. The output values of the calculator interfaces, corresponding to the sampling $C^{\bm{\alpha}}(\bm{k}; \bm{\beta})$ for a $\bm{k}$ vector, are always arrays in memory layout, both for integer and continuous indices, which makes the interface of the calculator flexible for any number of integer or continuous indices.
 
-In SsTC, the sizes $s_i$ of integer or continuous indices are specified by the components of \\ \verb|task%integer_indices| and \verb|task%continuous_indices| (if applicable) of the task \\ \verb|class(SsTC_local_k_data) :: task|, respectively. The library provides the utilities
+In SsTC, the sizes $s_i$ of integer or continuous indices are specified by the components of \\ \verb|task%integer_indices| and \verb|task%continuous_indices| (if applicable) of the task \\ \verb|class(SsTC_local_k_data) :: task|, respectively. The library provides the jagged array indexing utilities
 \begin{tcolorbox}[enhanced, breakable]
 \begin{itemize}
 \item \verb|SsTC_integer_array_element_to_memory_element|: Returns $r = f(\{n_1, n_2, \cdots, n_N\})$ for integer indices.
@@ -322,7 +321,11 @@ A system is a Fortran derived type
 type SsTC_sys
   character(len=120)            :: name
   integer                       :: num_bands
-  real(kind=dp)                 :: direct_lattice_basis(3, 3)
+  real(kind=dp)                 :: direct_lattice_basis(3, 3)               
+  !Direct lattice basis vectors in A.
+  !1st index is vector label, 2nd index is vector component.
+  real(kind=dp)                 :: reciprocal_lattice_basis(3, 3)           
+  !Reciprocal lattice basis vectors in A^-1.
   !1st index is vector label, 2nd index is vector component.
   real(kind=dp)                 :: metric_tensor(3, 3)
   !Metric tensor of the direct lattice basis.
@@ -609,17 +612,20 @@ The routine will write a file for each integer index with name \\ \verb|trim(sys
 \end{tcolorbox}
 If further use of the sampled data is intended within the execution of the application, making a copy of \verb|task%kslice_data| is suggested.
 \subsection{Sampler module}
-This module is centered around creating, sampling, and printing tasks which involve a regular 3-dimensional BZ sampling. The ``sampler" task is a derived type
+This module is centered around creating, sampling, and printing tasks which involve a regular 3-dimensional BZ sampling or a sampling over a predefined set of points in the BZ specified by the user. The ``sampler" task is a derived type
 \begin{codebox}{Sampler task}
 \begin{lstlisting}[caption={Derived type corresponding to a sampler task.},captionpos=b]
 type, extends(SsTC_global_k_data) :: SsTC_sampling_task
   integer                       :: samples(3) = (/100, 100, 100/)
   !Integer index, continuous index and kpt index 1, 2 and 3 respectively.
   complex(kind=dp), allocatable :: BZ_data(:, :, :, :, :)
+  logical                       :: predefined_set_of_kpts = .false.
+  real(kind=dp), allocatable    :: kpts(:, :)
+  complex(kind=dp), allocatable :: predefined_sampled_data(:, :, :)
 end type SsTC_sampling_task
 \end{lstlisting}
 \end{codebox}
-For the general calculator Eq. \eqref{eq:calculator}, and the reciprocal space basis vectors $\bm{b}_{\{1, 2, 3\}}$, we identify
+In the case of regular sampling, for the general calculator Eq. \eqref{eq:calculator}, and the reciprocal space basis vectors $\bm{b}_{\{1, 2, 3\}}$, we identify
 \begin{equation}
 \verb|BZ_data(alpha, beta, ik1, ik2, ik3)| = C^{\bm{\alpha}}(\bm{k}; \bm{\beta}),\quad \bm{k}\text{ is identified with } \verb|ik1, ik2, ik3|,
 \end{equation}
@@ -627,12 +633,21 @@ and given by
 \begin{equation}\label{eq:vec_coords_sampler}
 \bm{k} = \sum_{i=1}^3 \bm{b}_i\times (\verb|ik|i-1)/(\verb|samples(i)| - 1).
 \end{equation}
+
+In the case of predefined sampling specified by the user, we identify, for the vectors $\bm{b}_{\{1, 2, 3\}}$,
+\begin{equation}
+\verb|predefined_sampled_data(alpha, beta, ik)| = C^{\bm{\alpha}}(\bm{k}; \bm{\beta}),\quad \bm{k}\text{ is identified with } \verb|ik|,
+\end{equation}
+and given by
+\begin{equation}\label{eq:alt_vec_coords_sampler}
+\bm{k} = \sum_{i=1}^3 \bm{b}_i\times \verb|kpts(ik, |i \verb|)|.
+\end{equation}
 A sampling task can be constructed by the function \verb|SsTC_sampling_task_constructor|,
 \begin{codebox}{Sampler task constructor}
 \begin{lstlisting}[caption={Interface of the sampling task constructor.},captionpos=b]
 subroutine SsTC_sampling_task_constructor(task, name, &
                                           l_calculator, g_calculator, &
-                                          samples, &
+                                          samples, nkpts, kpts, &
                                           N_int_ind, int_ind_range, &
                                           N_ext_vars, &
                                           ext_vars_start, ext_vars_end, &
@@ -645,6 +660,8 @@ subroutine SsTC_sampling_task_constructor(task, name, &
   procedure(SsTC_global_calculator), optional :: g_calculator
 
   integer, optional, intent(in) :: samples(3)
+  integer, optional, intent(in) :: nkpts
+  real(kind=dp), optional, intent(in) :: kpts(nkpts, 3)
 
   integer, intent(in)           :: N_int_ind
   integer, optional, intent(in) :: int_ind_range(N_int_ind)
@@ -666,7 +683,9 @@ where
 \item \verb|name|: Name given to the task.
 \item \verb|l_calculator|: Pointer to a function that wants to be sampled, with interface \ref{lst:interface_l_calc}. Only one of \\ \verb|l_calculator| or \verb|g_calculator| can be specified.
 \item \verb|g_calculator|: Pointer to a function that wants to be sampled, with interface \ref{lst:interface_g_calc}. Only one of \\ \verb|l_calculator| or \verb|g_calculator| can be specified.
-\item \verb|samples(3)|: Each entry $i$ contains the number into which $\bm{b}_i$ has been discretized.
+\item \verb|samples(3)|: Each entry $i$ contains the number into which $\bm{b}_i$ has been discretized for the case of regular sampling.
+\item \verb|nkpts|: Size of the set of BZ points where sampling will take place in the case of predefined sampling. Specifying this option overrides regular sampling.
+\item \verb|kpts(nkpts, 3)|: Array containing the crystal coordinates of the set of BZ points where sampling will take place in the case of predefined sampling. Specifying this option overrides regular sampling.
 \item \verb|N_int_ind|: Number of integer indices.
 \item \verb|int_ind_range(i)|: Number of values the integer index $\alpha_i$ can have.
 \item \verb|N_ext_vars|: Number of continuous variables.
@@ -676,7 +695,7 @@ where
 \item \verb|part_int_comp(N_int_ind)|: Array corresponding to a selection of a particular integer component in array layout.
 \end{itemize}
 \end{tcolorbox}
-Sampling, and thus writing the values of $C$ in Eq. \eqref{eq:calculator} given by \verb|l_calculator| or \verb|g_calculator| to the array \verb|BZ_data| can be made with the subroutine \verb|SsTC_sample_sampling_task|.
+Sampling, and thus writing the values of $C$ in Eq. \eqref{eq:calculator} given by \verb|l_calculator| or \verb|g_calculator| to the array \verb|BZ_data| in the case of regular sampling or  \verb|predefined_sampled_data| in the case of predefined sampling can be made with the subroutine \verb|SsTC_sample_sampling_task|.
 \begin{codebox}{Sampler task sampler}
 \begin{lstlisting}[caption={Interface of the sampling task sampler.},captionpos=b]
 subroutine SsTC_sample_sampling_task(task, system)
@@ -699,12 +718,13 @@ end subroutine SsTC_print_sampling
 The routine will write a file for each integer index with name \\ \verb|trim(system%name)//'-'//trim(task%name)//'_'trim(num_label)//'.dat'| with \verb|num_label| being an \\ \verb|N_int_ind|-dimensional array with the corresponding integer index in array layout (see Sec. \ref{sec:notation}). Each file will contain, column by column, the following,
 \begin{tcolorbox}[enhanced, breakable]
 \begin{itemize}
-\item The components $\verb|ik|i=\{1, 2, 3\}$ of the vector $\bm{k}$ in Eq. \eqref{eq:vec_coords_sampler} corresponding to \verb|id| (3 columns).
+\item \textbf{Only in the case of predefined sampling,} the label \verb|ik| of the point $\bm{k}$ in Eq. \eqref{eq:alt_vec_coords_sampler}.
+\item In the case of regular sampling, the components $\verb|ik|i=\{1, 2, 3\}$ of the vector $\bm{k}$ in Eq. \eqref{eq:vec_coords_sampler} corresponding to \verb|id| (3 columns). In the case of predefined sampling, the components $\verb|kpts(ik,i)|,\;i=\{1, 2, 3\}$ of the vector $\bm{k}$ in Eq. \eqref{eq:alt_vec_coords_sampler}.
 \item For each continuous index $i$, the particular values of the data $\lambda_{ij}$ as given by Eq. \eqref{eq:disc_cont} \\ (\verb|size(task%continuous_indices)| columns).
 \item The real and imaginary part of the calculator $C^{\bm{\alpha}}(\bm{k}; \bm{\beta})$ (2 columns).
 \end{itemize}
 \end{tcolorbox}
-If further use of the sampled data is intended within the execution of the application, making a copy of \verb|task%BZ_data| is suggested.
+If further use of the sampled data is intended within the execution of the application, making a copy of \verb|task%BZ_data| or \verb|task%predefined_sampled_data| is suggested.
 \subsection{Integrator module}
 This module is centered around creating, sampling, integrating, and printing tasks which involve a BZ integral. The ``integrator" task is a derived type
 \begin{codebox}{Integration task}
@@ -1023,7 +1043,7 @@ end function SsTC_external_variable_constructor
 \end{lstlisting}
 \end{codebox}
 which implements Eq. \eqref{eq:disc_cont} for an index $\beta_i$.
-\subsubsection{Array transformation and index tracking}
+\subsubsection{Jagged array transformation and index tracking}
 
 The function \verb|SsTC_integer_array_element_to_memory_element|,
 \begin{codebox}{Array element to memory element (integer indices)}

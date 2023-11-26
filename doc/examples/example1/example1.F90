@@ -17,30 +17,30 @@ program example01
 
   call SsTC_init()
 
-  dummy = SsTC_sys_constructor("dummy", "./", efermi = 0.0_dp)
+  dummy = SsTC_sys_constructor("dummy", "./", efermi=0.0_dp)
 
   block
 
     type(SsTC_BZ_integral_task) :: test_integral
 
-    call SsTC_BZ_integral_task_constructor(task = test_integral, name = "example01-test", &
-                                           g_calculator = test_calculator, &
-                                           method = "rectangle", samples = (/33, 1, 1/), &
-                                           N_int_ind = 2, int_ind_range = (/3, 3/), &
-                                           N_ext_vars = 1, ext_vars_start = (/1.0_dp/), &
-                                           ext_vars_end = (/10.0_dp/), ext_vars_steps = (/10/))
+    call SsTC_BZ_integral_task_constructor(task=test_integral, name="example01-test", &
+                                           g_calculator=test_calculator, &
+                                           method="rectangle", samples=(/33, 1, 1/), &
+                                           N_int_ind=2, int_ind_range=(/3, 3/), &
+                                           N_ext_vars=1, ext_vars_start=(/1.0_dp/), &
+                                           ext_vars_end=(/10.0_dp/), ext_vars_steps=(/10/))
 
-    call SsTC_sample_and_integrate_BZ_integral_task(task = test_integral, &
-                                                    system = dummy)
+    call SsTC_sample_and_integrate_BZ_integral_task(task=test_integral, &
+                                                    system=dummy)
 
-    call SsTC_print_BZ_integral_task(task = test_integral, &
-                                     system = dummy)
+    call SsTC_print_BZ_integral_task(task=test_integral, &
+                                     system=dummy)
 
   end block
 
   call MPI_FINALIZE(ierror)
 
-  contains
+contains
 
   function test_calculator(task, system, k, error) result(u)
 
@@ -63,10 +63,10 @@ program example01
       do r = 1, product(task%continuous_indices)
         r_arr = SsTC_continuous_memory_element_to_array_element(task, r)
         !r_arr(1) now stores the iteration of the continuous variable.
-        u(i, r) = real(i_arr(1) + i_arr(2), dp) * &
-                  cmplx(exp(                      &
-                              k(1)*               &
-                              task%ext_var_data(1)%data(r_arr(1)) & !This references the value r_arr(1) of the continuous variable "1".
+        u(i, r) = real(i_arr(1) + i_arr(2), dp)* &
+                  cmplx(exp( &
+                        k(1)* &
+                        task%ext_var_data(1)%data(r_arr(1)) & !This references the value r_arr(1) of the continuous variable "1".
                         ))
       enddo
     enddo

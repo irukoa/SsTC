@@ -1,0 +1,11 @@
+*.x
+*.gcno
+*.gcda
+*.gcov
+*.err
+*.out
+*.html
+*.png
+*.css
+*.info
+*.dat
