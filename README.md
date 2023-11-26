@@ -84,7 +84,7 @@ To create tasks one needs to employ the task constructors `SsTC_BZ_integral_task
          enddo
        enddo
 
-The user can also pass as an input a cristalline system, which corresponds to the tight-binding representation of said system. This is a file given in the [Wannier90](https://wannier.org/) format, containing the Hamiltonian matrix elements and the position operator's matrix elements in the Wannier basis. A system is a derived type `type(SsTC_sys)`, which can be loaded from a file by using the `SsTC_sys_constructor`. The user is then encouraged to employ the Wannier interpolation routines contained in the `local_k_quantities.F90` module to compute the Hamiltonian and Berri connection matrices and its derivatives in the Wannier gauge.
+The user can also pass as an input a cristalline system, which corresponds to the tight-binding representation of said system. This is a file given in the [Wannier90](https://wannier.org/) format, containing the Hamiltonian matrix elements and the position operator's matrix elements in the Wannier basis. A system is a derived type `type(SsTC_sys)`, which can be loaded from a file by using the `SsTC_sys_constructor`. The user is then encouraged to employ the Wannier interpolation routines contained in the `local_k_quantities.F90` module to compute the Hamiltonian and Berry connection matrices and its derivatives in the Wannier gauge.
 
 Once created a task, this can be sampled/integrated by using the task specific routines `SsTC_sample_and_integrate_BZ_integral_task`, `SsTC_kpath_sampler`, `SsTC_sample_kslice_task` and `SsTC_sample_sampling_task`. Which take as inputs a task of the corresponding type and a system of type `type(SsTC_sys)`. This will write to the particular result variable contained in the type (see User's guide). Lastly, the results can be plotted to files by using the routines `SsTC_print_BZ_integral_task`, `SsTC_print_kpath`, `SsTC_print_kslice`, and `SsTC_print_sampling`. These will write a file for each possible combination of $\alpha_i$ integer indices and each of the columns will correspond to a particular $\beta_i$ index and/or a $k$ value (in the case of sampling).
 
@@ -185,7 +185,7 @@ As an example, consider Example 1 in the User's guide,
 
     end program example01
 
-As another example, an application calculating the jerk current of the system GaAs, as in Example 2 of the User's guide, should look like:
+As another example, an application calculating the [jerk current](https://doi.org/10.1103/physrevb.107.205204) of the system GaAs, as in Example 2 of the User's guide, should look like:
 
     bash:/path/to/application/$ cat my_jerk_application.F90
 <!-- tsk -->
