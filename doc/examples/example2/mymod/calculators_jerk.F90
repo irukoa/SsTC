@@ -71,8 +71,9 @@ contains
     real(kind=dp) :: omega, smearing, &
                      spacing, dk, &
                      arg, delta, &
-                     bpart, &
                      eig(system%num_bands)
+
+    complex(kind=dp) :: bpart
 
     complex(kind=dp), dimension(system%num_bands, system%num_bands) :: w_hamiltonian, &
                                                                        rho, &

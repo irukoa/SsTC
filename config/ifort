@@ -1,7 +1,7 @@
 default: main
 
 F90 = mpiifort
-F90FLAGS = -fPIE -qopenmp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -fpp -stand f18
+F90FLAGS = -fPIE -qopenmp -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -fpp -stand f18 -heap-arrays
 F90FLAGS += -g -traceback -warn unused -warn all -check bounds -fp-stack-check -implicitnone -diag-disable 5462 -diag-disable 10440 #Debug flags.
 F90FLAGS += -Ofast #Optimization flags.
 
